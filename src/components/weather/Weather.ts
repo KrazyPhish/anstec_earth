@@ -7,7 +7,7 @@ import { rain, snow } from "../../images"
 
 export namespace Weather {
   export type WeatherType = "rain" | "snow" | "fog"
-  
+
   /**
    * @property [id] ID
    * @property [data] 附加数据
@@ -28,10 +28,13 @@ export namespace Weather {
 
 /**
  * @description 天气特效
- * @param earth {@link Earth}
+ * @param earth {@link Earth} 地球实例
  * @example
  * ```
  * const earth = useEarth()
+ * const weather = earth.weather
+ *
+ * //or
  * const weather = new Weather(earth)
  * ```
  */
@@ -46,6 +49,42 @@ export class Weather<T = unknown> {
     earth.clock.shouldAnimate = true
     this.scene = earth.scene
     this.particleLayer = new ParticleLayer<T>(earth)
+  }
+
+  /**
+   * @description 大气/照明恢复的距离，仅当启用自然光照或大气层效果时生效
+   */
+  get fadeInDistance() {
+    return this.scene.globe.lightingFadeInDistance
+  }
+  set fadeInDistance(value: number) {
+    this.scene.globe.lightingFadeInDistance = value
+  }
+
+  /**
+   * @description 一切都被点亮的距离，仅当启用自然光照或大气层效果时生效
+   */
+  get fadeOutDistance() {
+    return this.scene.globe.lightingFadeOutDistance
+  }
+  set fadeOutDistance(value: number) {
+    this.scene.globe.lightingFadeOutDistance = value
+  }
+
+  /**
+   * @description 启用太阳光源的自然光照
+   * @param value 是否启用
+   */
+  public useNaturalLight(value: boolean) {
+    this.scene.globe.enableLighting = value
+  }
+
+  /**
+   * @description 启用大气层效果
+   * @param value 是否启用
+   */
+  public enableAtmosphere(value: boolean) {
+    this.scene.globe.showGroundAtmosphere = value
   }
 
   /**

@@ -1,4 +1,4 @@
-import { Camera, Cartesian3, Ellipsoid, EllipsoidalOccluder, Scene, Viewer } from "cesium"
+import { Camera, Cartesian3, DeveloperError, Ellipsoid, EllipsoidalOccluder, Scene, Viewer } from "cesium"
 import { Earth } from "../Earth"
 import { Utils } from "../../utils"
 
@@ -193,6 +193,7 @@ export class Covering<T = unknown> {
   /**
    * @description 新增覆盖物
    * @param param {@link Covering.AddParam} 参数
+   * @exception Reference element is required when customizing.
    * @example
    * ```
    * const earth = useEarth
@@ -227,7 +228,7 @@ export class Covering<T = unknown> {
   }: Covering.AddParam<T>) {
     if (customize) {
       if (!reference) {
-        throw new Error("Reference element is required when customizing.")
+        throw new DeveloperError("Reference element is required when customizing.")
       }
     } else {
       className.push("covering-container")

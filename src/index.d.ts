@@ -13,7 +13,6 @@ import {
   DepthFunction,
   DistanceDisplayCondition,
   Entity,
-  Geometry,
   GroundPolylinePrimitive,
   GroundPrimitive,
   HeadingPitchRoll,
@@ -39,7 +38,6 @@ import {
   PointPrimitiveCollection,
   Primitive,
   PrimitiveCollection,
-  PrimitiveType,
   Rectangle,
   Rectangle as Rect,
   Scene,
@@ -48,11 +46,8 @@ import {
   UrlTemplateImageryProvider,
   VerticalOrigin,
   Viewer,
-  Framebuffer,
   FrameState,
-  ShaderSource,
   Sampler,
-  Texture,
   TextureMagnificationFilter,
   TextureMinificationFilter,
   BillboardGraphics,
@@ -60,6 +55,8 @@ import {
   PathGraphics,
   TimeIntervalCollection,
   Ellipsoid,
+  CumulusCloud,
+  CloudCollection,
 } from "cesium"
 import { EChartsOption } from "echarts"
 
@@ -261,6 +258,310 @@ declare module "@anstec/earth" {
     DMSS = "DMSS",
   }
 
+  export namespace Earth {
+    /**
+     * @property [defaultViewRectangle] 默认视窗范围
+     * @property [showAnimation = false] 是否显示动画控件
+     * @property [showTimeline = false] 是否显示时间轴控件
+     * @property [lockCamera] {@link CameraLockOptions} 相机锁定选项
+     */
+    export type ConstructorOptions = {
+      defaultViewRectangle?: Rectangle
+      showAnimation?: boolean
+      showTimeline?: boolean
+      lockCamera?: CameraLockOptions
+    }
+
+    /**
+     * @description 相机锁定选项
+     * @property [enable = false] 启用锁定
+     * @property [rectangle] 锁定范围
+     * @property [height] 锁定高度
+     */
+    export type CameraLockOptions = {
+      enable?: boolean
+      rectangle?: Rectangle
+      height?: number
+    }
+  }
+
+  /**
+   * @description 地球
+   * @param container 容器ID / 容器 / {@link Viewer} 实例
+   * @param cesiumOptions {@link Viewer.ConstructorOptions} 视图选项
+   * @param options {@link Earth.ConstructorOptions} 参数
+   * @example
+   * ```
+   * //use hook
+   * //already have a viewer
+   * const earth = useEarth("my_earth", viewer)
+   *
+   * //use hook
+   * //no available viewer
+   * const earth = useEarth()
+   *
+   * //use class
+   * //already have a viewer
+   * const earth = new Earth(viewer)
+   *
+   * //use class
+   * //no available viewer
+   * const earth = new Earth("GisContainer", {
+   *  animation: true,
+   *  timeline: true,
+   *  shouldAnimate: true,
+   *  fullscreenButton: false,
+   *  geocoder: false,
+   *  homeButton: false,
+   *  sceneModePicker: false,
+   *  scene3DOnly: false,
+   *  sceneMode: SceneMode.SCENE3D,
+   *  selectionIndicator: false,
+   *  infoBox: false,
+   *  baseLayerPicker: false,
+   *  navigationHelpButton: false,
+   *  vrButton: false,
+   *  shadows: false,
+   *  mapMode2D: MapMode2D.INFINITE_SCROLL,
+   *  mapProjection: new WebMercatorProjection(Ellipsoid.WGS84),
+   * })
+   * ```
+   */
+  export class Earth {
+    /**
+     * @description ID
+     */
+    id: string
+    /**
+     * @description HTML容器
+     */
+    readonly container: HTMLElement
+    /**
+     * @description 视窗实列
+     */
+    readonly viewer: Viewer
+    /**
+     * @description 场景实例
+     */
+    readonly scene: Scene
+    /**
+     * @description 相机实例
+     */
+    readonly camera: Camera
+    /**
+     * @description 时钟实例
+     */
+    readonly clock: Clock
+    /**
+     * @description 动画控件
+     */
+    readonly animation: HTMLElement
+    /**
+     * @description 时间轴控件
+     */
+    readonly timeline: HTMLElement
+    /**
+     * @description 坐标系
+     */
+    readonly coordinate: Coordinate
+    /**
+     * @description 全局事件
+     */
+    readonly global: GlobalEvent
+    /**
+     * @description 默认图层实例
+     */
+    readonly layers: GraphicsLayer
+    /**
+     * @description 测量组件
+     */
+    readonly measure: Measure
+    /**
+     * @description 动态绘制
+     */
+    readonly drawTool: Draw
+    /**
+     * @description 菜单组件
+     */
+    readonly contextMenu: ContextMenu
+    /**
+     * @description 天气场景特效
+     */
+    readonly weather: Weather
+    constructor(
+      container: string | HTMLDivElement | Viewer,
+      cesiumOptions?: Viewer.ConstructorOptions,
+      options?: Earth.ConstructorOptions
+    )
+    /**
+     * @description 使用Echarts插件并映射坐标系统
+     * 1. 该坐标系统跟随Cesium视角调整Echarts坐标
+     * 2. 该坐标系统由于Echarts限制，仅支持单实例
+     * 3. 对应视图需要开启Echarts插件时运行该方法
+     * 4. 其他Echarts图形实例也可加载，但不随视图更新位置
+     * @example
+     * ```
+     * const earth = useEarth()
+     * earth.useEcharts()
+     * const overlay = new Overlay({ earth, echartsOption })
+     * ```
+     */
+    useEcharts(): void
+    /**
+     * @description 使用默认图层类
+     * @returns 默认暴露的图层类
+     * @deprecated Now can directly read the public value `earth.layers`
+     */
+    useDefaultLayers(): GraphicsLayer
+    /**
+     * @description 使用默认测量类
+     * @returns 测量工具
+     * @deprecated Now can directly read the public value `earth.measure`
+     */
+    useMeasure(): Measure
+    /**
+     * @description 使用默认绘制类
+     * @returns 绘制工具
+     * @deprecated Now can directly read the public value `earth.drawTool`
+     */
+    useDraw(): Draw
+    /**
+     * @description 使用默认上下文菜单
+     * @returns 上下文菜单实例
+     * @deprecated Now can directly read the public value `earth.contextMenu`
+     */
+    useContextMenu(): ContextMenu
+    /**
+     * @description 锁定相机
+     * @param param {@link Earth.CameraLockOptions} 参数
+     * @example
+     * ```
+     * const earth = useEarth()
+     * earth.lockCamera({
+     *  enable: true,
+     *  rectangle: Rectangle.fromDegrees(72.004, 0.8293, 137.8347, 55.8271),
+     *  height: 1000000,
+     * })
+     * ```
+     */
+    lockCamera(param?: Earth.CameraLockOptions): void
+    /**
+     * @description 添加地图影像层
+     * @param provider 影像图层
+     * @example
+     * ```
+     * const earth = useEarth()
+     * const imageryProvider = useTileImageryProvider({ url: "/api/imagery", maximumLevel: 18 })
+     * earth.addImageryProvider(imageryProvider)
+     * ```
+     */
+    addImageryProvider(provider: ImageryProvider): ImageryLayer
+    /**
+     * @description 移除所有地图影像层
+     */
+    removeImageryProvider(): void
+    /**
+     * @description 移除地图影像层
+     * @param layer 图层
+     * @example
+     * ```
+     * const earth = useEarth()
+     * const imageryProvider = useTileImageryProvider({ url: "/api/imagery", maximumLevel: 18 })
+     *
+     * //remove one
+     * earth.removeImageryProvider(imageryProvider)
+     *
+     * //remove all
+     * earth.removeImageryProvider()
+     * ```
+     */
+    removeImageryProvider(layer: ImageryLayer): void
+    /**
+     * @description 设置地形
+     * @param terrainProvider 地形
+     * @example
+     * ```
+     * const earth = useEarth()
+     * const terrainProvider = await CesiumTerrainProvider.fromUrl("/api/terrain")
+     * earth.setTerrain(terrainProvider)
+     * ```
+     */
+    setTerrain(terrainProvider: TerrainProvider): void
+    /**
+     * @description 开启 / 关闭地形深度测试
+     * @param value
+     * @example
+     * ```
+     * const earth = useEarth()
+     *
+     * //turn on
+     * earth.setDepthTestAgainstTerrain(true)
+     *
+     * //turn off
+     * earth.setDepthTestAgainstTerrain(false)
+     * ```
+     */
+    setDepthTestAgainstTerrain(value: boolean): void
+    /**
+     * @description 移动相机到默认位置
+     */
+    flyHome(): void
+    /**
+     * @description 移动相机到指定位置
+     * @param target 目标位置参数
+     * @example
+     * ```
+     * const earth = useEarth()
+     * earth.flyTo({ position: Cartesian3.fromDegrees(104, 31) })
+     * ```
+     */
+    flyTo(target: {
+      position?: Cartesian3
+      rectangle?: Rectangle
+      duration?: number
+      orientation?: {
+        heading?: number
+        pitch?: number
+        roll?: number
+      }
+    }): void
+    flyTo(target: {
+      position?: Cartesian3
+      rectangle?: {
+        west: number
+        south: number
+        east: number
+        north: number
+      }
+      duration?: number
+      orientation?: {
+        heading?: number
+        pitch?: number
+        roll?: number
+      }
+    }): void
+    /**
+     * @description 设置地图视图模式
+     * @param mode  2D视图，3D视图
+     * @param duration 动画时间，默认`2s`
+     * @example
+     * ```
+     * const earth = useEarth()
+     *
+     * //2D
+     * earth.morphTo(MapMode.Scene2D)
+     *
+     * //3D
+     * earth.morphTo(MapMode.Scene3D)
+     * ```
+     */
+    morphTo(mode: DefaultContextMenuItem.Scene2D | DefaultContextMenuItem.Scene3D, duration?: number): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
+  }
+
   export namespace AnimationManager {
     /**
      * @description 新增动画对象参数
@@ -288,6 +589,49 @@ declare module "@anstec/earth" {
     }
   }
 
+  /**
+   * @description 动画管理器
+   * @param earth {@link Earth} 地球实例
+   * @exception The instance of 'AnimationManager' can only be constructed once for each earth.
+   * @example
+   * ```
+   * const earth = useEarth()
+   * const animationManager = new AnimationManager(earth)
+   * animationManager.add({
+   *  id: "test",
+   *  positions: [
+   *    { longitude: 104, latitude: 31, time: "2022-01-01" },
+   *    { longitude: 105, latitude: 31, time: "2022-01-02" }
+   *  ],
+   *  billboard: {
+   *    image: "/billboard.png",
+   *    scale: 1,
+   *  },
+   * })
+   */
+  export class AnimationManager {
+    constructor(earth: Earth)
+    /**
+     * @description 新增动画对象
+     * @param param {@link AnimationManager.AddParam} 参数
+     */
+    add(param: AnimationManager.AddParam): void
+    /**
+     * @description 根据ID移除动画对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 移除所有动画对象
+     * @param id ID
+     */
+    remove(): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
+  }
+
   export namespace GlobalEvent {
     /**
      * @property position {@link Cartesian2} 屏幕坐标
@@ -302,6 +646,47 @@ declare module "@anstec/earth" {
       target?: any
     }
     export type Callback = (param: CallbackParam) => void
+  }
+
+  /**
+   * @description 全局事件
+   * @example
+   * ```
+   * const earth = useEarth()
+   *
+   * //订阅
+   * earth.global.subscribe(param => console.log(param), GlobalEventType.LEFT_CLICK, "*")
+   *
+   * //取消订阅
+   * earth.global.subscribe(param => console.log(param), GlobalEventType.LEFT_CLICK, "*")
+   * ```
+   */
+  export class GlobalEvent {
+    constructor(earth: Earth)
+    /**
+     * @description 订阅全局事件
+     * @param callback {@link GlobalEvent.Callback} 回调
+     * @param event {@link GlobalEventType} 事件类型
+     * @param [module] 模块选项
+     * 1. 为特定模块订阅事件时传入
+     * 2. 通配符 `*` 可以表示所有模块
+     * 3. 传入模块名则仅订阅该模块事件
+     */
+    subscribe(callback: GlobalEvent.Callback, event: GlobalEventType, module?: string): void
+    /**
+     * @description 取消订阅全局事件
+     * @param callback {@link GlobalEvent.Callback} 回调
+     * @param event {@link GlobalEventType} 事件类型
+     * @param [module] 模块选项
+     * 1. 为特定模块取消订阅事件时传入
+     * 2. 通配符 `*` 可以表示所有模块
+     * 3. 传入模块名则仅取消订阅该模块事件
+     */
+    unsubscribe(callback: GlobalEvent.Callback, event: GlobalEventType, module?: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   export namespace CesiumNavigation {
@@ -339,8 +724,26 @@ declare module "@anstec/earth" {
     }
   }
 
+  export class CesiumNavigation {
+    constructor(viewer: Viewer, options: CesiumNavigation.ConstructorOptions)
+  }
+
   export namespace EventBus {
     export type Handler<T = unknown> = (event: T) => void
+  }
+
+  /**
+   * @description 事件调度总线
+   * @example
+   * ```
+   * const eventBus = new EventBus()
+   * ```
+   */
+  export class EventBus {
+    constructor()
+    on<T>(event: string, handler: EventBus.Handler<T>): void
+    off<T>(event: string, handler?: EventBus.Handler<T>): void
+    emit<T>(event: string, context?: T): void
   }
 
   export namespace Cluster {
@@ -381,6 +784,321 @@ declare module "@anstec/earth" {
     }
   }
 
+  /**
+   * @description 聚合广告牌，标签，点图层
+   * @param earth 地球
+   * @param options {@link Cluster.ConstructorOptions} 自定义聚合参数
+   * @example
+   * ```
+   * const earth = useEarth()
+   * const cluster = new Cluster(earth)
+   * cluster.load(data)
+   * ```
+   */
+  export class Cluster {
+    constructor(earth: Earth, options?: Cluster.ConstructorOptions)
+    /**
+     * @description 设置自定义样式
+     * @param callback {@link Cluster.CustomFunction} 自定义样式函数
+     */
+    setStyle(callback?: Cluster.CustomFunction): void
+    /**
+     * @description 加载数据
+     * @param data 数据
+     */
+    load(
+      data: {
+        billboard?: Billboard.ConstructorOptions
+        label?: Label.ConstructorOptions
+        point?: PointPrimitive
+      }[]
+    ): void
+    /**
+     * @description 是否启用聚合，初始时是启用的
+     */
+    enable(status: boolean): void
+    /**
+     * @description 清空数据
+     */
+    clear(): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
+  }
+
+  /**
+   * @description 坐标系统
+   * @example
+   * ```
+   * const earth = useEarth()
+   * const coordinate = earth.coordinate
+   * //or
+   * const coordinate = new Coordinate(earth)
+   * ```
+   */
+  export class Coordinate {
+    constructor(earth: Earth)
+    /**
+     * @description 开启鼠标实时获取坐标事件
+     * @param callback 回调函数
+     * @param [realtime = true] `true`为鼠标移动时实时获取，`false`为鼠标单击时获取
+     * @example
+     * ```
+     * coordinate.registerMouseCoordinate((data) => { console.log(data) }, true)
+     * ```
+     */
+    registerMouseCoordinate(callback: (data: Cartographic) => void, realtime?: boolean): void
+    /**
+     * @description 销毁实时鼠标获取坐标事件
+     * @example
+     * ```
+     * coordinate.unregisterMouseCoordinate()
+     * ```
+     */
+    unregisterMouseCoordinate(): void
+    /**
+     * @description 屏幕坐标转空间坐标
+     * @param position {@link Cartesian2} 屏幕坐标
+     * @param [mode = ScreenCapture.ELLIPSOID] {@link ScreenCapture} 屏幕捕获模式
+     * @returns `Cartesian3`坐标
+     * @example
+     * ```
+     * const position = new Cartesian2(50, 50)
+     *
+     * //scene
+     * const cartesian3 = coordinate.screenToCartesian(position, ScreenCapture.SCENE)
+     *
+     * //terrain
+     * const cartesian3 = coordinate.screenToCartesian(position, ScreenCapture.TERRAIN)
+     *
+     * //ellipsoid
+     * const cartesian3 = coordinate.screenToCartesian(position, ScreenCapture.ELLIPSOID)
+     * ```
+     */
+    screenToCartesian(position: Cartesian2, mode?: ScreenCapture): Cartesian3 | undefined
+    /**
+     * @description 空间坐标转屏幕坐标
+     * @param position {@link Cartesian3} 空间坐标
+     * @returns `Cartesian2`坐标
+     * @example
+     * ```
+     * const position = Cartesian3.fromDegrees(104, 31, 0)
+     * const cartesian2 = coordinate.cartesianToScreen(position)
+     * ```
+     */
+    cartesianToScreen(position: Cartesian3): Cartesian2
+    /**
+     * @description 地理坐标转空间坐标
+     * @param cartographic {@link Cartographic} 地理坐标
+     * @returns `Cartesian3`坐标
+     * @example
+     * ```
+     * const position = Cartographic.fromDegrees(104, 31, 0)
+     * const cartesian3 = coordinate.cartographicToCartesian(position)
+     * ```
+     */
+    cartographicToCartesian(cartographic: Cartographic): Cartesian3
+    /**
+     * @description 空间坐标转地理坐标
+     * @param position {@link Cartesian3} 空间坐标
+     * @return `Cartographic`坐标
+     * ```
+     * const position = Cartesian3.fromDegrees(104, 31, 0)
+     * const carto = coordinate.cartesianToCartographic(position)
+     * ```
+     */
+    cartesianToCartographic(position: Cartesian3): Cartographic
+    /**
+     * @description 屏幕坐标转经纬度坐标
+     * @param position {@link cartesian2} 屏幕坐标
+     * @returns `Geographic`坐标
+     * @example
+     * ```
+     * const position = new Cartesian2(50, 50)
+     * const geo = coordinate.screenToGeographic(position)
+     * ```
+     */
+    screenToGeographic(position: Cartesian2): Geographic | undefined
+    /**
+     * @description 屏幕坐标转地理坐标
+     * @param position {@link Cartesian2} 屏幕坐标
+     * @returns `Cartographic`坐标
+     * @example
+     * ```
+     * const position = new Cartesian2(50, 50)
+     * const carto = coordinate.screenToCartographic(position)
+     * ```
+     */
+    screenToCartographic(position: Cartesian2): Cartographic | undefined
+    /**
+     * @description 获取坐标处位置的地面高度
+     * @param position {@link Cartographic} | {@link Geographic} 地理或经纬度坐标
+     * @returns 高度
+     * @exception Invaid position type, use cartographic or geographic.
+     */
+    positionSurfaceHeight(position: Cartographic | Geographic): number | undefined
+  }
+
+  /**
+   * @description 地理坐标，经纬度 <角度制>
+   * @example
+   * ```
+   * const geo = new Geographic(104, 31, 500)
+   * ```
+   */
+  export class Geographic {
+    longitude: number
+    latitude: number
+    height: number
+    /**
+     * @param longitude 经度 <角度制>
+     * @param latitude 纬度 <角度制>
+     * @param [height = 0] 海拔高度 `m`
+     */
+    constructor(longitude: number, latitude: number, height?: number)
+    /**
+     * @description 转为笛卡尔坐标系
+     * @param [ellipsoid = Ellipsoid.WGS84] {@link Ellipsoid} 坐标球体类型
+     * @param [result] {@link Cartesian3} 存储结果对象
+     * @returns 笛卡尔坐标
+     * @example
+     * ```
+     * const geo = new Geographic(104, 31, 500)
+     * const cartesian3 = geo.toCartesian()
+     * ```
+     */
+    toCartesian(ellipsoid?: Ellipsoid, result?: Cartesian3): Cartesian3
+    /**
+     * @description 转为地理坐标系
+     * @param [result] {@link Cartographic} 存储结果对象
+     * @returns 地理坐标
+     * @example
+     * ```
+     * const geo = new Geographic(104, 31, 500)
+     * const carto = geo.toCartographic()
+     * ```
+     */
+    toCartographic(result?: Cartographic): Cartographic
+    /**
+     * @description 转为数组
+     * @returns 数组格式
+     * @example
+     * ```
+     * const geo = new Geographic(104, 31, 500)
+     * const [longitude, latitude] = geo.toArray()
+     * ```
+     */
+    toArray(): number[]
+    /**
+     * @description 转为带高程的数组
+     * @returns 数组格式
+     * @example
+     * ```
+     * const geo = new Geographic(104, 31, 500)
+     * const [longitude, latitude, height] = geo.toArrayHeight()
+     * ```
+     */
+    toArrayHeight(): number[]
+    /**
+     * @description 克隆当前坐标
+     * @returns 新的`Geographic`坐标
+     * @example
+     * ```
+     * const geo = new Geographic(104, 31, 500)
+     * const clone = geo.clone()
+     * ```
+     */
+    clone(): Geographic
+    /**
+     * @description 格式化经纬度
+     * @param [format = CoorFormat.DMS] {@link CoorFormat} 格式
+     * @returns 格式化结果
+     * @example
+     * ```
+     * const geo = new Geographic(104, 31, 500)
+     *
+     * //DMS
+     * const { longitude, latitude } = geo.format(CoorFormat.DMS)
+     *
+     * //DMSS
+     * const { longitude, latitude } = geo.format(CoorFormat.DMSS)
+     * ```
+     */
+    format(format?: CoorFormat): { longitude: string; latitude: string }
+    /**
+     * @description 从已知地理坐标克隆结果
+     * @param geo {@link Geographic} 需要克隆的对象
+     * @param [result] {@link Geographic} 存储结果对象
+     * @returns 地理坐标
+     */
+    static clone(geo: Geographic, result?: Geographic): Geographic
+    /**
+     * @description 比较两个地理坐标是否全等
+     * @param left {@link Geographic} 左值
+     * @param right {@link Geographic} 右值
+     */
+    static equals(left: Geographic, right: Geographic): boolean
+    /**
+     * @description 从弧度制的数据转换
+     * @param longitude 经度 <弧度制>
+     * @param latitude 纬度 <弧度制>
+     * @param [height = 0] 海拔高度 `m`
+     * @param [result] {@link Geographic} 存储结果对象
+     * @returns 地理坐标
+     */
+    static fromRadians(longitude: number, latitude: number, height?: number, result?: Geographic): Geographic
+    /**
+     * @description 从笛卡尔坐标系转换
+     * @param cartesian {@link Cartesian3} 笛卡尔坐标
+     * @param [ellipsoid = Ellipsoid.WGS84] {@link Ellipsoid} 坐标球体类型
+     * @param [result] {@link Geographic} 存储结果对象
+     * @returns 经纬度坐标
+     * @example
+     * ```
+     * const cartesian3 = Cartesian3.fromDegrees(104, 31, 500)
+     * const geo = Geographic.fromCartesian(cartesian3)
+     * ```
+     */
+    static fromCartesian(cartesian: Cartesian3, ellipsoid?: Ellipsoid, result?: Geographic): Geographic
+    /**
+     * @description 从地理坐标系转换
+     * @param cartographic {@link Cartographic} 地理坐标
+     * @param [result] {@link Geographic} 存储结果对象
+     * @returns `Geographic`坐标
+     * @example
+     * ```
+     * const carto = Cartographic.fromDegrees(104, 31, 500)
+     * const geo = Geographic.fromCartographic(carto)
+     * ```
+     */
+    static fromCartographic(cartographic: Cartographic, result?: Geographic): Geographic
+    /**
+     * @description 数组批量转坐标
+     * @param coordinates 数组坐标
+     * @exception Array length must be a mutiple of 2.
+     * @exception Invaid longitude or latitude value.
+     * @example
+     * ```
+     * const arr = [104, 31]
+     * const geoArr = Geographic.fromDegreesArray(arr)
+     * ```
+     */
+    static fromDegreesArray(coordinates: number[]): Geographic[]
+    /**
+     * @description 带高程的数组批量转坐标
+     * @param coordinates 带高程的数组坐标
+     * @exception Array length must be a mutiple of 3.
+     * @exception Invaid longitude or latitude value.
+     * @example
+     * ```
+     * const arr = [104, 31, 500]
+     * const geoArr = Geographic.fromDegreesArrayHeights(arr)
+     * ```
+     */
+    static fromDegreesArrayHeights(coordinates: number[]): Geographic[]
+  }
+
   export namespace Covering {
     export type AnchorPosition = "TOP_LEFT" | "TOP_RIGHT" | "BOTTOM_LEFT" | "BOTTOM_RIGHT"
 
@@ -410,6 +1128,73 @@ declare module "@anstec/earth" {
     }
 
     export type SetParam<T> = Partial<Pick<AddParam<T>, "position" | "title" | "content" | "data">>
+  }
+
+  /**
+   * @description 自定义覆盖物
+   * @example
+   * ```
+   * const earth = useEarth
+   * const cover = new Covering(earth)
+   * ```
+   */
+  export class Covering<T = unknown> {
+    constructor(earth: Earth)
+    /**
+     * @description 设置覆盖物是否可拖拽
+     * @param value 是否启用可拖拽
+     */
+    setDraggable(value: boolean): void
+    /**
+     * @description 新增覆盖物
+     * @param param {@link Covering.AddParam<T>} 参数
+     * @exception Reference element is required when customizing.
+     * @example
+     * ```
+     * const earth = useEarth
+     * const cover = new Covering(earth)
+     *
+     * //custom
+     * cover.add({
+     *  customize: true,
+     *  reference: customDivElement,
+     * })
+     *
+     * //default
+     * cover.add({
+     *  customize: false,
+     *  className = ["default-covering"],
+     *  title = "Title",
+     *  content = "Content",
+     * })
+     * ```
+     */
+    add(param: Covering.AddParam<T>): void
+    /**
+     * @description 按ID设置覆盖物的属性
+     * @param id ID
+     * @param param {@link Covering.SetParam<T>} 参数
+     * @returns
+     */
+    set(id: string, param: Covering.SetParam<T>): void
+    /**
+     * @description 获取附加数据
+     * @param id ID
+     */
+    getData(id: string): T | undefined
+    /**
+     * @description 移除所有覆盖物
+     */
+    remove(): void
+    /**
+     * @description 按ID移除覆盖物
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   export namespace Draw {
@@ -883,2346 +1668,6 @@ declare module "@anstec/earth" {
     }
   }
 
-  export namespace Dynamic {
-    export type Layer =
-      | PointLayer<Point>
-      | BillboardLayer<Billboard>
-      | EllipseLayer<Circle>
-      | ModelLayer<Model>
-      | RectangleLayer<Rectangle>
-      | PolygonLayer<Polygon>
-      | PolylineLayer<Polyline>
-      | WallLayer<Wall>
-      | LabelLayer<Label>
-      | PolygonLayer<AttackArrow>
-      | PolygonLayer<PincerArrow>
-      | PolygonLayer<StraightArrow>
-      | PolylineLayer
-
-    export type Data<T, D = unknown> = {
-      type: T
-      positions: Cartesian3[]
-      attr: {
-        [K in keyof D]-?: D[K]
-      }
-    }
-
-    export type AttackArrow = Data<
-      DrawType.ATTACK_ARROW,
-      Omit<Draw.AttackArrow, "onFinish" | "onEvery" | "keep" | "id">
-    >
-
-    export type Billboard = Data<
-      DrawType.BILLBOARD,
-      Omit<Draw.Billboard, "onEvery" | "onFinish" | "keep" | "limit" | "id">
-    >
-
-    export type Circle = Data<DrawType.CIRCLE, Omit<Draw.Circle, "onFinish" | "keep" | "id"> & { radius: number }>
-
-    export type Label = Data<DrawType.LABEL, Omit<Draw.Label, "id" | "limit" | "keep" | "onEvery" | "onFinish">>
-
-    export type Model = Data<
-      DrawType.MODEL,
-      Omit<Draw.Model, "onEvery" | "onFinish" | "keep" | "color" | "limit" | "id">
-    >
-
-    export type PincerArrow = Data<
-      DrawType.PINCER_ARROW,
-      Omit<Draw.PincerArrow, "onFinish" | "onEvery" | "keep" | "id">
-    >
-
-    export type Point = Data<DrawType.POINT, Pick<Draw.Point, "color" | "pixelSize" | "module">>
-
-    export type Polygon = Data<DrawType.POLYGON, Omit<Draw.Polygon, "onEvery" | "onFinish" | "onMove" | "keep" | "id">>
-
-    export type Polyline = Data<
-      DrawType.POLYLINE,
-      Pick<Draw.Polyline, "width" | "ground" | "module" | "materialType" | "materialUniforms">
-    >
-
-    export type Rectangle = Data<DrawType.RECTANGLE, Pick<Draw.Rectangle, "color" | "ground" | "module">>
-
-    export type StraightArrow = Data<DrawType.STRAIGHT_ARROW, Omit<Draw.StraightArrow, "onFinish" | "keep" | "id">>
-
-    export type Wall = Data<DrawType.WALL, Omit<Draw.Wall, "id" | "keep" | "onMove" | "onEvery" | "onFinish">>
-  }
-
-  export namespace Heatmap {
-    /**
-     * @property [x] x
-     * @property [y] y
-     * @property [value = 1] 值
-     * @property [radius] 有效范围
-     */
-    export type Point = {
-      x: number
-      y: number
-      value?: number
-      radius?: number
-    }
-
-    /**
-     * @property [min] 最小值
-     * @property [max] 最大值
-     * @property [data] {@link Point} 数据
-     */
-    export type Data = {
-      min: number
-      max: number
-      data: Point[]
-    }
-
-    /**
-     * @description 热力图构造参数
-     * @property [radius = 60] 半径
-     * @property [spacingFactor = 1.5] 间距因子
-     * @property [maxOpacity = 0.8] 最大透明度
-     * @property [minOpacity = 0.1] 最小透明度
-     * @property [blur = 0.85] 模糊
-     * @property [gradient] 颜色梯度
-     * @property [minCanvasSize = 40000] 画布的最小尺寸`px`
-     * @property [maxCanvasSize = 4000000] 画布的最大尺寸`px`
-     * @property [minScaleDenominator = 700] 最小比例尺
-     * @property [maxScaleDenominator = 2000] 最大比例尺
-     */
-    export type ConstructorOptions = {
-      radius: number
-      spacingFactor: number
-      maxOpacity: number
-      minOpacity: number
-      blur: number
-      gradient: { [key: string]: string }
-      minCanvasSize: number
-      maxCanvasSize: number
-      minScaleDenominator: number
-      maxScaleDenominator: number
-    }
-  }
-
-  export namespace BillboardLayer {
-    type Attributes = "color" | "position" | "image" | "rotation" | "scale"
-
-    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
-    export type LabelSetParam<T> = Omit<LabelLayer.SetParam<T>, "position">
-
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property position {@link Cartesian3} 位置
-     * @property [pixelOffset = {@link Cartesian2.ZERO}] 像素偏移
-     * @property [horizontalOrigin = {@link HorizontalOrigin.CENTER}] 横向对齐
-     * @property [verticalOrigin = {@link VerticalOrigin.BOTTOM}] 纵向对齐
-     * @property [heightReference = {@link HeightReference.NONE}] 位置高度参考
-     * @property [scale = 1] 缩放
-     * @property image 图片
-     * @property [color = {@link Color.WHITE}] 颜色
-     * @property [rotation = 0] 旋转
-     * @property [alignedAxis = {@link Cartesian3.ZERO}] 轴向量
-     * @property [width] 宽度
-     * @property [height] 高度
-     * @property [scaleByDistance] {@link NearFarScalar} 按距离设置缩放
-     * @property [translucencyByDistance] {@link NearFarScalar} 按距离设置半透明度
-     * @property [pixelOffsetScaleByDistance] {@link NearFarScalar} 按距离设置像素偏移
-     * @property [sizeInMeters = false] 宽高以`m`为单位，否则`px`
-     * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
-     * @property [disableDepthTestDistance] 按距离禁用地形深度检测
-     * @property [label] {@link LabelAddParam} 对应标签
-     */
-    export type AddParam<T> = Layer.AddParam<T> & {
-      position: Cartesian3
-      pixelOffset?: Cartesian2
-      horizontalOrigin?: HorizontalOrigin
-      verticalOrigin?: VerticalOrigin
-      heightReference?: HeightReference
-      scale?: number
-      image: string
-      color?: Color
-      rotation?: number
-      alignedAxis?: Cartesian3
-      width?: number
-      height?: number
-      scaleByDistance?: NearFarScalar
-      translucencyByDistance?: NearFarScalar
-      pixelOffsetScaleByDistance?: NearFarScalar
-      sizeInMeters?: boolean
-      distanceDisplayCondition?: DistanceDisplayCondition
-      disableDepthTestDistance?: number
-      label?: LabelAddParam<T>
-    }
-
-    export type SetParam<T> = Partial<Pick<AddParam<T>, Attributes>> & { label?: LabelSetParam<T> }
-  }
-
-  export namespace DiffusePointLayer {
-    /**
-     * @property pointSVG 点的svg图像
-     * @property position {@link Cartesian3} 位置
-     * @property [data] 数据
-     * @property callback 回调
-     */
-    export type Data<T> = {
-      pointSVG: SVGElement
-      position: Cartesian3
-      data?: T
-      callback: () => void
-    }
-
-    /**
-     * @property position {@link Cartesian3} 位置
-     * @property [id] ID
-     * @property [className] 类名
-     * @property [pixelSize = 10] 像素大小
-     * @property [color = {@link Color.RED}] 颜色
-     * @property [strokeColor = {@link Color.RED}] 描线颜色
-     * @property [data] 数据
-     */
-    export type AddParam<T> = {
-      position: Cartesian3
-      id?: string
-      className?: string[]
-      pixelSize?: number
-      color?: Color
-      strokeColor?: Color
-      data?: T
-    }
-
-    /**
-     * @property [position] {@link Cartesian3} 位置
-     * @property [data] 数据
-     */
-    export type SetParam<T> = {
-      position?: Cartesian3
-      data?: T
-    }
-  }
-
-  export namespace EllipseLayer {
-    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property center {@link Cartesian3} 圆心
-     * @property majorAxis 长半径
-     * @property minorAxis 短半径
-     * @property [rotation] 旋转
-     * @property [height] 高度
-     * @property [color = {@link Color.RED}] 填充色
-     * @property [ground = false] 是否贴地
-     * @property [label] {@link LabelAddParam} 对应标签
-     */
-    export type AddParam<T> = Layer.AddParam<T> & {
-      center: Cartesian3
-      majorAxis: number
-      minorAxis: number
-      rotation?: number
-      height?: number
-      color?: Color
-      ground?: boolean
-      label?: LabelAddParam<T>
-    }
-  }
-
-  export namespace EllipsoidLayer {
-    export type Attributes =
-      | "radii"
-      | "material"
-      | "outlineColor"
-      | "outlineWidth"
-      | "stackPartitions"
-      | "slicePartitions"
-
-    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
-    export type LabelSetParam<T> = Omit<LabelLayer.SetParam<T>, "position">
-
-    /**
-     * @extends Layer.Data {@link Layer.Data}
-     * @property center {@link Cartesian3} 中心点
-     * @property radii {@link Cartesian3} 球体三轴半径
-     * @property hpr {@link HeadingPitchRoll} 欧拉角
-     */
-    export type Data<T> = Layer.Data<T> & {
-      center: Cartesian3
-      radii: Cartesian3
-      hpr: HeadingPitchRoll
-    }
-
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property center {@link Cartesian3} 中心点
-     * @property radii {@link Cartesian3} 球体三轴半径
-     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
-     * @property [material] {@link Material} 材质
-     * @property [outlineColor = {@link Color.AQUAMARINE}]  边框颜色
-     * @property [outlineWidth = 1] 边框宽度
-     * @property [stackPartitions = 16] 纵向切片数
-     * @property [slicePartitions = 8] 径向切片数
-     * @property [label] {@link LabelAddParam} 对应标签
-     */
-    export type AddParam<T> = Layer.AddParam<T> & {
-      center: Cartesian3
-      radii: Cartesian3
-      hpr?: HeadingPitchRoll
-      material?: Material
-      outlineColor?: Color
-      outlineWidth?: number
-      stackPartitions?: number
-      slicePartitions?: number
-      label?: LabelAddParam<T>
-    }
-
-    /**
-     * @property [center] {@link Cartesian3} 中心点
-     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
-     * @property [label] {@link LabelSetParam} 对应标签
-     */
-    export type SetParam<T> = {
-      center?: Cartesian3
-      hpr?: HeadingPitchRoll
-      label?: LabelSetParam<T>
-    }
-  }
-
-  export namespace LabelLayer {
-    export type Attributes = "id" | "module" | "position"
-
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property position {@link Cartesian3} 位置
-     * @property text 文本
-     * @property [font = ”14px sans-serif] 字体
-     * @property [fillColor = {@link Color.RED}] 字体色
-     * @property [outlineColor = {@link Color.RED}] 字体描边色
-     * @property [outlineWidth = 1] 字体描边宽度
-     * @property [backgroundColor = new {@link Color}(0.165, 0.165, 0.165, 0.8)] 背景色
-     * @property [showBackground = false] 是否渲染背景
-     * @property [backgroundPadding = new {@link Cartesian2}(7, 5)] 背景边距
-     * @property [style = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
-     * @property [pixelOffset = {@link Cartesian2.ZERO}] 像素偏移
-     * @property [eyeOffset = {@link Cartesian3.ZERO}] 观察者偏移
-     * @property [horizontalOrigin = {@link HorizontalOrigin.CENTER}] 横向对齐
-     * @property [verticalOrigin = {@link VerticalOrigin.CENTER}] 纵向对齐
-     * @property [scale = 1] 缩放
-     * @property [scaleByDistance] {@link NearFarScalar} 按距离设置缩放
-     * @property [translucencyByDistance] {@link NearFarScalar} 按距离设置半透明度
-     * @property [pixelOffsetScaleByDistance] {@link NearFarScalar} 按距离设置像素偏移
-     * @property [heightReference = {@link HeightReference.NONE}] 位置高度参考
-     * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
-     * @property [disableDepthTestDistance] 按距离禁用地形深度检测
-     */
-    export type AddParam<T> = Layer.AddParam<T> & {
-      position: Cartesian3
-      text: string
-      font?: string
-      fillColor?: Color
-      outlineColor?: Color
-      outlineWidth?: number
-      backgroundColor?: Color
-      showBackground?: boolean
-      backgroundPadding?: Cartesian2
-      style?: LabelStyle
-      pixelOffset?: Cartesian2
-      eyeOffset?: Cartesian3
-      horizontalOrigin?: HorizontalOrigin
-      verticalOrigin?: VerticalOrigin
-      scale?: number
-      scaleByDistance?: NearFarScalar
-      translucencyByDistance?: NearFarScalar
-      pixelOffsetScaleByDistance?: NearFarScalar
-      heightReference?: HeightReference
-      distanceDisplayCondition?: DistanceDisplayCondition
-      disableDepthTestDistance?: number
-    }
-
-    export type SetParam<T> = Partial<Omit<AddParam<T>, "id" | "module" | "data">>
-  }
-
-  export namespace Layer {
-    /**
-     * @description 图元类型
-     */
-    export type Primitives =
-      | Billboard
-      | Label
-      | Model
-      | ParticleSystem
-      | PointPrimitive
-      | Primitive
-      | GroundPrimitive
-      | GroundPolylinePrimitive
-
-    /**
-     * @description 附加数据
-     * @property [module] 模块名称
-     * @property [data] 附加数据
-     */
-    export type Data<T> = {
-      module?: string
-      data?: T
-    }
-
-    /**
-     * @description 新增元素的基础参数
-     * @extends Data {@link Data}
-     * @property [id] 唯一ID
-     * @property [show] 是否展示
-     */
-    export type AddParam<T> = Data<T> & {
-      id?: string
-      show?: boolean
-    }
-
-    /**
-     * @description 缓存数据
-     * @property primitive 图元
-     * @property data 缓存的额外数据
-     */
-    export type Cache<P, D> = {
-      primitive: P
-      data: D
-    }
-
-    /**
-     * @description 从cesium `Collection` 中抽取的公共属性
-     * @property show 是否展示
-     * @property add 新增方法
-     * @property remove 按索引（通常是图元）删除集合
-     * @property removeAll 清空所有图元
-     */
-    export type Collection = {
-      show: boolean
-      add: (arg: any) => any
-      remove: (arg: any) => boolean
-      removeAll: () => void
-    }
-  }
-
-  export namespace ModelLayer {
-    export type StopViewFunc = () => void
-
-    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
-    export type LabelSetParam<T> = Omit<LabelLayer.SetParam<T>, "position">
-
-    export type EnvelopeAddParam<T> = Pick<EllipsoidLayer.AddParam<T>, EllipsoidLayer.Attributes>
-
-    export type EnvelopeSetParam<T> = Pick<EllipsoidLayer.SetParam<T>, "hpr">
-
-    /**
-     * @property position {@link Cartesian3} 位置
-     * @property hpr {@link HeadingPitchRoll} 欧拉角
-     */
-    export type Data<T> = Layer.Data<T> & {
-      position: Cartesian3
-      hpr: HeadingPitchRoll
-    }
-
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property url 模型url
-     * @property position {@link Cartesian3} 位置
-     * @property [scale = 1] 缩放
-     * @property [asynchronous = true] 异步加载
-     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
-     * @property [minimumPixelSize = 24] 模型近似最小像素
-     * @property [color] {@link Color} 颜色
-     * @property [colorBlendMode = {@link ColorBlendMode.MIX}] 颜色混合模式
-     * @property [colorBlendAmount = 0.5] 混合程度，在`colorBlendMode`值为`MIX`时生效
-     * @property [silhouetteColor = {@link Color.LIGHTYELLOW}] 轮廓颜色
-     * @property [silhouetteSize = 1] 轮廓大小
-     * @property [animationLoop = {@link ModelAnimationLoop.REPEAT}] 动画方式
-     * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
-     * @property [hightReference = {@link HeightReference.NONE}] 高度位置参考
-     * @property [label] {@link LabelAddParam} 对应标签
-     * @property [envelope] {@link EnvelopeAddParam} 对应包络
-     */
-    export type AddParam<T> = Layer.AddParam<T> & {
-      url: string
-      position: Cartesian3
-      scale?: number
-      asynchronous?: boolean
-      hpr?: HeadingPitchRoll
-      minimumPixelSize?: number
-      color?: Color
-      colorBlendMode?: ColorBlendMode
-      colorBlendAmount?: number
-      silhouetteColor?: Color
-      silhouetteSize?: number
-      animationLoop?: ModelAnimationLoop
-      distanceDisplayCondition?: DistanceDisplayCondition
-      hightReference?: HeightReference
-      label?: LabelAddParam<T>
-      envelope?: EnvelopeAddParam<T>
-    }
-
-    /**
-     * @property [position] {@link Cartesian3} 位置
-     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
-     * @property [minimumPixelSize = 24] 模型近似最小像素
-     * @property [color] {@link Color} 颜色
-     * @property [silhouetteColor = {@link Color.LIGHTYELLOW}] 轮廓颜色
-     * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
-     * @property [label] {@link LabelSetParam} 对应标签
-     * @property [envelope] {@link EnvelopeSetParam} 对应包络
-     */
-    export type SetParam<T> = {
-      position?: Cartesian3
-      hpr?: HeadingPitchRoll
-      color?: Color
-      silhouetteColor?: Color
-      distanceDisplayCondition?: DistanceDisplayCondition
-      label?: LabelSetParam<T>
-      envelope?: EnvelopeSetParam<T>
-    }
-
-    /**
-     * @property [view = {@link ViewAngle.THIRD}] 视角
-     * @property [offset = new {@link Cartesian3}(50, 0, 20)] 视角偏移
-     * @property [sensitivity = 0.1] 鼠标调整视角的灵敏度 `[0,1]`
-     *
-     */
-    export type ViewOptions = {
-      view?: ViewAngle
-      offset?: Cartesian3
-      sensitivity?: number
-    }
-
-    /**
-     * @property id ID
-     * @property path {@link Cartesian3} 移动路径
-     * @property [split = 5] 基准间隔距离，插值点间距的数值依据
-     * @property [frequency = 40] 位置更新间隔`ms`
-     * @property [loop = false] 是否循环动作
-     * @property [onActionEnd] 动作结束时的回调，仅自动结束且动作不循环时生效
-     */
-    export type ActionOptions = {
-      id: string
-      path: Cartesian3[]
-      split?: number
-      frequency?: number
-      loop?: boolean
-      onActionEnd?: (position: Cartesian3) => void
-    }
-  }
-
-  export namespace ParticleLayer {
-    /**
-     * @description 用于在每个时间点强制修改、颜色、尺寸等粒子属性的函数
-     * @param particle 当前粒子
-     * @param currentTime 当前时间
-     */
-    export type UpdateCallback = (particle: Particle, currentTime: number) => void
-
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property position {@link Cartesian3} 位置
-     * @property [loop = true] 循环播放
-     * @property [startScale] 开始时缩放
-     * @property [endScale] 结束时缩放
-     * @property [scale = 1] 粒子图像比例，覆盖`startScale`和`endScale`
-     * @property [startColor] {@link Color} 开始时颜色
-     * @property [endColor] {@link Color} 结束时颜色
-     * @property [color = {@link Color.WHITE}] 粒子颜色，覆盖`startColor`和`endColor`
-     * @property [image] 粒子图片源
-     * @property [minimumImageSize] {@link Cartesian2} 粒子图片最小值
-     * @property [maximumImageSize] {@link Cartesian2} 粒子图片最大值
-     * @property [imageSize = {@link Cartesian2.ONE}] 粒子图片大小，覆盖`minimumImageSize`和`maximumImageSize`
-     * @property [minimumSpeed] 粒子最小速度
-     * @property [maximumSpeed] 粒子最大速度
-     * @property [speed = 1] 粒子速度，覆盖`minimumSpeed`和`maximumSpeed`
-     * @property [minimumParticleLife] 粒子最小持续时间
-     * @property [maximumParticleLife] 粒子最大持续时间
-     * @property [particleLife = 5] 粒子持续时间`s`，覆盖`minimumParticleLife`和`maximumParticleLife`
-     * @property [lifetime = {@link Number.MAX_VALUE}] 生命周期`s`
-     * @property [minimumMass] 粒子最小质量，单位`kg`
-     * @property [maximumMass] 粒子最大质量，单位`kg`
-     * @property [mass = 1] 粒子质量，覆盖`minimumMass`和`maximumMass`
-     * @property [sizeInMeters = true] 粒子以`m`为单位，否则`px`
-     * @property [bursts] {@link ParticleBurst} 粒子爆发
-     * @property [emissionRate = 5] 每秒发射粒子数
-     * @property [emitter = new CircleEmitter(0.5)] {@link ParticleEmitter} 粒子发射器
-     * @property [modelMatrix] 粒子系统从模型坐标转为世界坐标，优先级高于`position`
-     * @property [emitterModelMatrix {@link Matrix4.IDENTITY}] 粒子系统的局部坐标内变换粒子发射器
-     * @property [updateCallback] {@link UpdateCallback} 粒子更新函数
-     */
-    export type AddParam<T> = Layer.AddParam<T> & {
-      position: Cartesian3
-      loop?: boolean
-      startScale?: number
-      endScale?: number
-      scale?: number
-      startColor?: Color
-      endColor?: Color
-      color?: Color
-      image?: string
-      minimumImageSize?: Cartesian2
-      maximumImageSize?: Cartesian2
-      imageSize?: Cartesian2
-      minimumSpeed?: number
-      maximumSpeed?: number
-      speed?: number
-      minimumParticleLife?: number
-      maximumParticleLife?: number
-      particleLife?: number
-      lifetime?: number
-      minimumMass?: number
-      maximumMass?: number
-      mass?: number
-      sizeInMeters?: boolean
-      bursts?: ParticleBurst[]
-      emissionRate?: number
-      emitter?: ParticleEmitter
-      modelMatrix?: Matrix4
-      emitterModelMatrix?: Matrix4
-      updateCallback?: UpdateCallback
-    }
-
-    /**
-     * @property [position] {@link Cartesian3} 位置
-     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
-     * @property [translation] {@link Cartesian3} 偏移
-     * @property [emissionRate] 每秒发射粒子数
-     * @property [startScale] 开始时缩放
-     * @property [endScale] 结束时缩放
-     * @property [minimumImageSize] {@link Cartesian2} 粒子图片最小值
-     * @property [maximumImageSize] {@link Cartesian2} 粒子图片最大值
-     * @property [minimumMass] 粒子最小质量，单位`kg`
-     * @property [maximumMass] 粒子最大质量，单位`kg`
-     * @property [minimumParticleLife] 粒子最小持续时间
-     * @property [maximumParticleLife] 粒子最大持续时间
-     * @property [minimumSpeed] 粒子最小速度
-     * @property [maximumSpeed] 粒子最大速度
-     */
-    export type SetParam = {
-      position?: Cartesian3
-      hpr?: HeadingPitchRoll
-      translation?: Cartesian3
-      emissionRate?: number
-      startScale?: number
-      endScale?: number
-      minimumImageSize?: number
-      maximumImageSize?: number
-      maximumMass?: number
-      minimumMass?: number
-      maximumParticleLife?: number
-      minimumParticleLife?: number
-      maximumSpeed?: number
-      minimumSpeed?: number
-    }
-
-    /**
-     * @description 自定义粒子系统
-     * @property position {@link Cartesian3} 位置
-     * @property [id] ID
-     * @property [startColor] {@link Color} 开始时颜色
-     * @property [endColor] {@link Color} 结束时颜色
-     * @property [startScale] 开始时缩放
-     * @property [endScale] 结束时缩放
-     * @property [minimumSpeed] 粒子最小速度
-     * @property [maximumSpeed] 粒子最大速度
-     * @property [size = "normal"] 覆盖`startScale`，`endScale`，`minimumSpeed`和`maximumSpeed`，自定义时将该属性置空
-     * @property [lifetime = {@link Number.MAX_VALUE}] 生命周期`s`
-     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
-     * @property [translation] {@link Cartesian3} 偏移
-     */
-    export type Custom = {
-      position: Cartesian3
-      id?: string
-      startColor?: Color
-      endColor?: Color
-      startScale?: number
-      endScale?: number
-      minimumSpeed?: number
-      maximumSpeed?: number
-      size?: "small" | "normal" | "large"
-      lifetime?: number
-      hpr?: HeadingPitchRoll
-      translation?: Cartesian3
-    }
-
-    /**
-     * @description 火焰
-     * @extends Custom {@link Custom}
-     * @property [smoke = true] 是否开启烟雾效果
-     */
-    export type Fire = Custom & { smoke?: boolean }
-
-    /**
-     * @description 烟雾
-     * @extends Custom {@link Custom}
-     * @property [duration] `lifetime`属性会覆盖该属性
-     */
-    export type Smoke = Custom & { duration?: "fast" | "normal" | "enduring" }
-
-    /**
-     * @description 爆炸
-     * @extends Custom {@link Custom}
-     * @property [fire = true] 是否开启火焰效果
-     */
-    export type Blast = Omit<Custom, "lifetime"> & { fire?: boolean }
-
-    /**
-     * @description 发动机、导弹、飞机尾焰
-     * @extends Custom {@link Custom}
-     * @property [speed = 20] 喷焰速度
-     */
-    export type Flame = Omit<Custom, "minimumSpeed" | "maximumSpeed"> & { speed?: number }
-  }
-
-  export namespace PointLayer {
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property position {@link Cartesian3} 位置
-     * @property [color = {@link Color.RED}] 填充色
-     * @property [pixelSize = 5] 像素大小
-     * @property [outlineColor = {@link Color.RED}] 边框色
-     * @property [outlineWidth = 1] 边框宽度
-     * @property [scaleByDistance] {@link NearFarScalar} 按距离设置缩放
-     * @property [disableDepthTestDistance] 按距离禁用地形深度检测
-     * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
-     */
-    export type AddParam<T> = Layer.AddParam<T> & {
-      position: Cartesian3
-      color?: Color
-      pixelSize?: number
-      outlineColor?: Color
-      outlineWidth?: number
-      scaleByDistance?: NearFarScalar
-      disableDepthTestDistance?: number
-      distanceDisplayCondition?: DistanceDisplayCondition
-    }
-
-    export type SetParam<T> = Partial<Omit<AddParam<T>, "id" | "module" | "data">>
-  }
-
-  export namespace PolygonLayer {
-    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
-    export type OutlineAddParam<T> = Pick<PolylineLayer.AddParam<T>, "materialType" | "materialUniforms" | "width">
-
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property positions {@link Cartesian3} 位置
-     * @property [height] 高度
-     * @property [color = {@link Color.RED}] 填充色
-     * @property [usePointHeight = false] 多边形顶点使用其自身高度
-     * @property [ground = false] 是否贴地
-     * @property [outline] {@link OutlineAddParam} 轮廓线
-     * @property [label] {@link LabelAddParam} 对应标签
-     */
-    export type AddParam<T> = Layer.AddParam<T> & {
-      positions: Cartesian3[]
-      height?: number
-      color?: Color
-      usePointHeight?: boolean
-      ground?: boolean
-      outline?: OutlineAddParam<T>
-      label?: LabelAddParam<T>
-    }
-  }
-
-  export namespace PolylineLayer {
-    /**
-     * @description 线条材质类型
-     */
-    export type MaterialType =
-      | "Color"
-      | "PolylineArrow"
-      | "PolylineDash"
-      | "PolylineGlow"
-      | "PolylineOutline"
-      | "PolylineFlowingDash"
-      | "PolylineFlowingWave"
-      | "PolylineTrailing"
-
-    /**
-     * @description 材质类型对应的 `uniforms` 参数
-     */
-    export type MaterialUniforms = { [key: string]: any }
-
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property lines {@link Cartesian3} 位置
-     * @property [asynchronous = true] 是否异步渲染
-     * @property [width = 2] 线宽
-     * @property [arcType = {@link ArcType.RHUMB}] 线段弧度类型
-     * @property [materialType = "Color"] {@link MaterialType} 材质类型
-     * @property [materialUniforms = { color: {@link Color.RED} }] {@link MaterialUniforms} 材质参数
-     * @property [ground = false] 是否贴地
-     */
-    export type AddParam<T> = Layer.AddParam<T> & {
-      lines: Cartesian3[][]
-      asynchronous?: boolean
-      width?: number
-      arcType?: ArcType
-      materialType?: MaterialType
-      materialUniforms?: MaterialUniforms
-      ground?: boolean
-    }
-  }
-
-  export namespace RectangleLayer {
-    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property rectangle {@link Rectangle} 矩形
-     * @property [height] 高度
-     * @property [color = {@link Color.BLUE}] 填充色
-     * @property [ground = false] 是否贴地
-     * @property [label] {@link LabelAddParam} 对应标签
-     */
-    export type AddParam<T> = Layer.AddParam<T> & {
-      rectangle: Rectangle
-      height?: number
-      color?: Color
-      ground?: boolean
-      label?: LabelAddParam<T>
-    }
-  }
-
-  export namespace WallLayer {
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property positions {@link Cartesian3} 位置
-     * @property [maximumHeights = 5000] 最大高度
-     * @property [minimumHeights = 0] 最小高度
-     * @property [color = {@link Color.LAWNGREEN}] 填充色
-     * @property [outline = true] 是否渲染边框
-     * @property [outlineColor = {@link Color.WHITESMOKE}] 边框色
-     * @property [outlineWidth = 1] 边框宽度
-     */
-    export type AddParam<T> = Layer.AddParam<T> & {
-      positions: Cartesian3[]
-      maximumHeights?: number[]
-      minimumHeights?: number[]
-      color?: Color
-      outline?: boolean
-      outlineColor?: Color
-      outlineWidth?: number
-    }
-  }
-
-  /**
-   * @description 自定义材质
-   */
-  export namespace CustomMaterial {
-    export type ConstructorOptions = {
-      strict?: boolean
-      translucent?: boolean | ((...params: any[]) => any)
-      minificationFilter?: TextureMinificationFilter
-      magnificationFilter?: TextureMagnificationFilter
-      fabric: { [key: string]: any }
-    }
-
-    const getMaterialByType: (type: string) => Material
-  }
-
-  export namespace Measure {
-    /**
-     * @property [id] ID
-     * @property [module] 模块
-     */
-    export type Base = {
-      id?: string
-      module?: string
-    }
-
-    /**
-     * @property id ID
-     * @property startPosition {@link Cartesian3} 起始位置
-     * @property endPosition {@link Cartesian3} 结束位置
-     * @property spaceDistance 空间距离
-     * @property rhumbDistance 大圆距离
-     * @property heightDifference 高度差
-     */
-    export type TriangleReturn = {
-      id: string
-      startPosition: Cartesian3
-      endPosition: Cartesian3
-      spaceDistance: number
-      rhumbDistance: number
-      heightDifference: number
-    }
-
-    /**
-     * @property id ID
-     * @property positions {@link Geographic} 点集
-     */
-    export type SectionReturn = {
-      id: string
-      positions: Geographic[]
-    }
-
-    /**
-     * @extends Base {@link Base}
-     * @property [color = {@link Color.ORANGE}] 测量线颜色
-     * @property [width = 1] 测量线宽度
-     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
-     * @property [labelOutlineWidth = 1] 标签轮廓线宽度
-     * @property [labelFillColor = {@link Color.RED}] 标签字体色
-     * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
-     * @property [labelText] 标签文字自定义函数
-     */
-    export type Triangle = Base & {
-      color?: Color
-      width?: number
-      labelOutlineColor?: Color
-      labelOutlineWidth?: number
-      labelFillColor?: Color
-      labelStyle?: LabelStyle
-      labelText?: (params: { spaceDistance: number; rhumbDistance: number; heightDifference: number }) => string
-    }
-
-    /**
-     * @extends Base {@link Base}
-     * @property [split = true] 是否为分段方位测量，否则为首点方位测量
-     * @property [width = 2] 测量线宽度
-     * @property [materialType = "PolylineDash"] {@link PolylineLayer.MaterialType} 测量线材质
-     * @property [materialUniforms = { color: Color.ORANGE }] {@link PolylineLayer.MaterialUniforms} 测量线材质参数
-     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
-     * @property [labelOutlineWidth = 1] 标签轮廓线宽度
-     * @property [labelFillColor = {@link Color.RED}] 标签字体色
-     * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
-     * @property [headLabelText] 起始节点文本
-     * @property [nodeLabelText] 过程节点文本
-     */
-    export type Bearing = Base & {
-      split?: boolean
-      width?: number
-      materialType?: PolylineLayer.MaterialType
-      materialUniforms?: PolylineLayer.MaterialUniforms
-      labelOutlineColor?: Color
-      labelOutlineWidth?: number
-      labelFillColor?: Color
-      labelStyle?: LabelStyle
-      headLabelText?: string | ((position: Geographic) => string)
-      nodeLabelText?: (bearing: number) => string
-    }
-
-    /**
-     * @extends Base {@link Base}
-     * @property [pointPixelSize = 10] 坐标点像素大小
-     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
-     * @property [labelOutlineWidth = 1] 标签轮廓线宽度
-     * @property [labelFillColor = {@link Color.RED}] 标签字体色
-     * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
-     * @property [labelText] 标签文字自定义函数
-     */
-    export type Coordinate = Base & {
-      color?: Color
-      pointPixelSize?: number
-      labelOutlineColor?: Color
-      labelOutlineWidth?: number
-      labelFillColor?: Color
-      labelStyle?: LabelStyle
-      labelText?: (position: Geographic) => string
-    }
-
-    /**
-     * @extends Base {@link Base}
-     * @property [split = true] 是否为分段方距测量，否则为首点方距测量
-     * @property [width = 2] 测量线宽度
-     * @property [materialType = "PolylineDash"] {@link PolylineLayer.MaterialType} 测量线材质
-     * @property [materialUniforms = { color: Color.ORANGE }] {@link PolylineLayer.MaterialUniforms} 测量线材质参数
-     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
-     * @property [labelOutlineWidth = 1] 标签轮廓线宽度
-     * @property [labelFillColor = {@link Color.RED}] 标签字体色
-     * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
-     * @property [headLabelText] 起始节点文本
-     * @property [nodeLabelText] 过程节点文本
-     */
-    export type Distance = Base & {
-      split?: boolean
-      width?: number
-      materialType?: PolylineLayer.MaterialType
-      materialUniforms?: PolylineLayer.MaterialUniforms
-      labelOutlineColor?: Color
-      labelOutlineWidth?: number
-      labelFillColor?: Color
-      labelStyle?: LabelStyle
-      headLabelText?: string | ((total: number) => string)
-      nodeLabelText?: (distance: number) => string
-    }
-
-    /**
-     * @extends Base {@link Base}
-     * @property [width = 2] 测量线宽度
-     * @property [materialType = "PolylineDash"] {@link PolylineLayer.MaterialType} 测量线材质
-     * @property [materialUniforms = { color: Color.ORANGE }] {@link PolylineLayer.MaterialUniforms} 测量线材质参数
-     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
-     * @property [labelOutlineWidth = 1] 标签轮廓线宽度
-     * @property [labelFillColor = {@link Color.RED}] 标签字体色
-     * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
-     * @property [headLabelText] 起始节点文本
-     * @property [nodeLabelText] 过程节点文本
-     */
-    export type HeightDifference = Base & {
-      width?: number
-      materialType?: PolylineLayer.MaterialType
-      materialUniforms?: PolylineLayer.MaterialUniforms
-      labelOutlineColor?: Color
-      labelOutlineWidth?: number
-      labelFillColor?: Color
-      labelStyle?: LabelStyle
-      headLabelText?: string | ((position: Geographic) => string)
-      nodeLabelText?: (bearing: number) => string
-    }
-
-    /**
-     * @extends Base {@link Base}
-     * @property [color = {@link Color.YELLOW}] 填充色
-     * @property [outlineColor = {@link Color.RED}] 轮廓颜色
-     * @property [outlineWidth = 1] 轮廓线宽度
-     * @property [labelText] 标签文字自定义函数
-     */
-    export type Area = Base & {
-      color?: Color
-      outlineColor?: Color
-      outlineWidth?: number
-      labelText?: (total: number) => string
-    }
-
-    /**
-     * @extends Base {@link Base}
-     * @property [splits = 50] 剖面取点个数
-     * @property [width = 2] 测量线宽度
-     * @property [materialType = "PolylineDash"] {@link PolylineLayer.MaterialType} 测量线材质
-     * @property [materialUniforms = { color: Color.ORANGE }] {@link PolylineLayer.MaterialUniforms} 测量线材质参数
-     */
-    export type Section = Base & {
-      splits?: number
-      width?: number
-      materialType?: PolylineLayer.MaterialType
-      materialUniforms?: PolylineLayer.MaterialUniforms
-    }
-  }
-
-  export namespace ContextMenu {
-    export type Callback = (param: { id?: string; module?: string; key?: string; type: MenuEventType }) => void
-
-    /**
-     * @property belong 归属
-     * @property [default] 默认是否激活当前项
-     */
-    export type ToggleOptions = {
-      belong: string
-      default?: boolean
-    }
-
-    /**
-     * @property [separator = true] 分隔符
-     * @property [icon] 图标
-     * @property [iconClass] 图标类名
-     * @property [key] 菜单Key
-     * @property [label] 菜单显示名称
-     * @property [toggle] {@link ToggleOptions} 是否为切换/开关型
-     * @property [children] 子菜单
-     * @property [callback] 回调
-     */
-    export type Item = {
-      separator?: boolean
-      icon?: string | (() => HTMLElement)
-      iconClass?: string | string[]
-      key?: string | DefaultContextMenuItem
-      label: string
-      toggle?: ToggleOptions
-      children?: Item[]
-      callback?: Callback
-    }
-  }
-
-  export namespace EChartsOverlay {
-    /**
-     * @property earth {@link Earth} 地球实例
-     * @property [id] ID
-     * @property [option] {@link EChartsOption} Echarts设置
-     */
-    export type ConstructorOptions = {
-      earth: Earth
-      id?: string
-      option?: EChartsOption
-    }
-  }
-
-  export namespace Radar {
-    /**
-     * @property [id] ID
-     * @property center {@link Cartesian3} 扫描的中心/光源坐标
-     * @property radius 扫描半径，在锥形扫描中单位为度数
-     * @property [duration] 扫描间隔`ms`
-     * @property [color = {@link Color.LAWNGREEN}] 颜色
-     * @property [data] 附加数据
-     */
-    type Base<T = unknown> = {
-      id?: string
-      center: Cartesian3
-      radius: number
-      duration?: number
-      color?: Color
-      data?: T
-    }
-
-    /**
-     * @extends Base {@link Base}
-     * @property [border = 0] 范围边框宽度
-     * @property [width = 3] 指针的透明部分宽度
-     */
-    export type Scan<T> = Base<T> & {
-      border?: number
-      width?: number
-    }
-
-    /**
-     * @extends Base {@link Base}
-     * @property [border = 4] 扩散透明度
-     */
-    export type Diffuse<T> = Base<T> & { border?: number }
-
-    /**
-     * @extends Base {@link Base}
-     * @property [shadeColor = {@link Color.LAWNGREEN}] 球形范围遮罩颜色
-     */
-    export type Fanshaped<T> = Base<T> & { shadeColor?: Color }
-
-    /**
-     * @extends Base {@link Base}
-     * @property path {@link Cartesian3} 扫描路径
-     * @property [split = 30] 光锥斜面分割数，分割数过多会影响渲染性能
-     */
-    export type Cone<T> = Base<T> & {
-      path: Cartesian3[]
-      split?: number
-    }
-  }
-
-  export namespace Sensor {
-    /**
-     * @property hpr {@link HeadingPitchRoll} 欧拉角
-     * @property position {@link Cartesian3} 位置
-     * @property [data] 附加数据
-     * @property [callback] 回调
-     */
-    export type Data<T> = {
-      hpr: HeadingPitchRoll
-      position: Cartesian3
-      data?: T
-      callback?: () => void
-    }
-
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property position {@link Cartesian3} 位置
-     * @property radius 切面半径，视觉发射长度`m`
-     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
-     * @property [xHalfAngle = PI / 3] 横向切面角度 <弧度制>
-     * @property [yHalfAngle = PI / 3] 纵向切面角度 <弧度制>
-     * @property [color = {@link Color.LAWNGREEN}] 颜色
-     * @property [lineColor = {@link Color.LAWNGREEN}] 线条颜色
-     * @property [scanPlane = true] 是否启用扫描面
-     * @property [scanPlaneColor = {@link Color.LAWNGREEN}] 扫描面颜色
-     * @property [scanPlaneRate = 1] 扫描速率
-     * @property [scanMode = {@link ScanMode.HORIZONTAL}] 扫描模式
-     * @property [gradientScan = true] 扫描面是否启用渐变色
-     * @property [gradientScanColors = [{@link Color.WHITESMOKE}, {@link Color.LIGHTYELLOW}, {@link Color.YELLOW}, {@link Color.ORANGE}, {@link Color.RED}]] 扫描有序渐变色组
-     * @property [gradientScanSteps = [0.2, 0.45, 0.65]] 扫描渐变占比
-     * @property [intersection = true] 是否显示与地球的相交线
-     * @property [intersectionColor = {@link Color.LAWNGREEN}.withAlpha(0.5)] 相交线颜色
-     * @property [intersectionWidth = 1] 相交线宽度
-     * @property [radarWave = true] 是否启用雷达波
-     */
-    export type Phased<T> = Layer.AddParam<T> & {
-      position: Cartesian3
-      radius: number
-      hpr?: HeadingPitchRoll
-      xHalfAngle?: number
-      yHalfAngle?: number
-      color?: Color
-      lineColor?: Color
-      scanPlane?: boolean
-      scanPlaneColor?: Color
-      scanPlaneRate?: number
-      scanMode?: ScanMode
-      gradientScan?: boolean
-      gradientScanColors?: [Color, Color, Color, Color, Color]
-      gradientScanSteps?: [number, number, number]
-      intersection?: boolean
-      intersectionColor?: Color
-      intersectionWidth?: number
-      radarWave?: boolean
-    }
-
-    /**
-     * @extends Layer.AddParam {@link Layer.AddParam}
-     * @property position {@link Cartesian3} 位置
-     * @property radius 切面半径，视觉发射长度`m`
-     * @property height 高度`m`
-     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
-     * @property [color = {@link Color.LAWNGREEN}] 颜色
-     * @property [speed = 50] 波纹速度
-     * @property [thin = 0.25] 波纹厚度 `[0, 1]`
-     * @property [slices = 120] 圆锥侧面切片数
-     * @property [mode = {@link ConicMode.MATH}] 计算锥形的模式
-     */
-    export type Radar<T> = Layer.AddParam<T> & {
-      position: Cartesian3
-      radius: number
-      height: number
-      hpr?: HeadingPitchRoll
-      color?: Color
-      speed?: number
-      thin?: number
-      slices?: number
-      mode?: ConicMode
-    }
-  }
-
-  export namespace Weather {
-    export type WeatherType = "rain" | "snow" | "fog"
-
-    /**
-     * @property [id] ID
-     * @property [data] 附加数据
-     * @property position {@link Cartesian3} 位置
-     * @property type {@link WeatherType} 天气类型
-     * @property [effectRadius = 100000] 粒子发射器覆盖半径
-     * @property [particleSize] 粒子近似大小
-     */
-    export type AddParam<T> = {
-      id?: string
-      data?: T
-      position: Cartesian3
-      type: WeatherType
-      effectRadius?: number
-      particleSize?: number
-    }
-  }
-
-  export namespace WindField {
-    /**
-     * @description 维度
-     * @property lon 经度
-     * @property lat 纬度
-     * @property lev 高度
-     */
-    export type Dimensions = {
-      lon: number
-      lat: number
-      lev: number
-    }
-
-    /**
-     * @description 范围
-     * @property array 数据数组
-     * @property min 最小值
-     * @property max 最大值
-     */
-    export type Range = {
-      array: Float32Array | number[]
-      min: number
-      max: number
-    }
-
-    /**
-     * @description 数据
-     * @property dimensions {@link Dimensions} 维度
-     * @property lon {@link Range} 经度范围
-     * @property lat {@link Range} 纬度范围
-     * @property lev {@link Range} 高度范围
-     * @property U {@link Range} U范围
-     * @property V {@link Range} V范围
-     */
-    export type Data = {
-      dimensions: Dimensions
-      lon: Range
-      lat: Range
-      lev: Range
-      U: Range
-      V: Range
-    }
-
-    /**
-     * @property data {@link Data} 数据
-     * @property [params] {@link Param} 参数
-     */
-    export type ConstructorOptions = {
-      data: Data
-      params?: Param
-    }
-
-    /**
-     * @description 视图参数
-     * @property lonRange {@link Cartesian2} 经度范围
-     * @property latRange {@link Cartesian2} 纬度范围
-     * @property pixelSize 像素大小
-     */
-    export type ViewerParam = {
-      lonRange: Cartesian2
-      latRange: Cartesian2
-      pixelSize: number
-    }
-
-    /**
-     * @property [maxParticles = 4096] 最大粒子数`[0, 65536]`
-     * @property [particleHeight = 100] 粒子高度`[0, 10000]`
-     * @property [fadeOpacity = 0.9] 粒子拖尾`[0, 1]`
-     * @property [dropRate = 0.003] 粒子移动到随机位置频率，避免在重复位置出现`[0, 0.1]`
-     * @property [dropRateBump = 0.01] 基于粒子随机移动频率的补充`[0, 0.2]`
-     * @property [speedFactor = 0.4] 粒子移动速度`[0, 8]`
-     * @property [lineWidth = 2] 粒子宽度`[0, 16]`
-     * @property [particlesTextureSize] 粒子格栅大小，该值自动计算，无需手动添加
-     */
-    export type Param = {
-      maxParticles?: number
-      particleHeight?: number
-      fadeOpacity?: number
-      dropRate?: number
-      dropRateBump?: number
-      speedFactor?: number
-      lineWidth?: number
-      particlesTextureSize?: number
-    }
-
-    /**
-     * @description 纹理选项
-     * @property context 上下文
-     * @property [width] 宽度
-     * @property [height] 高度
-     * @property pixelFormat {@link PixelFormat} 像素格式
-     * @property pixelDatatype {@link PixelDatatype} 信息类型
-     * @property [flipY] Y
-     * @property [sampler] {@link Sampler} 采样
-     * @property [source] 源
-     */
-    export type TextureOptions = {
-      context: any
-      width?: number
-      height?: number
-      pixelFormat: PixelFormat
-      pixelDatatype: PixelDatatype
-      flipY?: boolean
-      sampler?: Sampler
-      source?: { arrayBufferView?: Float32Array }
-    }
-
-    /**
-     * @description 渲染状态
-     * @property depthTest 深度测试
-     * @property depthMask 开启深度
-     * @property blending 混合
-     */
-    export type RenderState = {
-      viewport: undefined
-      depthTest: {
-        enabled: boolean
-        func?: DepthFunction
-      }
-      depthMask: boolean
-      blending?: { enabled: boolean } | any
-    }
-  }
-
-  export namespace Earth {
-    /**
-     * @property [defaultViewRectangle] 默认视窗范围
-     * @property [showAnimation = false] 是否显示动画控件
-     * @property [showTimeline = false] 是否显示时间轴控件
-     * @property [lockCamera] {@link CameraLockOptions} 相机锁定选项
-     */
-    export type ConstructorOptions = {
-      defaultViewRectangle?: Rectangle
-      showAnimation?: boolean
-      showTimeline?: boolean
-      lockCamera?: CameraLockOptions
-    }
-
-    /**
-     * @description 相机锁定选项
-     * @property [enable = false] 启用锁定
-     * @property [rectangle] 锁定范围
-     * @property [height] 锁定高度
-     */
-    export type CameraLockOptions = {
-      enable?: boolean
-      rectangle?: Rectangle
-      height?: number
-    }
-  }
-
-  export namespace PhasedSensorPrimitive {
-    /**
-     * @property [id] ID
-     * @property [show = true] 是否显示
-     * @property [slice = 32] 切分程度
-     * @property [modelMatrix = {@link Matrix4.IDENTITY}] 矩阵模型
-     * @property [radius = {@link Number.POSITIVE_INFINITY}] 扫描半径
-     * @property [xHalfAngle = 0] 左右扫描半角，与行进方向垂直向上
-     * @property [yHalfAngle = 0] 前后扫描半角，与行进方向垂直向上
-     * @property [lineColor = {@link Color.WHITE}] 线条颜色
-     * @property [material] {@link Material} 统一材质
-     * @property [showSectorLines = true] 是否显示扇面的线
-     * @property [showSectorSegmentLines = true] 是否显示扇面和圆顶面连接的线
-     * @property [showLateralSurfaces = true] 是否显示侧面
-     * @property [lateralSurfaceMaterial] {@link Material} 侧面材质
-     * @property [showDomeSurfaces = true] 是否显示圆顶表面
-     * @property [domeSurfaceMaterial] {@link Material} 圆顶表面材质
-     * @property [showDomeLines = true] 是否显示圆顶面线
-     * @property [showIntersection = true] 是否显示与地球相交的线
-     * @property [intersectionColor = {@link Color.WHITE}] 与地球相交的线的颜色
-     * @property [intersectionWidth = 5] 与地球相交的线的宽度`px`
-     * @property [showThroughEllipsoid = false] 是否穿过地球
-     * @property [showWaves = false] 是否显示雷达波
-     * @property [showScanPlane = true] 是否显示扫描面
-     * @property [scanPlaneColor = {@link Color.WHITE}] 扫描面颜色
-     * @property [scanPlaneMode = {@link ScanMode.HORIZONTAL}] 扫描面模式
-     * @property [scanPlaneRate = 10] 扫描速率
-     * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 可视范围设置
-     * @property [showGradient = false] 是否启用渐变色
-     * @property [gradientColors] 有序渐变色组，固定5个
-     * @property [gradientSteps] 渐变色占比，取值`[0,1]`，固定3个
-     * @property [showGradientScan = false] 是否启用渐变色(扫描面)
-     * @property [gradientColorsScan] 有序渐变色组(扫描面)，固定5个
-     * @property [gradientStepsScan] 渐变色占比(扫描面)，取值(0,1)，固定3个
-     */
-    export type ConstructorOptions = {
-      id?: Object
-      show?: boolean
-      slice?: number
-      modelMatrix?: Matrix4
-      radius?: number
-      xHalfAngle?: number
-      yHalfAngle?: number
-      lineColor?: Color
-      material?: Material
-      showSectorLines?: boolean
-      showSectorSegmentLines?: boolean
-      showLateralSurfaces?: boolean
-      lateralSurfaceMaterial?: Material
-      showDomeSurfaces?: boolean
-      domeSurfaceMaterial?: Material
-      showDomeLines?: boolean
-      showIntersection?: boolean
-      intersectionColor?: Color
-      intersectionWidth?: number
-      showThroughEllipsoid?: boolean
-      showWaves?: boolean
-      showScanPlane?: boolean
-      scanPlaneColor?: Color
-      scanPlaneMode?: ScanMode
-      scanPlaneRate?: number
-      distanceDisplayCondition?: DistanceDisplayCondition
-      showGradient?: boolean
-      gradientColors?: Color[]
-      gradientSteps?: number[]
-      showGradientScan?: boolean
-      gradientColorsScan?: Color[]
-      gradientStepsScan?: number[]
-    }
-  }
-
-  export namespace CameraTool {
-    /**
-     * @description 根据层级获取对应的最大高度
-     * @param level 层级
-     * @returns 最大高度
-     */
-    const getLevelMaxHeight: (level: number) => number
-    /**
-     * @description 根据高度获取所属层级信息
-     * @param height 高度
-     * @returns 层级
-     */
-    const getLevelByHeight: (height: number) => number
-    /**
-     * @description 锁定相机到矩形区域内
-     * @param camera 相机
-     * @param rect 锁定矩形区域范围
-     * @param [height] 锁定高度
-     */
-    const LockCameraInRectangle: (camera: Camera, rect: Rectangle, height?: number) => void
-    /**
-     * @description 根据屏幕坐标选取在地球上的笛卡尔三系坐标点
-     * @param point 屏幕坐标
-     * @param scene 当前场景
-     * @param camera 当前相机
-     * @returns 对应的笛卡尔三系坐标点或选取失败返回`undefined`
-     */
-    const PickPointOnEllipsoid: (point: Cartesian2, scene: Scene, camera: Camera) => Cartesian3 | undefined
-    /**
-     * @description 生成视图矩形范围
-     * @param [viewRectangle] 相机区域
-     * @returns 范围
-     */
-    const viewRectangleToLonLatRange: (viewRectangle?: Rectangle) => {
-      lon: {
-        min: number
-        max: number
-      }
-      lat: {
-        min: number
-        max: number
-      }
-    }
-  }
-
-  /**
-   * @description 算法
-   * 1. 电子围栏
-   * 2. 航线交汇
-   * 3. 区域告警
-   * 4. 路线规划
-   * 5. 动态绘制
-   * 6. 地形测量
-   */
-  export namespace Figure {
-    export type Coordinate = Cartographic | Geographic
-    export type GeoTurple = [number, number]
-    export type Units =
-      | "meters"
-      | "millimeters"
-      | "centimeters"
-      | "kilometers"
-      | "acres"
-      | "miles"
-      | "nauticalmiles"
-      | "inches"
-      | "yards"
-      | "feet"
-      | "radians"
-      | "degrees"
-      | "hectares"
-    /**
-     * @description 叉乘
-     * 1. 多边形凹凸性
-     * 2. 点所处直线的方位
-     * 3. 三点构成的向量的顺逆时针方向
-     * @param a 夹角点 [经度，纬度]
-     * @param b 边缘点 [经度，纬度]
-     * @param c 边缘点 [经度，纬度]
-     * @returns 返回`number`值
-     * 1. 返回值小于`0`则表示向量ac在ab的逆时针方向
-     * 2. 返回值大于`0`则表示向量ac在ab的顺时针方向
-     * 3. 返回值等于`0`则表示向量ab与ac共线
-     */
-    const CrossProduct: (a: GeoTurple, b: GeoTurple, c: GeoTurple) => number
-    /**
-     * @description 计算球体上两点的最近距离
-     * @param from 坐标点
-     * @param to 坐标点
-     * @param [units = "meters"] 单位
-     * @returns 距离
-     */
-    const CalcDistance: <T extends Coordinate>(from: T, to: T, units?: Units) => number
-    /**
-     * @description 计算球体上两点的大圆距离
-     * @param from 坐标点
-     * @param to 坐标点
-     * @param [units = "meters"] 单位
-     * @returns 距离
-     */
-    const CalcRhumbDistance: <T extends Coordinate>(from: T, to: T, units?: Units) => number
-    /**
-     * @description 计算球体上两点的贴地距离
-     * @param from 坐标点
-     * @param to 坐标点
-     * @param scene 场景
-     * @param terrainProvider 地形图层
-     * @returns 距离 `m`
-     */
-    const CalcGroundDistance: <T extends Coordinate>(
-      from: T,
-      to: T,
-      scene: Scene,
-      terrainProvider: TerrainProvider
-    ) => Promise<number>
-    /**
-     * @description 根据经纬度，距离，角度计算另外一个点
-     * @param longitude 经度 <角度制>
-     * @param latitude 纬度 <角度制>
-     * @param distance 距离 `m`
-     * @param angle 角度 <角度制>
-     * @return 另外的点
-     */
-    const CalcPointByPointDistanceAngle: (
-      longitude: number,
-      latitude: number,
-      distance: number,
-      angle: number
-    ) => number[]
-    /**
-     * @description 计算点是否在矩形中
-     * @param point 坐标点
-     * @param rectangle 矩形
-     * @returns `boolean`值
-     */
-    const PointInRectangle: (point: Cartographic, rectangle: Rectangle) => boolean
-    /**
-     * @description 计算点是否在圆内
-     * @param point 坐标点
-     * @param center 圆心
-     * @param radius 半径
-     * @param [units = "meters"] 单位
-     * @returns `boolean`值
-     */
-    const PointInCircle: <T extends Coordinate>(point: T, center: T, radius: number, units?: Units) => boolean
-    /**
-     * @description 计算点是否在多边形内
-     * @param point 坐标点
-     * @param polygon 多边形点坐标
-     * @returns `boolean`值
-     */
-    const PointInPolygon: <T extends Coordinate>(point: T, polygon: T[]) => boolean
-    /**
-     * @description 计算两条线段是否相交
-     * @param line1 线段1
-     * @param line2 线段2
-     * @returns `boolean`值
-     */
-    const PolylineIntersectPolyline: <T extends Coordinate>(line1: [T, T], line2: [T, T]) => boolean
-    /**
-     * @description 计算折线段是否与矩形相交
-     * @param polyline 折线段
-     * @param rectangle 矩形
-     * @returns `boolean`值
-     */
-    const PolylineIntersectRectangle: (polyline: Cartographic[], rectangle: Rectangle) => boolean
-    /**
-     * @description 计算角度，以正北方向为基准
-     * @param from 基准原点
-     * @param to 参考点
-     * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
-     */
-    const CalcBearing: <T extends Coordinate>(from: T, to: T) => number
-    /**
-     * @description 计算大圆角度，以正北方向为基准
-     * @param from 基准原点
-     * @param to 参考点
-     * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
-     */
-    const CalcRhumbBearing: <T extends Coordinate>(from: T, to: T) => number
-    /**
-     * @description 计算三点夹角
-     * @param a 夹角点
-     * @param b 边缘点
-     * @param c 边缘点
-     * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
-     */
-    const CalcAngle: <T extends Coordinate>(a: T, b: T, c: T) => number
-    /**
-     * @description 计算两点中心点
-     * @param point1
-     * @param point2
-     * @returns 中心点
-     */
-    const CalcMidPoint: <T extends Coordinate>(point1: T, point2: T) => Coordinate
-    /**
-     * @description 计算多边形 / 多点的平面质心
-     * @param points 多边形或平面的顶点
-     * @returns 质心
-     */
-    const CalcMassCenter: (points: Coordinate[], withHeight?: boolean) => Coordinate
-    /**
-     * @description 计算一个一定位于多边形上的点
-     * @param polygon 多边形
-     * @returns 任意多边形上的点
-     */
-    const CalcPointOnPolygon: (polygon: Coordinate[]) => Coordinate
-    /**
-     * @descript 计算多边形面积
-     * @param polygon 多边形坐标
-     * @returns 面积 `㎡`
-     */
-    const CalcPolygonArea: (polygon: Coordinate[]) => number
-    /**
-     * @description 根据经纬度、椭圆半径及其旋转，生成对地投影椭圆 / 包络
-     * @param x 经度 <角度制>
-     * @param y 纬度 <角度制>
-     * @param radius1 x 轴半径 米
-     * @param radius2 y 轴半径 米
-     * @param rotate 旋转 <弧度制>
-     * @returns 包络点集合
-     */
-    const CalcEnvelope: (x: number, y: number, radius1: number, radius2: number, rotate: number) => number[][]
-    /**
-     * @description 根据高度和大圆弧长计算圆锥的真实高度和半径
-     * @param height 对地高度
-     * @param arc 大圆弧长
-     * @returns 真实高度和半径
-     */
-    const CalcConic: (height: number, arc: number) => { radius: number; heihgt: number }
-    /**
-     * @description 计算数学累进距离
-     * @param positions 坐标
-     * @returns 距离
-     */
-    const CalcMathDistance: (positions: GeoTurple[]) => number
-    /**
-     * @description 根基两点构成的直线及夹角、半径计算第三点
-     * @param target 基准点
-     * @param origin 起始点
-     * @param angle 角度
-     * @param radius 半径
-     * @param [revert = false] 是否逆时针
-     * @returns 第三点
-     */
-    const CalcThirdPoint: (target: GeoTurple, origin: GeoTurple, e: number, r: number, n?: boolean) => GeoTurple
-    /**
-     * @description 计算两点构成的数学角度、以正北方向为基准
-     * @param target 点1
-     * @param origin 点2
-     * @returns 角度 <弧度制>
-     */
-    const CalcAzimuth: (target: GeoTurple, origin: GeoTurple) => number
-    /**
-     * @description 计算三点的数学夹角
-     * @param a 边缘点
-     * @param b 夹角点
-     * @param c 边缘点
-     * @returns 数学角度值 <弧度制>
-     */
-    const CalcMathAngle: (a: GeoTurple, b: GeoTurple, c: GeoTurple) => number
-  }
-
-  export namespace Utils {
-    /**
-     * @description 获取随机ID
-     * @param [symbol = "-"] 连接符
-     * @returns 随机ID
-     */
-    const RandomUUID: (symbol?: UidFormat) => string
-    /**
-     * @description ID编码
-     * @param id ID
-     * @param [module] 模块
-     * @returns 编码结果
-     */
-    const EncodeId: (id: string, module?: string) => string
-    /**
-     * @description ID解码
-     * @param id 已编码ID
-     * @returns ID 模块
-     */
-    const DecodeId: (id: string) => { id: string; module?: string }
-    /**
-     * @description 格式化经度
-     * @param longitude 经度
-     * @param [format = CoorFormat.DMS] {@link CoorFormat} 格式
-     * @return 格式化结果
-     */
-    const formatGeoLongitude: (longitude: number, format?: CoorFormat) => string
-    /**
-     * @description 格式化纬度
-     * @param latitude 纬度
-     * @param format [format = CoorFormat.DMS] {@link CoorFormat} 格式
-     * @return 格式化结果
-     */
-    const formatGeoLatitude: (latitude: number, format?: CoorFormat) => string
-    /**
-     * @description 创建材质
-     * @param options
-     * @param typedArray
-     */
-    const createTexture: (options: WindField.TextureOptions, typedArray?: Float32Array) => Texture
-    const randomizeParticles: (
-      maxParticles: number,
-      viewerParameters: WindField.ViewerParam,
-      min: number,
-      max: number
-    ) => Float32Array
-    const createFramebuffer: (context: any, colorTexture?: Texture, depthTexture?: Texture) => Framebuffer
-    const createRawRenderState: (options: WindField.RenderState) => any
-    const getFullscreenQuad: () => Geometry
-    /**
-     * @description 将SVG图片格式转换为Canvas
-     * @param svg SVG图片
-     * @param [width = 48] 宽度
-     * @param [height = 48] 高度
-     * @returns Canvas结果
-     */
-    const ConvertSvg2Canvas: (svg: string, width?: number, height?: number) => HTMLCanvasElement
-  }
-
-  /**
-   * @description 初始化地球
-   * @param id 当前地球的ID
-   * @param ref 容器ID / 容器实例 / Viewer实例
-   * @param cesiumOptions Cesium设置
-   * @param options 设置
-   * @returns 地球实例
-   */
-  export const useEarth: (
-    id?: string,
-    ref?: string | HTMLDivElement | Viewer,
-    cesiumOptions?: Viewer.ConstructorOptions,
-    options?: Earth.ConstructorOptions
-  ) => Earth
-
-  /**
-   * @description 销毁指定地球并回收相关资源
-   * @param id 指定ID的地球
-   */
-  export const useEarthRecycle: (id?: string) => void
-
-  /**
-   * @description 使用CesiumNavigation初始化控制摇杆
-   * @param earth 地球
-   * @param option 控制摇杆参数
-   * @returns 控制遥杆
-   */
-  export const useNavigation: (earth: Earth, option?: CesiumNavigation.ConstructorOptions) => CesiumNavigation
-
-  export const useTileImageryProvider: (
-    option: UrlTemplateImageryProvider.ConstructorOptions
-  ) => UrlTemplateImageryProvider
-
-  export class CesiumNavigation {
-    constructor(viewer: Viewer, options: CesiumNavigation.ConstructorOptions)
-  }
-
-  export class AnimationManager {
-    constructor(earth: Earth)
-    /**
-     * @description 新增动画对象
-     * @param param {@link AnimationManager.AddParam} 参数
-     */
-    add(param: AnimationManager.AddParam): void
-    /**
-     * @description 根据ID移除动画对象
-     * @param id ID
-     */
-    remove(id: string): void
-    /**
-     * @description 移除所有动画对象
-     * @param id ID
-     */
-    remove(): void
-    /**
-     * @description 销毁
-     */
-    destroy(): void
-  }
-
-  /**
-   * @description 事件调度总线
-   * @example
-   * ```
-   * const eventBus = new EventBus()
-   * ```
-   */
-  export class EventBus {
-    constructor()
-    on<T>(event: string, handler: EventBus.Handler<T>): void
-    off<T>(event: string, handler?: EventBus.Handler<T>): void
-    emit<T>(event: string, context?: T): void
-  }
-
-  /**
-   * @description 全局事件
-   * @example
-   * ```
-   * const earth = useEarth()
-   *
-   * //订阅
-   * earth.global.subscribe(param => console.log(param), GlobalEventType.LEFT_CLICK, "*")
-   *
-   * //取消订阅
-   * earth.global.subscribe(param => console.log(param), GlobalEventType.LEFT_CLICK, "*")
-   * ```
-   */
-  export class GlobalEvent {
-    constructor(earth: Earth)
-    /**
-     * @description 订阅全局事件
-     * @param callback {@link GlobalEvent.Callback} 回调
-     * @param event {@link GlobalEventType} 事件类型
-     * @param [module] 模块选项
-     * 1. 为特定模块订阅事件时传入
-     * 2. 通配符 `*` 可以表示所有模块
-     * 3. 传入模块名则仅订阅该模块事件
-     */
-    subscribe(callback: GlobalEvent.Callback, event: GlobalEventType, module?: string): void
-    /**
-     * @description 取消订阅全局事件
-     * @param callback {@link GlobalEvent.Callback} 回调
-     * @param event {@link GlobalEventType} 事件类型
-     * @param [module] 模块选项
-     * 1. 为特定模块取消订阅事件时传入
-     * 2. 通配符 `*` 可以表示所有模块
-     * 3. 传入模块名则仅取消订阅该模块事件
-     */
-    unsubscribe(callback: GlobalEvent.Callback, event: GlobalEventType, module?: string): void
-    /**
-     * @description 销毁
-     */
-    destroy(): void
-  }
-
-  /**
-   * @description 聚合广告牌，标签，点图层
-   * @example
-   * ```
-   * const earth = useEarth()
-   * const cluster = new Cluster(earth)
-   * cluster.load(data)
-   * ```
-   */
-  export class Cluster {
-    /**
-     * @description 构造器函数
-     * @param earth 地球
-     * @param options {@link Cluster.ConstructorOptions} 自定义聚合参数
-     */
-    constructor(earth: Earth, options?: Cluster.ConstructorOptions)
-    /**
-     * @description 设置自定义样式
-     * @param callback {@link Cluster.CustomFunction} 自定义样式函数
-     */
-    setStyle(callback?: Cluster.CustomFunction): void
-    /**
-     * @description 加载数据
-     * @param data 数据
-     */
-    load(
-      data: {
-        billboard?: Billboard.ConstructorOptions
-        label?: Label.ConstructorOptions
-        point?: PointPrimitive
-      }[]
-    ): void
-    /**
-     * @description 是否启用聚合，初始时是启用的
-     */
-    enable(status: boolean): void
-    /**
-     * @description 清空数据
-     */
-    clear(): void
-    /**
-     * @description 销毁
-     */
-    destroy(): void
-  }
-
-  /**
-   * @description 坐标系统
-   * @example
-   * ```
-   * const earth = useEarth()
-   * const coordinate = earth.coordinate
-   * //or
-   * const coordinate = new Coordinate(earth)
-   * ```
-   */
-  export class Coordinate {
-    constructor(earth: Earth)
-    /**
-     * @description 开启鼠标实时获取坐标事件
-     * @param callback 回调函数
-     * @param [realtime = true] `true`为鼠标移动时实时获取，`false`为鼠标单击时获取
-     * @example
-     * ```
-     * coordinate.registerMouseCoordinate((data) => { console.log(data) }, true)
-     * ```
-     */
-    registerMouseCoordinate(callback: (data: Cartographic) => void, realtime?: boolean): void
-    /**
-     * @description 销毁实时鼠标获取坐标事件
-     * @example
-     * ```
-     * coordinate.unregisterMouseCoordinate()
-     * ```
-     */
-    unregisterMouseCoordinate(): void
-    /**
-     * @description 屏幕坐标转空间坐标
-     * @param position {@link Cartesian2} 屏幕坐标
-     * @param [mode = ScreenCapture.ELLIPSOID] {@link ScreenCapture} 屏幕捕获模式
-     * @returns `Cartesian3`坐标
-     * @example
-     * ```
-     * const position = new Cartesian2(50, 50)
-     *
-     * //scene
-     * const cartesian3 = coordinate.screenToCartesian(position, ScreenCapture.SCENE)
-     *
-     * //terrain
-     * const cartesian3 = coordinate.screenToCartesian(position, ScreenCapture.TERRAIN)
-     *
-     * //ellipsoid
-     * const cartesian3 = coordinate.screenToCartesian(position, ScreenCapture.ELLIPSOID)
-     * ```
-     */
-    screenToCartesian(position: Cartesian2, mode?: ScreenCapture): Cartesian3 | undefined
-    /**
-     * @description 空间坐标转屏幕坐标
-     * @param position {@link Cartesian3} 空间坐标
-     * @returns `Cartesian2`坐标
-     * @example
-     * ```
-     * const position = Cartesian3.fromDegrees(104, 31, 0)
-     * const cartesian2 = coordinate.cartesianToScreen(position)
-     * ```
-     */
-    cartesianToScreen(position: Cartesian3): Cartesian2
-    /**
-     * @description 地理坐标转空间坐标
-     * @param cartographic {@link Cartographic} 地理坐标
-     * @returns `Cartesian3`坐标
-     * @example
-     * ```
-     * const position = Cartographic.fromDegrees(104, 31, 0)
-     * const cartesian3 = coordinate.cartographicToCartesian(position)
-     * ```
-     */
-    cartographicToCartesian(cartographic: Cartographic): Cartesian3
-    /**
-     * @description 空间坐标转地理坐标
-     * @param position {@link Cartesian3} 空间坐标
-     * @return `Cartographic`坐标
-     * ```
-     * const position = Cartesian3.fromDegrees(104, 31, 0)
-     * const carto = coordinate.cartesianToCartographic(position)
-     * ```
-     */
-    cartesianToCartographic(position: Cartesian3): Cartographic
-    /**
-     * @description 屏幕坐标转经纬度坐标
-     * @param position {@link cartesian2} 屏幕坐标
-     * @returns `Geographic`坐标
-     * @example
-     * ```
-     * const position = new Cartesian2(50, 50)
-     * const geo = coordinate.screenToGeographic(position)
-     * ```
-     */
-    screenToGeographic(position: Cartesian2): Geographic | undefined
-    /**
-     * @description 屏幕坐标转地理坐标
-     * @param position {@link Cartesian2} 屏幕坐标
-     * @returns `Cartographic`坐标
-     * @example
-     * ```
-     * const position = new Cartesian2(50, 50)
-     * const carto = coordinate.screenToCartographic(position)
-     * ```
-     */
-    screenToCartographic(position: Cartesian2): Cartographic | undefined
-  }
-
-  /**
-   * @description 自定义覆盖物
-   * @example
-   * ```
-   * const earth = useEarth
-   * const cover = new Covering(earth)
-   * ```
-   */
-  export class Covering<T = unknown> {
-    constructor(earth: Earth)
-    /**
-     * @description 设置覆盖物是否可拖拽
-     * @param value 是否启用可拖拽
-     */
-    setDraggable(value: boolean): void
-
-    /**
-     * @description 新增覆盖物
-     * @param param {@link Covering.AddParam<T>} 参数
-     * @example
-     * ```
-     * const earth = useEarth
-     * const cover = new Covering(earth)
-     *
-     * //custom
-     * cover.add({
-     *  customize: true,
-     *  reference: customDivElement,
-     * })
-     *
-     * //default
-     * cover.add({
-     *  customize: false,
-     *  className = ["default-covering"],
-     *  title = "Title",
-     *  content = "Content",
-     * })
-     * ```
-     */
-    add(param: Covering.AddParam<T>): void
-
-    /**
-     * @description 按ID设置覆盖物的属性
-     * @param id ID
-     * @param param {@link Covering.SetParam<T>} 参数
-     * @returns
-     */
-    set(id: string, param: Covering.SetParam<T>): void
-
-    /**
-     * @description 获取附加数据
-     * @param id ID
-     */
-    getData(id: string): T | undefined
-
-    /**
-     * @description 移除所有覆盖物
-     */
-    remove(): void
-    /**
-     * @description 按ID移除覆盖物
-     * @param id ID
-     */
-    remove(id: string): void
-
-    /**
-     * @description 销毁
-     */
-    destroy(): void
-  }
-
-  /**
-   * @description 地理坐标，经纬度 <角度制>
-   * @example
-   * ```
-   * const geo = new Geographic(104, 31, 500)
-   * ```
-   */
-  export class Geographic {
-    longitude: number
-    latitude: number
-    height: number
-    /**
-     * @param longitude 经度 <角度制>
-     * @param latitude 纬度 <角度制>
-     * @param [height = 0] 海拔高度 `m`
-     */
-    constructor(longitude: number, latitude: number, height?: number)
-    /**
-     * @description 转为笛卡尔坐标系
-     * @param [ellipsoid = Ellipsoid.WGS84] {@link Ellipsoid} 坐标球体类型
-     * @param [result] {@link Cartesian3} 存储结果对象
-     * @returns 笛卡尔坐标
-     * @example
-     * ```
-     * const geo = new Geographic(104, 31, 500)
-     * const cartesian3 = geo.toCartesian()
-     * ```
-     */
-    toCartesian(ellipsoid?: Ellipsoid, result?: Cartesian3): Cartesian3
-    /**
-     * @description 转为地理坐标系
-     * @param [result] {@link Cartographic} 存储结果对象
-     * @returns 地理坐标
-     * @example
-     * ```
-     * const geo = new Geographic(104, 31, 500)
-     * const carto = geo.toCartographic()
-     * ```
-     */
-    toCartographic(result?: Cartographic): Cartographic
-    /**
-     * @description 转为数组
-     * @returns 数组格式
-     * @example
-     * ```
-     * const geo = new Geographic(104, 31, 500)
-     * const [longitude, latitude] = geo.toArray()
-     * ```
-     */
-    toArray(): number[]
-    /**
-     * @description 转为带高程的数组
-     * @returns 数组格式
-     * @example
-     * ```
-     * const geo = new Geographic(104, 31, 500)
-     * const [longitude, latitude, height] = geo.toArrayHeight()
-     * ```
-     */
-    toArrayHeight(): number[]
-    /**
-     * @description 克隆当前坐标
-     * @returns 新的`Geographic`坐标
-     * @example
-     * ```
-     * const geo = new Geographic(104, 31, 500)
-     * const clone = geo.clone()
-     * ```
-     */
-    clone(): Geographic
-    /**
-     * @description 格式化经纬度
-     * @param [format = CoorFormat.DMS] {@link CoorFormat} 格式
-     * @returns 格式化结果
-     * @example
-     * ```
-     * const geo = new Geographic(104, 31, 500)
-     *
-     * //DMS
-     * const { longitude, latitude } = geo.format(CoorFormat.DMS)
-     *
-     * //DMSS
-     * const { longitude, latitude } = geo.format(CoorFormat.DMSS)
-     * ```
-     */
-    format(format?: CoorFormat): { longitude: string; latitude: string }
-    /**
-     * @description 从弧度制的数据转换
-     * @param longitude 经度 <弧度制>
-     * @param latitude 纬度 <弧度制>
-     * @param [height = 0] 海拔高度 `m`
-     * @param [result] {@link Geographic} 存储结果对象
-     * @returns 地理坐标
-     */
-    static fromRadians(longitude: number, latitude: number, height?: number, result?: Geographic): Geographic
-    /**
-     * @description 从笛卡尔坐标系转换
-     * @param cartesian {@link Cartesian3} 笛卡尔坐标
-     * @param [ellipsoid = Ellipsoid.WGS84] {@link Ellipsoid} 坐标球体类型
-     * @param [result] {@link Geographic} 存储结果对象
-     * @returns 经纬度坐标
-     * @example
-     * ```
-     * const cartesian3 = Cartesian3.fromDegrees(104, 31, 500)
-     * const geo = Geographic.fromCartesian(cartesian3)
-     * ```
-     */
-    static fromCartesian(cartesian: Cartesian3, ellipsoid?: Ellipsoid, result?: Geographic): Geographic
-    /**
-     * @description 从地理坐标系转换
-     * @param cartographic {@link Cartographic} 地理坐标
-     * @param [result] {@link Geographic} 存储结果对象
-     * @returns `Geographic`坐标
-     * @example
-     * ```
-     * const carto = Cartographic.fromDegrees(104, 31, 500)
-     * const geo = Geographic.fromCartographic(carto)
-     * ```
-     */
-    static fromCartographic(cartographic: Cartographic, result?: Geographic): Geographic
-    /**
-     * @description 数组批量转坐标
-     * @param coordinates 数组坐标
-     * @example
-     * ```
-     * const arr = [104, 31]
-     * const geoArr = Geographic.fromDegreesArray(arr)
-     * ```
-     */
-    static fromDegreesArray(coordinates: number[]): Geographic[]
-    /**
-     * @description 带高程的数组批量转坐标
-     * @param coordinates 带高程的数组坐标
-     * @example
-     * ```
-     * const arr = [104, 31, 500]
-     * const geoArr = Geographic.fromDegreesArrayHeights(arr)
-     * ```
-     */
-    static fromDegreesArrayHeights(coordinates: number[]): Geographic[]
-  }
-
-  /**
-   * @description 动态绘制的状态管理
-   */
-  export class State {
-    static start(): void
-    static end(): void
-    static isOperate(): boolean
-  }
-
-  /**
-   * @description 动态笔触
-   */
-  export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
-    type: string
-    constructor(earth: Earth)
-    /**
-     * @description 笔触不支持编辑，添加对象仅增加图形
-     * @param option 笔触参数
-     */
-    add(option: PolylineLayer.AddParam<T>): void
-    /**
-     * @description 笔触
-     * @param param {@link Draw.Stroke} 笔触参数
-     * @returns 笔触沿途点
-     */
-    draw(param: Draw.Stroke): Promise<Draw.StrokeReturn>
-    edit(id: string): Promise<unknown>
-  }
-
-  export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow>> {
-    type: string
-    constructor(earth: Earth)
-    /**
-     * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
-     */
-    add(option: PolygonLayer.AddParam<Dynamic.AttackArrow>): void
-    /**
-     * @description 动态画攻击箭头
-     * @param param {@link Draw.AttackArrow} 画箭头参数
-     * @returns 攻击发起点和沿途选点的坐标
-     */
-    draw(param: Draw.AttackArrow): Promise<Draw.AttackArrowReturn>
-    /**
-     * @description 编辑
-     * @param id 目标ID
-     * @returns
-     */
-    edit(id: string): Promise<Draw.AttackArrowReturn>
-  }
-
-  /**
-   * @description 动态绘制广告牌
-   */
-  export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>> {
-    type: string
-    constructor(earth: Earth)
-    /**
-     * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
-     */
-    add(option: BillboardLayer.AddParam<Dynamic.Billboard>): void
-    /**
-     * @description 动态画广告牌
-     * @param param {@link Draw.Billboard} 画广告牌参数
-     * @returns 点的坐标
-     */
-    draw(param: Draw.Billboard): Promise<Draw.BillboardReturn[]>
-    /**
-     * @description 编辑
-     * @param id 目标ID
-     * @returns
-     */
-    edit(id: string): Promise<Draw.BillboardReturn>
-  }
-
-  /**
-   * @description 动态绘制圆
-   */
-  export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
-    type: string
-    constructor(earth: Earth)
-    /**
-     * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
-     */
-    add(option: EllipseLayer.AddParam<Dynamic.Circle>): void
-    /**
-     * @description 动态画圆
-     * @param param {@link Draw.Circle} 画圆参数
-     * @returns 圆心坐标和半径
-     */
-    draw(param: Draw.Circle): Promise<Draw.CircleReturn>
-    /**
-     * @description 编辑
-     * @param id 目标ID
-     * @returns
-     */
-    edit(id: string): Promise<unknown>
-  }
-
   /**
    * @description 绘制工具
    * @example
@@ -3591,6 +2036,70 @@ declare module "@anstec/earth" {
     destroy(): void
   }
 
+  export namespace Dynamic {
+    export type Layer =
+      | PointLayer<Point>
+      | BillboardLayer<Billboard>
+      | EllipseLayer<Circle>
+      | ModelLayer<Model>
+      | RectangleLayer<Rectangle>
+      | PolygonLayer<Polygon>
+      | PolylineLayer<Polyline>
+      | WallLayer<Wall>
+      | LabelLayer<Label>
+      | PolygonLayer<AttackArrow>
+      | PolygonLayer<PincerArrow>
+      | PolygonLayer<StraightArrow>
+      | PolylineLayer
+
+    export type Data<T, D = unknown> = {
+      type: T
+      positions: Cartesian3[]
+      attr: {
+        [K in keyof D]-?: D[K]
+      }
+    }
+
+    export type AttackArrow = Data<
+      DrawType.ATTACK_ARROW,
+      Omit<Draw.AttackArrow, "onFinish" | "onEvery" | "keep" | "id">
+    >
+
+    export type Billboard = Data<
+      DrawType.BILLBOARD,
+      Omit<Draw.Billboard, "onEvery" | "onFinish" | "keep" | "limit" | "id">
+    >
+
+    export type Circle = Data<DrawType.CIRCLE, Omit<Draw.Circle, "onFinish" | "keep" | "id"> & { radius: number }>
+
+    export type Label = Data<DrawType.LABEL, Omit<Draw.Label, "id" | "limit" | "keep" | "onEvery" | "onFinish">>
+
+    export type Model = Data<
+      DrawType.MODEL,
+      Omit<Draw.Model, "onEvery" | "onFinish" | "keep" | "color" | "limit" | "id">
+    >
+
+    export type PincerArrow = Data<
+      DrawType.PINCER_ARROW,
+      Omit<Draw.PincerArrow, "onFinish" | "onEvery" | "keep" | "id">
+    >
+
+    export type Point = Data<DrawType.POINT, Pick<Draw.Point, "color" | "pixelSize" | "module">>
+
+    export type Polygon = Data<DrawType.POLYGON, Omit<Draw.Polygon, "onEvery" | "onFinish" | "onMove" | "keep" | "id">>
+
+    export type Polyline = Data<
+      DrawType.POLYLINE,
+      Pick<Draw.Polyline, "width" | "ground" | "module" | "materialType" | "materialUniforms">
+    >
+
+    export type Rectangle = Data<DrawType.RECTANGLE, Pick<Draw.Rectangle, "color" | "ground" | "module">>
+
+    export type StraightArrow = Data<DrawType.STRAIGHT_ARROW, Omit<Draw.StraightArrow, "onFinish" | "keep" | "id">>
+
+    export type Wall = Data<DrawType.WALL, Omit<Draw.Wall, "id" | "keep" | "onMove" | "onEvery" | "onFinish">>
+  }
+
   /**
    * @description 动态绘制基类
    */
@@ -3685,205 +2194,56 @@ declare module "@anstec/earth" {
     destroy(): void
   }
 
-  export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
-    type: string
-    constructor(earth: Earth)
+  export namespace Heatmap {
     /**
-     * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @property [x] x
+     * @property [y] y
+     * @property [value = 1] 值
+     * @property [radius] 有效范围
      */
-    add(option: LabelLayer.AddParam<Dynamic.Label>): void
-    /**
-     * @description 动态画标签
-     * @param param {@link Draw.Label} 画标签参数
-     * @returns 标签的坐标
-     */
-    draw(param: Draw.Label): Promise<Draw.LabelReturn[]>
-    /**
-     * @description 编辑
-     * @param id 目标ID
-     * @returns
-     */
-    edit(id: string): Promise<Draw.LabelReturn>
-  }
+    export type Point = {
+      x: number
+      y: number
+      value?: number
+      radius?: number
+    }
 
-  export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
-    type: string
-    constructor(earth: Earth)
     /**
-     * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @property [min] 最小值
+     * @property [max] 最大值
+     * @property [data] {@link Point} 数据
      */
-    add(option: ModelLayer.AddParam<Dynamic.Model>): void
-    /**
-     * @description 动态画模型
-     * @param param {@link Draw.Model} 画模型参数
-     * @returns 点的坐标
-     */
-    draw(param: Draw.Model): Promise<Draw.ModelReturn[]>
-    /**
-     * @description 编辑
-     * @param id 目标ID
-     * @returns
-     */
-    edit(id: string): Promise<Draw.ModelReturn>
-  }
+    export type Data = {
+      min: number
+      max: number
+      data: Point[]
+    }
 
-  export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow>> {
-    type: string
-    constructor(earth: Earth)
     /**
-     * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @description 热力图构造参数
+     * @property [radius = 60] 半径
+     * @property [spacingFactor = 1.5] 间距因子
+     * @property [maxOpacity = 0.8] 最大透明度
+     * @property [minOpacity = 0.1] 最小透明度
+     * @property [blur = 0.85] 模糊
+     * @property [gradient] 颜色梯度
+     * @property [minCanvasSize = 40000] 画布的最小尺寸`px`
+     * @property [maxCanvasSize = 4000000] 画布的最大尺寸`px`
+     * @property [minScaleDenominator = 700] 最小比例尺
+     * @property [maxScaleDenominator = 2000] 最大比例尺
      */
-    add(option: PolygonLayer.AddParam<Dynamic.PincerArrow>): void
-    /**
-     * @description 动态画钳击箭头
-     * @param param {@link Draw.PincerArrow} 画箭头参数
-     * @returns 沿途选点的坐标
-     */
-    draw(param: Draw.PincerArrow): Promise<Draw.PincerArrowReturn>
-    /**
-     * @description 编辑
-     * @param id 目标ID
-     * @returns
-     */
-    edit(id: string): Promise<unknown>
-  }
-
-  export class PointDynamic extends Dynamic<PointLayer<Dynamic.Point>> {
-    type: string
-    constructor(earth: Earth)
-    /**
-     * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
-     */
-    add(option: PointLayer.AddParam<Dynamic.Point>): void
-    /**
-     * @description 动态画点
-     * @param param {@link Draw.Point} 画点参数
-     * @returns 点的坐标
-     */
-    draw(param: Draw.Point): Promise<Draw.PointReturn[]>
-    /**
-     * @description 编辑
-     * @param id 目标ID
-     * @returns
-     */
-    edit(id: string): Promise<Draw.PointReturn>
-  }
-
-  export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
-    type: string
-    constructor(earth: Earth)
-    /**
-     * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
-     */
-    add(option: PolygonLayer.AddParam<Dynamic.Polygon>): void
-    /**
-     * @description 动态画多边形
-     * @param param {@link Draw.Polygon} 画多边形参数
-     * @returns 多边形点的坐标
-     */
-    draw(param: Draw.Polygon): Promise<Draw.PolygonReturn>
-    /**
-     * @description 编辑
-     * @param id 目标ID
-     * @returns
-     */
-    edit(id: string): Promise<Draw.PolygonReturn>
-  }
-
-  export class PolylineDynamic extends Dynamic<PolylineLayer<Dynamic.Polyline>> {
-    type: string
-    constructor(earth: Earth)
-    /**
-     * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
-     */
-    add(option: PolylineLayer.AddParam<Dynamic.Polyline>): void
-    /**
-     * @description 动态画线段
-     * @param param {@link Draw.Polyline} 画线段参数
-     * @returns 线段点的坐标
-     */
-    draw(param: Draw.Polyline): Promise<Draw.PolylineReturn>
-    /**
-     * @description 编辑
-     * @param id 目标ID
-     * @returns
-     */
-    edit(id: string): Promise<Draw.PolylineReturn>
-  }
-
-  /**
-   * @description 动态绘制点
-   */
-  export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>> {
-    type: string
-    constructor(earth: Earth)
-    /**
-     * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
-     */
-    add(option: RectangleLayer.AddParam<Dynamic.Rectangle>): void
-    /**
-     * @description 动态画矩形
-     * @param param {@link Draw.Rectangle} 画矩形参数
-     * @returns 矩形
-     */
-    draw(param: Draw.Rectangle): Promise<Draw.RectangleReturn>
-    /**
-     * @description 编辑
-     * @param id 目标ID
-     * @returns
-     */
-    edit(id: string): Promise<Draw.RectangleReturn>
-  }
-
-  export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightArrow>> {
-    type: string
-    constructor(earth: Earth)
-    /**
-     * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
-     */
-    add(option: PolygonLayer.AddParam<Dynamic.StraightArrow>): void
-    /**
-     * @description 动态画直线箭头
-     * @param param {@link Draw.StraightArrow} 画箭头参数
-     * @returns 起始和结束点的坐标
-     */
-    draw(param: Draw.StraightArrow): Promise<Draw.StraightArrowReturn>
-    /**
-     * @description 编辑
-     * @param id 目标ID
-     * @returns
-     */
-    edit(id: string): Promise<unknown>
-  }
-
-  export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
-    type: string
-    constructor(earth: Earth)
-    /**
-     * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
-     */
-    add(option: WallLayer.AddParam<Dynamic.Wall>): void
-    /**
-     * @description 动态画墙体
-     * @param param {@link Draw.Wall} 画墙体参数
-     * @returns 墙体点的坐标
-     */
-    draw(param: Draw.Wall): Promise<Draw.WallReturn>
-    /**
-     * @description 编辑
-     * @param id 目标ID
-     * @returns
-     */
-    edit(id: string): Promise<Draw.WallReturn>
+    export type ConstructorOptions = {
+      radius: number
+      spacingFactor: number
+      maxOpacity: number
+      minOpacity: number
+      blur: number
+      gradient: { [key: string]: string }
+      minCanvasSize: number
+      maxCanvasSize: number
+      minScaleDenominator: number
+      maxScaleDenominator: number
+    }
   }
 
   /**
@@ -3922,6 +2282,60 @@ declare module "@anstec/earth" {
      * @description 销毁热图
      */
     destroy(): void
+  }
+
+  export namespace BillboardLayer {
+    type Attributes = "color" | "position" | "image" | "rotation" | "scale"
+
+    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
+
+    export type LabelSetParam<T> = Omit<LabelLayer.SetParam<T>, "position">
+
+    /**
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property position {@link Cartesian3} 位置
+     * @property [pixelOffset = {@link Cartesian2.ZERO}] 像素偏移
+     * @property [horizontalOrigin = {@link HorizontalOrigin.CENTER}] 横向对齐
+     * @property [verticalOrigin = {@link VerticalOrigin.BOTTOM}] 纵向对齐
+     * @property [heightReference = {@link HeightReference.NONE}] 位置高度参考
+     * @property [scale = 1] 缩放
+     * @property image 图片
+     * @property [color = {@link Color.WHITE}] 颜色
+     * @property [rotation = 0] 旋转
+     * @property [alignedAxis = {@link Cartesian3.ZERO}] 轴向量
+     * @property [width] 宽度
+     * @property [height] 高度
+     * @property [scaleByDistance] {@link NearFarScalar} 按距离设置缩放
+     * @property [translucencyByDistance] {@link NearFarScalar} 按距离设置半透明度
+     * @property [pixelOffsetScaleByDistance] {@link NearFarScalar} 按距离设置像素偏移
+     * @property [sizeInMeters = false] 宽高以`m`为单位，否则`px`
+     * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
+     * @property [disableDepthTestDistance] 按距离禁用地形深度检测
+     * @property [label] {@link LabelAddParam} 对应标签
+     */
+    export type AddParam<T> = Layer.AddParam<T> & {
+      position: Cartesian3
+      pixelOffset?: Cartesian2
+      horizontalOrigin?: HorizontalOrigin
+      verticalOrigin?: VerticalOrigin
+      heightReference?: HeightReference
+      scale?: number
+      image: string
+      color?: Color
+      rotation?: number
+      alignedAxis?: Cartesian3
+      width?: number
+      height?: number
+      scaleByDistance?: NearFarScalar
+      translucencyByDistance?: NearFarScalar
+      pixelOffsetScaleByDistance?: NearFarScalar
+      sizeInMeters?: boolean
+      distanceDisplayCondition?: DistanceDisplayCondition
+      disableDepthTestDistance?: number
+      label?: LabelAddParam<T>
+    }
+
+    export type SetParam<T> = Partial<Pick<AddParam<T>, Attributes>> & { label?: LabelSetParam<T> }
   }
 
   /**
@@ -4013,6 +2427,130 @@ declare module "@anstec/earth" {
     destroy(): boolean
   }
 
+  export namespace CloudLayer {
+    /**
+     * @property [noiseDetail = 16] 噪声纹理中所需的细节量
+     * @property [noiseOffset = {@link Cartesian3.ZERO}] 噪声纹理中所需的偏移量
+     */
+    export type ConstructorOptions = {
+      noiseDetail?: number
+      noiseOffset?: Cartesian3
+    }
+
+    /**
+     * @property position {@link Cartesian3} 位置
+     * @property [id] ID
+     * @property [data] 附加数据
+     * @property [show = true] 是否显示
+     * @property [brightness = 0] 灰度 `[0, 1]`
+     * @property [color = {@link Color.WHITE}] 颜色
+     * @property [scale] {@link Cartesian2} 缩放
+     * @property [maximumSize] {@link Cartesian3} 云体最大渲染椭球体积
+     * @property [slice = 0.5] 切片值 `[0, 1]`，为云的外观选择特定横截面
+     * 1. 低于 0.2 的值可能会导致横截面太小，并且椭圆体的边缘将可见，高于 0.7 的值将导致云看起来更小
+     * 2. 应完全避免 [0.1, 0.9] 范围之外的值，因为它们不会产生理想的结果
+     * 3. 如果 `slice` 设置为负数，云将不会渲染横截面，相反，它将渲染可见的椭圆体外部
+     * 4. 对于 `maximumSize.z` 值较小的云，负值 `slice` 结果理想，但对较大的云，可能会导致云扭曲到填满椭圆体
+     */
+    export type AddParam<T> = {
+      position: Cartesian3
+      id?: string
+      data?: T
+      show?: boolean
+      brightness?: number
+      color?: Color
+      scale?: Cartesian2
+      maximumSize?: Cartesian3
+      slice?: number
+    }
+
+    export type SetParam<T> = Omit<Partial<AddParam<T>>, "id" | "data">
+  }
+
+  /**
+   * @decription 积云图层
+   * @extends Layer {@link Layer} 图层基类
+   * @param earth {@link Earth} 地球实例
+   * @param options {@link CloudLayer.ConstructorOptions} 参数
+   * @example
+   * ```
+   * const earth = useEarth()
+   * const cloudLayer = new CloudLayer(earth)
+   * ```
+   */
+  export class CloudLayer<T = unknown> extends Layer<CloudCollection, CumulusCloud, Layer.Data<T>> {
+    constructor(earth: Earth, options: CloudLayer.ConstructorOptions)
+    /**
+     * @description 新增积云
+     * @param param {@link CloudLayer.AddParam} 新增参数
+     * @example
+     * ```
+     * const earth = useEarth()
+     * const cloudLayer = new CloudLayer(earth)
+     * cloudLayer.add({
+     *  id: "cloud",
+     *  show: true,
+     *  brightness: 0.6,
+     *  color: Color.WHITE,
+     *  position: Cartesian3.fromDegrees(104, 30, 5000),
+     *  scale: new Cartesian2(24, 10),
+     *  maximumSize: new Cartesian3(14, 9, 10),
+     *  slice: 0.4,
+     * })
+     * ```
+     */
+    add(param: CloudLayer.AddParam<T>): void
+    /**
+     * @description 按ID修改积云
+     * @param id ID
+     * @param param {@link CloudLayer.SetParam} 修改参数
+     */
+    set(id: string, param: CloudLayer.SetParam<T>): void
+  }
+
+  export namespace DiffusePointLayer {
+    /**
+     * @property pointSVG 点的svg图像
+     * @property position {@link Cartesian3} 位置
+     * @property [data] 数据
+     * @property callback 回调
+     */
+    export type Data<T> = {
+      pointSVG: SVGElement
+      position: Cartesian3
+      data?: T
+      callback: () => void
+    }
+
+    /**
+     * @property position {@link Cartesian3} 位置
+     * @property [id] ID
+     * @property [className] 类名
+     * @property [pixelSize = 10] 像素大小
+     * @property [color = {@link Color.RED}] 颜色
+     * @property [strokeColor = {@link Color.RED}] 描线颜色
+     * @property [data] 数据
+     */
+    export type AddParam<T> = {
+      position: Cartesian3
+      id?: string
+      className?: string[]
+      pixelSize?: number
+      color?: Color
+      strokeColor?: Color
+      data?: T
+    }
+
+    /**
+     * @property [position] {@link Cartesian3} 位置
+     * @property [data] 数据
+     */
+    export type SetParam<T> = {
+      position?: Cartesian3
+      data?: T
+    }
+  }
+
   /**
    * @description 扩散点图层
    * @example
@@ -4061,6 +2599,32 @@ declare module "@anstec/earth" {
      * @description 销毁
      */
     destroy(): void
+  }
+
+  export namespace EllipseLayer {
+    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
+
+    /**
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property center {@link Cartesian3} 圆心
+     * @property majorAxis 长半径
+     * @property minorAxis 短半径
+     * @property [rotation] 旋转
+     * @property [height] 高度
+     * @property [color = {@link Color.RED}] 填充色
+     * @property [ground = false] 是否贴地
+     * @property [label] {@link LabelAddParam} 对应标签
+     */
+    export type AddParam<T> = Layer.AddParam<T> & {
+      center: Cartesian3
+      majorAxis: number
+      minorAxis: number
+      rotation?: number
+      height?: number
+      color?: Color
+      ground?: boolean
+      label?: LabelAddParam<T>
+    }
   }
 
   /**
@@ -4131,6 +2695,67 @@ declare module "@anstec/earth" {
      * @returns 返回`boolean`值
      */
     destroy(): boolean
+  }
+
+  export namespace EllipsoidLayer {
+    export type Attributes =
+      | "radii"
+      | "material"
+      | "outlineColor"
+      | "outlineWidth"
+      | "stackPartitions"
+      | "slicePartitions"
+
+    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
+
+    export type LabelSetParam<T> = Omit<LabelLayer.SetParam<T>, "position">
+
+    /**
+     * @extends Layer.Data {@link Layer.Data}
+     * @property center {@link Cartesian3} 中心点
+     * @property radii {@link Cartesian3} 球体三轴半径
+     * @property hpr {@link HeadingPitchRoll} 欧拉角
+     */
+    export type Data<T> = Layer.Data<T> & {
+      center: Cartesian3
+      radii: Cartesian3
+      hpr: HeadingPitchRoll
+    }
+
+    /**
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property center {@link Cartesian3} 中心点
+     * @property radii {@link Cartesian3} 球体三轴半径
+     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
+     * @property [material] {@link Material} 材质
+     * @property [outlineColor = {@link Color.AQUAMARINE}]  边框颜色
+     * @property [outlineWidth = 1] 边框宽度
+     * @property [stackPartitions = 16] 纵向切片数
+     * @property [slicePartitions = 8] 径向切片数
+     * @property [label] {@link LabelAddParam} 对应标签
+     */
+    export type AddParam<T> = Layer.AddParam<T> & {
+      center: Cartesian3
+      radii: Cartesian3
+      hpr?: HeadingPitchRoll
+      material?: Material
+      outlineColor?: Color
+      outlineWidth?: number
+      stackPartitions?: number
+      slicePartitions?: number
+      label?: LabelAddParam<T>
+    }
+
+    /**
+     * @property [center] {@link Cartesian3} 中心点
+     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
+     * @property [label] {@link LabelSetParam} 对应标签
+     */
+    export type SetParam<T> = {
+      center?: Cartesian3
+      hpr?: HeadingPitchRoll
+      label?: LabelSetParam<T>
+    }
   }
 
   /**
@@ -4227,46 +2852,58 @@ declare module "@anstec/earth" {
     destroy(): boolean
   }
 
-  /**
-   * @description 默认提供图形类
-   * @example
-   * ```
-   * const earth = useEarth()
-   * const layers = new GraphicsLayer(earth)
-   * //or
-   * const layers = earth.useDefaultLayers()
-   * ```
-   */
-  export class GraphicsLayer {
-    readonly allowDestroy: boolean
-    billboard: BillboardLayer
-    ellipse: EllipseLayer
-    point: PointLayer
-    polygon: PolygonLayer
-    polyline: PolylineLayer
-    rectangle: RectangleLayer
-    wall: WallLayer
-    constructor(earth: Earth)
+  export namespace LabelLayer {
+    export type Attributes = "id" | "module" | "position"
+
     /**
-     * @description 重置图层
-     * @example
-     * ```
-     * const earth = useEarth()
-     * const layers = new GraphicsLayer(earth)
-     * layers.reset()
-     * ```
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property position {@link Cartesian3} 位置
+     * @property text 文本
+     * @property [font = ”14px sans-serif] 字体
+     * @property [fillColor = {@link Color.RED}] 字体色
+     * @property [outlineColor = {@link Color.RED}] 字体描边色
+     * @property [outlineWidth = 1] 字体描边宽度
+     * @property [backgroundColor = new {@link Color}(0.165, 0.165, 0.165, 0.8)] 背景色
+     * @property [showBackground = false] 是否渲染背景
+     * @property [backgroundPadding = new {@link Cartesian2}(7, 5)] 背景边距
+     * @property [style = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
+     * @property [pixelOffset = {@link Cartesian2.ZERO}] 像素偏移
+     * @property [eyeOffset = {@link Cartesian3.ZERO}] 观察者偏移
+     * @property [horizontalOrigin = {@link HorizontalOrigin.CENTER}] 横向对齐
+     * @property [verticalOrigin = {@link VerticalOrigin.CENTER}] 纵向对齐
+     * @property [scale = 1] 缩放
+     * @property [scaleByDistance] {@link NearFarScalar} 按距离设置缩放
+     * @property [translucencyByDistance] {@link NearFarScalar} 按距离设置半透明度
+     * @property [pixelOffsetScaleByDistance] {@link NearFarScalar} 按距离设置像素偏移
+     * @property [heightReference = {@link HeightReference.NONE}] 位置高度参考
+     * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
+     * @property [disableDepthTestDistance] 按距离禁用地形深度检测
      */
-    reset(): void
-    /**
-     * @description 强制销毁
-     * @example
-     * ```
-     * const earth = useEarth()
-     * const layers = new GraphicsLayer(earth)
-     * layers.forceDestroy()
-     * ```
-     */
-    forceDestroy(): void
+    export type AddParam<T> = Layer.AddParam<T> & {
+      position: Cartesian3
+      text: string
+      font?: string
+      fillColor?: Color
+      outlineColor?: Color
+      outlineWidth?: number
+      backgroundColor?: Color
+      showBackground?: boolean
+      backgroundPadding?: Cartesian2
+      style?: LabelStyle
+      pixelOffset?: Cartesian2
+      eyeOffset?: Cartesian3
+      horizontalOrigin?: HorizontalOrigin
+      verticalOrigin?: VerticalOrigin
+      scale?: number
+      scaleByDistance?: NearFarScalar
+      translucencyByDistance?: NearFarScalar
+      pixelOffsetScaleByDistance?: NearFarScalar
+      heightReference?: HeightReference
+      distanceDisplayCondition?: DistanceDisplayCondition
+      disableDepthTestDistance?: number
+    }
+
+    export type SetParam<T> = Partial<Omit<AddParam<T>, "id" | "module" | "data">>
   }
 
   /**
@@ -4326,6 +2963,67 @@ declare module "@anstec/earth" {
      * ```
      */
     set(id: string, param: LabelLayer.SetParam<T>): void
+  }
+
+  export namespace Layer {
+    /**
+     * @description 图元类型
+     */
+    export type Primitives =
+      | Billboard
+      | CumulusCloud
+      | Label
+      | Model
+      | ParticleSystem
+      | PointPrimitive
+      | Primitive
+      | GroundPrimitive
+      | GroundPolylinePrimitive
+
+    /**
+     * @description 附加数据
+     * @property [module] 模块名称
+     * @property [data] 附加数据
+     */
+    export type Data<T> = {
+      module?: string
+      data?: T
+    }
+
+    /**
+     * @description 新增元素的基础参数
+     * @extends Data {@link Data}
+     * @property [id] 唯一ID
+     * @property [show] 是否展示
+     */
+    export type AddParam<T> = Data<T> & {
+      id?: string
+      show?: boolean
+    }
+
+    /**
+     * @description 缓存数据
+     * @property primitive 图元
+     * @property data 缓存的额外数据
+     */
+    export type Cache<P, D> = {
+      primitive: P
+      data: D
+    }
+
+    /**
+     * @description 从cesium `Collection` 中抽取的公共属性
+     * @property show 是否展示
+     * @property add 新增方法
+     * @property remove 按索引（通常是图元）删除集合
+     * @property removeAll 清空所有图元
+     */
+    export type Collection = {
+      show: boolean
+      add: (arg: any) => any
+      remove: (arg: any) => boolean
+      removeAll: () => void
+    }
   }
 
   /**
@@ -4430,6 +3128,114 @@ declare module "@anstec/earth" {
      * @returns 返回`boolean`值
      */
     destroy(): boolean
+  }
+
+  export namespace ModelLayer {
+    export type StopViewFunc = () => void
+
+    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
+
+    export type LabelSetParam<T> = Omit<LabelLayer.SetParam<T>, "position">
+
+    export type EnvelopeAddParam<T> = Pick<EllipsoidLayer.AddParam<T>, EllipsoidLayer.Attributes>
+
+    export type EnvelopeSetParam<T> = Pick<EllipsoidLayer.SetParam<T>, "hpr">
+
+    /**
+     * @property position {@link Cartesian3} 位置
+     * @property hpr {@link HeadingPitchRoll} 欧拉角
+     */
+    export type Data<T> = Layer.Data<T> & {
+      position: Cartesian3
+      hpr: HeadingPitchRoll
+    }
+
+    /**
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property url 模型url
+     * @property position {@link Cartesian3} 位置
+     * @property [scale = 1] 缩放
+     * @property [asynchronous = true] 异步加载
+     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
+     * @property [minimumPixelSize = 24] 模型近似最小像素
+     * @property [color] {@link Color} 颜色
+     * @property [colorBlendMode = {@link ColorBlendMode.MIX}] 颜色混合模式
+     * @property [colorBlendAmount = 0.5] 混合程度，在`colorBlendMode`值为`MIX`时生效
+     * @property [silhouetteColor = {@link Color.LIGHTYELLOW}] 轮廓颜色
+     * @property [silhouetteSize = 1] 轮廓大小
+     * @property [animationLoop = {@link ModelAnimationLoop.REPEAT}] 动画方式
+     * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
+     * @property [hightReference = {@link HeightReference.NONE}] 高度位置参考
+     * @property [label] {@link LabelAddParam} 对应标签
+     * @property [envelope] {@link EnvelopeAddParam} 对应包络
+     */
+    export type AddParam<T> = Layer.AddParam<T> & {
+      url: string
+      position: Cartesian3
+      scale?: number
+      asynchronous?: boolean
+      hpr?: HeadingPitchRoll
+      minimumPixelSize?: number
+      color?: Color
+      colorBlendMode?: ColorBlendMode
+      colorBlendAmount?: number
+      silhouetteColor?: Color
+      silhouetteSize?: number
+      animationLoop?: ModelAnimationLoop
+      distanceDisplayCondition?: DistanceDisplayCondition
+      hightReference?: HeightReference
+      label?: LabelAddParam<T>
+      envelope?: EnvelopeAddParam<T>
+    }
+
+    /**
+     * @property [position] {@link Cartesian3} 位置
+     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
+     * @property [minimumPixelSize = 24] 模型近似最小像素
+     * @property [color] {@link Color} 颜色
+     * @property [silhouetteColor = {@link Color.LIGHTYELLOW}] 轮廓颜色
+     * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
+     * @property [label] {@link LabelSetParam} 对应标签
+     * @property [envelope] {@link EnvelopeSetParam} 对应包络
+     */
+    export type SetParam<T> = {
+      position?: Cartesian3
+      hpr?: HeadingPitchRoll
+      color?: Color
+      silhouetteColor?: Color
+      distanceDisplayCondition?: DistanceDisplayCondition
+      label?: LabelSetParam<T>
+      envelope?: EnvelopeSetParam<T>
+    }
+
+    /**
+     * @property [view = {@link ViewAngle.THIRD}] 视角
+     * @property [offset = new {@link Cartesian3}(50, 0, 20)] 视角偏移
+     * @property [sensitivity = 0.1] 鼠标调整视角的灵敏度 `[0,1]`
+     *
+     */
+    export type ViewOptions = {
+      view?: ViewAngle
+      offset?: Cartesian3
+      sensitivity?: number
+    }
+
+    /**
+     * @property id ID
+     * @property path {@link Cartesian3} 移动路径
+     * @property [split = 5] 基准间隔距离，插值点间距的数值依据
+     * @property [frequency = 40] 位置更新间隔`ms`
+     * @property [loop = false] 是否循环动作
+     * @property [onActionEnd] 动作结束时的回调，仅自动结束且动作不循环时生效
+     */
+    export type ActionOptions = {
+      id: string
+      path: Cartesian3[]
+      split?: number
+      frequency?: number
+      loop?: boolean
+      onActionEnd?: (position: Cartesian3) => void
+    }
   }
 
   /**
@@ -4566,6 +3372,170 @@ declare module "@anstec/earth" {
      * @returns 返回`boolean`值
      */
     destroy(): boolean
+  }
+
+  export namespace ParticleLayer {
+    /**
+     * @description 用于在每个时间点强制修改、颜色、尺寸等粒子属性的函数
+     * @param particle 当前粒子
+     * @param currentTime 当前时间
+     */
+    export type UpdateCallback = (particle: Particle, currentTime: number) => void
+
+    /**
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property position {@link Cartesian3} 位置
+     * @property [loop = true] 循环播放
+     * @property [startScale] 开始时缩放
+     * @property [endScale] 结束时缩放
+     * @property [scale = 1] 粒子图像比例，覆盖`startScale`和`endScale`
+     * @property [startColor] {@link Color} 开始时颜色
+     * @property [endColor] {@link Color} 结束时颜色
+     * @property [color = {@link Color.WHITE}] 粒子颜色，覆盖`startColor`和`endColor`
+     * @property [image] 粒子图片源
+     * @property [minimumImageSize] {@link Cartesian2} 粒子图片最小值
+     * @property [maximumImageSize] {@link Cartesian2} 粒子图片最大值
+     * @property [imageSize = {@link Cartesian2.ONE}] 粒子图片大小，覆盖`minimumImageSize`和`maximumImageSize`
+     * @property [minimumSpeed] 粒子最小速度
+     * @property [maximumSpeed] 粒子最大速度
+     * @property [speed = 1] 粒子速度，覆盖`minimumSpeed`和`maximumSpeed`
+     * @property [minimumParticleLife] 粒子最小持续时间
+     * @property [maximumParticleLife] 粒子最大持续时间
+     * @property [particleLife = 5] 粒子持续时间`s`，覆盖`minimumParticleLife`和`maximumParticleLife`
+     * @property [lifetime = {@link Number.MAX_VALUE}] 生命周期`s`
+     * @property [minimumMass] 粒子最小质量，单位`kg`
+     * @property [maximumMass] 粒子最大质量，单位`kg`
+     * @property [mass = 1] 粒子质量，覆盖`minimumMass`和`maximumMass`
+     * @property [sizeInMeters = true] 粒子以`m`为单位，否则`px`
+     * @property [bursts] {@link ParticleBurst} 粒子爆发
+     * @property [emissionRate = 5] 每秒发射粒子数
+     * @property [emitter = new CircleEmitter(0.5)] {@link ParticleEmitter} 粒子发射器
+     * @property [modelMatrix] 粒子系统从模型坐标转为世界坐标，优先级高于`position`
+     * @property [emitterModelMatrix {@link Matrix4.IDENTITY}] 粒子系统的局部坐标内变换粒子发射器
+     * @property [updateCallback] {@link UpdateCallback} 粒子更新函数
+     */
+    export type AddParam<T> = Layer.AddParam<T> & {
+      position: Cartesian3
+      loop?: boolean
+      startScale?: number
+      endScale?: number
+      scale?: number
+      startColor?: Color
+      endColor?: Color
+      color?: Color
+      image?: string
+      minimumImageSize?: Cartesian2
+      maximumImageSize?: Cartesian2
+      imageSize?: Cartesian2
+      minimumSpeed?: number
+      maximumSpeed?: number
+      speed?: number
+      minimumParticleLife?: number
+      maximumParticleLife?: number
+      particleLife?: number
+      lifetime?: number
+      minimumMass?: number
+      maximumMass?: number
+      mass?: number
+      sizeInMeters?: boolean
+      bursts?: ParticleBurst[]
+      emissionRate?: number
+      emitter?: ParticleEmitter
+      modelMatrix?: Matrix4
+      emitterModelMatrix?: Matrix4
+      updateCallback?: UpdateCallback
+    }
+
+    /**
+     * @property [position] {@link Cartesian3} 位置
+     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
+     * @property [translation] {@link Cartesian3} 偏移
+     * @property [emissionRate] 每秒发射粒子数
+     * @property [startScale] 开始时缩放
+     * @property [endScale] 结束时缩放
+     * @property [minimumImageSize] {@link Cartesian2} 粒子图片最小值
+     * @property [maximumImageSize] {@link Cartesian2} 粒子图片最大值
+     * @property [minimumMass] 粒子最小质量，单位`kg`
+     * @property [maximumMass] 粒子最大质量，单位`kg`
+     * @property [minimumParticleLife] 粒子最小持续时间
+     * @property [maximumParticleLife] 粒子最大持续时间
+     * @property [minimumSpeed] 粒子最小速度
+     * @property [maximumSpeed] 粒子最大速度
+     */
+    export type SetParam = {
+      position?: Cartesian3
+      hpr?: HeadingPitchRoll
+      translation?: Cartesian3
+      emissionRate?: number
+      startScale?: number
+      endScale?: number
+      minimumImageSize?: number
+      maximumImageSize?: number
+      maximumMass?: number
+      minimumMass?: number
+      maximumParticleLife?: number
+      minimumParticleLife?: number
+      maximumSpeed?: number
+      minimumSpeed?: number
+    }
+
+    /**
+     * @description 自定义粒子系统
+     * @property position {@link Cartesian3} 位置
+     * @property [id] ID
+     * @property [startColor] {@link Color} 开始时颜色
+     * @property [endColor] {@link Color} 结束时颜色
+     * @property [startScale] 开始时缩放
+     * @property [endScale] 结束时缩放
+     * @property [minimumSpeed] 粒子最小速度
+     * @property [maximumSpeed] 粒子最大速度
+     * @property [size = "normal"] 覆盖`startScale`，`endScale`，`minimumSpeed`和`maximumSpeed`，自定义时将该属性置空
+     * @property [lifetime = {@link Number.MAX_VALUE}] 生命周期`s`
+     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
+     * @property [translation] {@link Cartesian3} 偏移
+     */
+    export type Custom = {
+      position: Cartesian3
+      id?: string
+      startColor?: Color
+      endColor?: Color
+      startScale?: number
+      endScale?: number
+      minimumSpeed?: number
+      maximumSpeed?: number
+      size?: "small" | "normal" | "large"
+      lifetime?: number
+      hpr?: HeadingPitchRoll
+      translation?: Cartesian3
+    }
+
+    /**
+     * @description 火焰
+     * @extends Custom {@link Custom}
+     * @property [smoke = true] 是否开启烟雾效果
+     */
+    export type Fire = Custom & { smoke?: boolean }
+
+    /**
+     * @description 烟雾
+     * @extends Custom {@link Custom}
+     * @property [duration] `lifetime`属性会覆盖该属性
+     */
+    export type Smoke = Custom & { duration?: "fast" | "normal" | "enduring" }
+
+    /**
+     * @description 爆炸
+     * @extends Custom {@link Custom}
+     * @property [fire = true] 是否开启火焰效果
+     */
+    export type Blast = Omit<Custom, "lifetime"> & { fire?: boolean }
+
+    /**
+     * @description 发动机、导弹、飞机尾焰
+     * @extends Custom {@link Custom}
+     * @property [speed = 20] 喷焰速度
+     */
+    export type Flame = Omit<Custom, "minimumSpeed" | "maximumSpeed"> & { speed?: number }
   }
 
   /**
@@ -4707,6 +3677,32 @@ declare module "@anstec/earth" {
     destroy(): boolean
   }
 
+  export namespace PointLayer {
+    /**
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property position {@link Cartesian3} 位置
+     * @property [color = {@link Color.RED}] 填充色
+     * @property [pixelSize = 5] 像素大小
+     * @property [outlineColor = {@link Color.RED}] 边框色
+     * @property [outlineWidth = 1] 边框宽度
+     * @property [scaleByDistance] {@link NearFarScalar} 按距离设置缩放
+     * @property [disableDepthTestDistance] 按距离禁用地形深度检测
+     * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
+     */
+    export type AddParam<T> = Layer.AddParam<T> & {
+      position: Cartesian3
+      color?: Color
+      pixelSize?: number
+      outlineColor?: Color
+      outlineWidth?: number
+      scaleByDistance?: NearFarScalar
+      disableDepthTestDistance?: number
+      distanceDisplayCondition?: DistanceDisplayCondition
+    }
+
+    export type SetParam<T> = Partial<Omit<AddParam<T>, "id" | "module" | "data">>
+  }
+
   /**
    * @description 点图层
    * @extends Layer {@link Layer} 图层基类
@@ -4757,6 +3753,32 @@ declare module "@anstec/earth" {
      * ```
      */
     set(id: string, param: PointLayer.SetParam<T>): void
+  }
+
+  export namespace PolygonLayer {
+    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
+
+    export type OutlineAddParam<T> = Pick<PolylineLayer.AddParam<T>, "materialType" | "materialUniforms" | "width">
+
+    /**
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property positions {@link Cartesian3} 位置
+     * @property [height] 高度
+     * @property [color = {@link Color.RED}] 填充色
+     * @property [usePointHeight = false] 多边形顶点使用其自身高度
+     * @property [ground = false] 是否贴地
+     * @property [outline] {@link OutlineAddParam} 轮廓线
+     * @property [label] {@link LabelAddParam} 对应标签
+     */
+    export type AddParam<T> = Layer.AddParam<T> & {
+      positions: Cartesian3[]
+      height?: number
+      color?: Color
+      usePointHeight?: boolean
+      ground?: boolean
+      outline?: OutlineAddParam<T>
+      label?: LabelAddParam<T>
+    }
   }
 
   /**
@@ -4838,6 +3860,46 @@ declare module "@anstec/earth" {
     destroy(): boolean
   }
 
+  export namespace PolylineLayer {
+    /**
+     * @description 线条材质类型
+     */
+    export type MaterialType =
+      | "Color"
+      | "PolylineArrow"
+      | "PolylineDash"
+      | "PolylineGlow"
+      | "PolylineOutline"
+      | "PolylineFlowingDash"
+      | "PolylineFlowingWave"
+      | "PolylineTrailing"
+
+    /**
+     * @description 材质类型对应的 `uniforms` 参数
+     */
+    export type MaterialUniforms = { [key: string]: any }
+
+    /**
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property lines {@link Cartesian3} 位置
+     * @property [asynchronous = true] 是否异步渲染
+     * @property [width = 2] 线宽
+     * @property [arcType = {@link ArcType.RHUMB}] 线段弧度类型
+     * @property [materialType = "Color"] {@link MaterialType} 材质类型
+     * @property [materialUniforms = { color: {@link Color.RED} }] {@link MaterialUniforms} 材质参数
+     * @property [ground = false] 是否贴地
+     */
+    export type AddParam<T> = Layer.AddParam<T> & {
+      lines: Cartesian3[][]
+      asynchronous?: boolean
+      width?: number
+      arcType?: ArcType
+      materialType?: MaterialType
+      materialUniforms?: MaterialUniforms
+      ground?: boolean
+    }
+  }
+
   /**
    * @description 线段图层
    * @extends Layer {@link Layer} 图层基类
@@ -4881,12 +3943,34 @@ declare module "@anstec/earth" {
     add(param: PolylineLayer.AddParam<T>): void
     /**
      * @deprecated 已废弃，请使用`add`
+     * @deleted 已删除
      */
     addFlowingDash(param: any): void
     /**
      * @deprecated 已废弃，请使用`add`
+     * @deleted 已删除
      */
     addFlowingWave(param: any): void
+  }
+
+  export namespace RectangleLayer {
+    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
+
+    /**
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property rectangle {@link Rectangle} 矩形
+     * @property [height] 高度
+     * @property [color = {@link Color.BLUE}] 填充色
+     * @property [ground = false] 是否贴地
+     * @property [label] {@link LabelAddParam} 对应标签
+     */
+    export type AddParam<T> = Layer.AddParam<T> & {
+      rectangle: Rectangle
+      height?: number
+      color?: Color
+      ground?: boolean
+      label?: LabelAddParam<T>
+    }
   }
 
   /**
@@ -4955,6 +4039,28 @@ declare module "@anstec/earth" {
     destroy(): boolean
   }
 
+  export namespace WallLayer {
+    /**
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property positions {@link Cartesian3} 位置
+     * @property [maximumHeights = 5000] 最大高度
+     * @property [minimumHeights = 0] 最小高度
+     * @property [color = {@link Color.LAWNGREEN}] 填充色
+     * @property [outline = true] 是否渲染边框
+     * @property [outlineColor = {@link Color.WHITESMOKE}] 边框色
+     * @property [outlineWidth = 1] 边框宽度
+     */
+    export type AddParam<T> = Layer.AddParam<T> & {
+      positions: Cartesian3[]
+      maximumHeights?: number[]
+      minimumHeights?: number[]
+      color?: Color
+      outline?: boolean
+      outlineColor?: Color
+      outlineWidth?: number
+    }
+  }
+
   /**
    * @description 墙体图层
    * @extends Layer {@link Layer} 图层基类
@@ -5017,6 +4123,222 @@ declare module "@anstec/earth" {
      * @param id ID
      */
     remove(id: string): void
+  }
+
+  /**
+   * @description 自定义材质
+   */
+  export namespace CustomMaterial {
+    export type ConstructorOptions = {
+      strict?: boolean
+      translucent?: boolean | ((...params: any[]) => any)
+      minificationFilter?: TextureMinificationFilter
+      magnificationFilter?: TextureMagnificationFilter
+      fabric: { [key: string]: any }
+    }
+
+    const getMaterialByType: (type: string) => Material
+  }
+
+  /**
+   * @description 流动线条材质
+   */
+  export class PolylineFlowingDashMaterial extends Material {
+    constructor(options?: CustomMaterial.ConstructorOptions)
+  }
+
+  /**
+   * @description 波动线条材质
+   */
+  export class PolylineFlowingWaveMaterial extends Material {
+    constructor(options?: CustomMaterial.ConstructorOptions)
+  }
+
+  /**
+   * @description 拖尾线条材质
+   */
+  export class PolylineTrailingMaterial extends Material {
+    constructor(options?: CustomMaterial.ConstructorOptions)
+  }
+
+  export namespace Measure {
+    /**
+     * @property [id] ID
+     * @property [module] 模块
+     */
+    export type Base = {
+      id?: string
+      module?: string
+    }
+
+    /**
+     * @property id ID
+     * @property startPosition {@link Cartesian3} 起始位置
+     * @property endPosition {@link Cartesian3} 结束位置
+     * @property spaceDistance 空间距离
+     * @property rhumbDistance 大圆距离
+     * @property heightDifference 高度差
+     */
+    export type TriangleReturn = {
+      id: string
+      startPosition: Cartesian3
+      endPosition: Cartesian3
+      spaceDistance: number
+      rhumbDistance: number
+      heightDifference: number
+    }
+
+    /**
+     * @property id ID
+     * @property positions {@link Geographic} 点集
+     */
+    export type SectionReturn = {
+      id: string
+      positions: Geographic[]
+    }
+
+    /**
+     * @extends Base {@link Base}
+     * @property [color = {@link Color.ORANGE}] 测量线颜色
+     * @property [width = 1] 测量线宽度
+     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
+     * @property [labelOutlineWidth = 1] 标签轮廓线宽度
+     * @property [labelFillColor = {@link Color.RED}] 标签字体色
+     * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
+     * @property [labelText] 标签文字自定义函数
+     */
+    export type Triangle = Base & {
+      color?: Color
+      width?: number
+      labelOutlineColor?: Color
+      labelOutlineWidth?: number
+      labelFillColor?: Color
+      labelStyle?: LabelStyle
+      labelText?: (params: { spaceDistance: number; rhumbDistance: number; heightDifference: number }) => string
+    }
+
+    /**
+     * @extends Base {@link Base}
+     * @property [split = true] 是否为分段方位测量，否则为首点方位测量
+     * @property [width = 2] 测量线宽度
+     * @property [materialType = "PolylineDash"] {@link PolylineLayer.MaterialType} 测量线材质
+     * @property [materialUniforms = { color: Color.ORANGE }] {@link PolylineLayer.MaterialUniforms} 测量线材质参数
+     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
+     * @property [labelOutlineWidth = 1] 标签轮廓线宽度
+     * @property [labelFillColor = {@link Color.RED}] 标签字体色
+     * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
+     * @property [headLabelText] 起始节点文本
+     * @property [nodeLabelText] 过程节点文本
+     */
+    export type Bearing = Base & {
+      split?: boolean
+      width?: number
+      materialType?: PolylineLayer.MaterialType
+      materialUniforms?: PolylineLayer.MaterialUniforms
+      labelOutlineColor?: Color
+      labelOutlineWidth?: number
+      labelFillColor?: Color
+      labelStyle?: LabelStyle
+      headLabelText?: string | ((position: Geographic) => string)
+      nodeLabelText?: (bearing: number) => string
+    }
+
+    /**
+     * @extends Base {@link Base}
+     * @property [pointPixelSize = 10] 坐标点像素大小
+     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
+     * @property [labelOutlineWidth = 1] 标签轮廓线宽度
+     * @property [labelFillColor = {@link Color.RED}] 标签字体色
+     * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
+     * @property [labelText] 标签文字自定义函数
+     */
+    export type Coordinate = Base & {
+      color?: Color
+      pointPixelSize?: number
+      labelOutlineColor?: Color
+      labelOutlineWidth?: number
+      labelFillColor?: Color
+      labelStyle?: LabelStyle
+      labelText?: (position: Geographic) => string
+    }
+
+    /**
+     * @extends Base {@link Base}
+     * @property [split = true] 是否为分段方距测量，否则为首点方距测量
+     * @property [width = 2] 测量线宽度
+     * @property [materialType = "PolylineDash"] {@link PolylineLayer.MaterialType} 测量线材质
+     * @property [materialUniforms = { color: Color.ORANGE }] {@link PolylineLayer.MaterialUniforms} 测量线材质参数
+     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
+     * @property [labelOutlineWidth = 1] 标签轮廓线宽度
+     * @property [labelFillColor = {@link Color.RED}] 标签字体色
+     * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
+     * @property [headLabelText] 起始节点文本
+     * @property [nodeLabelText] 过程节点文本
+     */
+    export type Distance = Base & {
+      split?: boolean
+      width?: number
+      materialType?: PolylineLayer.MaterialType
+      materialUniforms?: PolylineLayer.MaterialUniforms
+      labelOutlineColor?: Color
+      labelOutlineWidth?: number
+      labelFillColor?: Color
+      labelStyle?: LabelStyle
+      headLabelText?: string | ((total: number) => string)
+      nodeLabelText?: (distance: number) => string
+    }
+
+    /**
+     * @extends Base {@link Base}
+     * @property [width = 2] 测量线宽度
+     * @property [materialType = "PolylineDash"] {@link PolylineLayer.MaterialType} 测量线材质
+     * @property [materialUniforms = { color: Color.ORANGE }] {@link PolylineLayer.MaterialUniforms} 测量线材质参数
+     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
+     * @property [labelOutlineWidth = 1] 标签轮廓线宽度
+     * @property [labelFillColor = {@link Color.RED}] 标签字体色
+     * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
+     * @property [headLabelText] 起始节点文本
+     * @property [nodeLabelText] 过程节点文本
+     */
+    export type HeightDifference = Base & {
+      width?: number
+      materialType?: PolylineLayer.MaterialType
+      materialUniforms?: PolylineLayer.MaterialUniforms
+      labelOutlineColor?: Color
+      labelOutlineWidth?: number
+      labelFillColor?: Color
+      labelStyle?: LabelStyle
+      headLabelText?: string | ((position: Geographic) => string)
+      nodeLabelText?: (bearing: number) => string
+    }
+
+    /**
+     * @extends Base {@link Base}
+     * @property [color = {@link Color.YELLOW}] 填充色
+     * @property [outlineColor = {@link Color.RED}] 轮廓颜色
+     * @property [outlineWidth = 1] 轮廓线宽度
+     * @property [labelText] 标签文字自定义函数
+     */
+    export type Area = Base & {
+      color?: Color
+      outlineColor?: Color
+      outlineWidth?: number
+      labelText?: (total: number) => string
+    }
+
+    /**
+     * @extends Base {@link Base}
+     * @property [splits = 50] 剖面取点个数
+     * @property [width = 2] 测量线宽度
+     * @property [materialType = "PolylineDash"] {@link PolylineLayer.MaterialType} 测量线材质
+     * @property [materialUniforms = { color: Color.ORANGE }] {@link PolylineLayer.MaterialUniforms} 测量线材质参数
+     */
+    export type Section = Base & {
+      splits?: number
+      width?: number
+      materialType?: PolylineLayer.MaterialType
+      materialUniforms?: PolylineLayer.MaterialUniforms
+    }
   }
 
   /**
@@ -5120,6 +4442,8 @@ declare module "@anstec/earth" {
      * @description 剖面测量
      * @param param {@link Measure.Section} 参数
      * @returns {ISectionReturn} 测量结果
+     * @exception Lack of terrian data, or load terrian failed.
+     * @exception A certain material type is required.
      * @example
      * ```
      * const earth = useEarth()
@@ -5139,6 +4463,53 @@ declare module "@anstec/earth" {
     remove(id: string): void
   }
 
+  export namespace ContextMenu {
+    /**
+     * @property [id] ID
+     * @property [module] 模块名
+     * @property [key] 菜单键名
+     * @property type {@link MenuEventType} 菜单事件类型
+     */
+    export type CallbackParam = {
+      id?: string
+      module?: string
+      key?: string
+      type: MenuEventType
+    }
+
+    export type Callback = (param: CallbackParam) => void
+
+    /**
+     * @property belong 归属
+     * @property [default] 默认是否激活当前项
+     */
+    export type ToggleOptions = {
+      belong: string
+      default?: boolean
+    }
+
+    /**
+     * @property [separator = true] 分隔符
+     * @property [icon] 图标
+     * @property [iconClass] 图标类名
+     * @property [key] 菜单Key
+     * @property [label] 菜单显示名称
+     * @property [toggle] {@link ToggleOptions} 是否为切换/开关型
+     * @property [children] 子菜单
+     * @property [callback] 回调
+     */
+    export type Item = {
+      separator?: boolean
+      icon?: string | (() => HTMLElement)
+      iconClass?: string | string[]
+      key?: string | DefaultContextMenuItem
+      label: string
+      toggle?: ToggleOptions
+      children?: Item[]
+      callback?: Callback
+    }
+  }
+
   /**
    * @description 上下文菜单
    * @param earth {@link Earth} 地球实例
@@ -5156,8 +4527,8 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 设置默认菜单
-     * @param menus 默认菜单项
-     * @param callback 右键回调
+     * @param menus {@link ContextMenu.Item} 默认菜单项
+     * @param [callback] {@link ContextMenu.Callback} 右键回调
      * @example
      * ```
      * const earth = useEarth()
@@ -5191,8 +4562,9 @@ declare module "@anstec/earth" {
     /**
      * @description 新增模块菜单项
      * @param module 模块名称
-     * @param menus 菜单项
-     * @param callback 右键回调
+     * @param menus {@link ContextMenu.Item} 菜单项
+     * @param [callback] {@link ContextMenu.Callback} 右键回调
+     * @exception Argument param 'module' cannot be '' or 'default'.
      * @example
      * ```
      * const earth = useEarth()
@@ -5263,8 +4635,22 @@ declare module "@anstec/earth" {
     destroy(): void
   }
 
+  export namespace EChartsOverlay {
+    /**
+     * @property earth {@link Earth} 地球实例
+     * @property [id] ID
+     * @property [option] {@link EChartsOption} Echarts设置
+     */
+    export type ConstructorOptions = {
+      earth: Earth
+      id?: string
+      option?: EChartsOption
+    }
+  }
+
   /**
    * @description Echarts插件图层
+   * @param options {@link EChartsOverlay.ConstructorOptions} 参数
    * @example
    * ```
    * const earth = useEarth()
@@ -5276,7 +4662,7 @@ declare module "@anstec/earth" {
     constructor(options: EChartsOverlay.ConstructorOptions)
     /**
      * @description 加载Echarts设置
-     * @param option Echarts设置
+     * @param option {@link EChartsOption} Echarts设置
      */
     updateOverlay(option: EChartsOption): void
     /**
@@ -5301,6 +4687,57 @@ declare module "@anstec/earth" {
      * @description 销毁
      */
     dispose(): void
+  }
+
+  export namespace Radar {
+    /**
+     * @property [id] ID
+     * @property center {@link Cartesian3} 扫描的中心/光源坐标
+     * @property radius 扫描半径，在锥形扫描中单位为度数
+     * @property [duration] 扫描间隔`ms`
+     * @property [color = {@link Color.LAWNGREEN}] 颜色
+     * @property [data] 附加数据
+     */
+    type Base<T = unknown> = {
+      id?: string
+      center: Cartesian3
+      radius: number
+      duration?: number
+      color?: Color
+      data?: T
+    }
+
+    /**
+     * @extends Base {@link Base}
+     * @property [border = 0] 范围边框宽度
+     * @property [width = 3] 指针的透明部分宽度
+     */
+    export type Scan<T> = Base<T> & {
+      border?: number
+      width?: number
+    }
+
+    /**
+     * @extends Base {@link Base}
+     * @property [border = 4] 扩散透明度
+     */
+    export type Diffuse<T> = Base<T> & { border?: number }
+
+    /**
+     * @extends Base {@link Base}
+     * @property [shadeColor = {@link Color.LAWNGREEN}] 球形范围遮罩颜色
+     */
+    export type Fanshaped<T> = Base<T> & { shadeColor?: Color }
+
+    /**
+     * @extends Base {@link Base}
+     * @property path {@link Cartesian3} 扫描路径
+     * @property [split = 30] 光锥斜面分割数，分割数过多会影响渲染性能
+     */
+    export type Cone<T> = Base<T> & {
+      path: Cartesian3[]
+      split?: number
+    }
   }
 
   /**
@@ -5411,46 +4848,85 @@ declare module "@anstec/earth" {
     destroy(): void
   }
 
-  /**
-   * @description 相控阵传感器图元
-   */
-  export class PhasedSensorPrimitive {
-    readonly id: Object | undefined
-    readonly show: boolean
-    readonly slice: number
-    readonly modelMatrix: Matrix4
-    readonly radius: number
-    readonly xHalfAngle: number
-    readonly yHalfAngle: number
-    readonly lineColor: Color
-    readonly material: Material
-    readonly showSectorLines: boolean
-    readonly showSectorSegmentLines: boolean
-    readonly showLateralSurfaces: boolean
-    readonly lateralSurfaceMaterial: Material
-    readonly showDomeSurfaces: boolean
-    readonly domeSurfaceMaterial: Material
-    readonly showDomeLines: boolean
-    readonly showIntersection: boolean
-    readonly intersectionColor: Color
-    readonly intersectionWidth: number
-    readonly showThroughEllipsoid: boolean
-    readonly showWaves: boolean
-    readonly showScanPlane: boolean
-    readonly scanPlaneColor: Color
-    readonly scanPlaneMode: ScanMode
-    readonly scanPlaneRate: number
-    readonly distanceDisplayCondition?: DistanceDisplayCondition
-    readonly showGradient: boolean
-    readonly gradientColors: Color[]
-    readonly gradientSteps: number[]
-    readonly showGradientScan: boolean
-    readonly gradientColorsScan: Color[]
-    readonly gradientStepsScan: number[]
-    constructor(options?: PhasedSensorPrimitive.ConstructorOptions)
-    update(frameState: FrameState): void
-    isDestroyed(): boolean
-    destroy(): void
+  export namespace Sensor {
+    /**
+     * @property hpr {@link HeadingPitchRoll} 欧拉角
+     * @property position {@link Cartesian3} 位置
+     * @property [data] 附加数据
+     * @property [callback] 回调
+     */
+    export type Data<T> = {
+      hpr: HeadingPitchRoll
+      position: Cartesian3
+      data?: T
+      callback?: () => void
+    }
+
+    /**
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property position {@link Cartesian3} 位置
+     * @property radius 切面半径，视觉发射长度`m`
+     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
+     * @property [xHalfAngle = PI / 3] 横向切面角度 <弧度制>
+     * @property [yHalfAngle = PI / 3] 纵向切面角度 <弧度制>
+     * @property [color = {@link Color.LAWNGREEN}] 颜色
+     * @property [lineColor = {@link Color.LAWNGREEN}] 线条颜色
+     * @property [scanPlane = true] 是否启用扫描面
+     * @property [scanPlaneColor = {@link Color.LAWNGREEN}] 扫描面颜色
+     * @property [scanPlaneRate = 1] 扫描速率
+     * @property [scanMode = {@link ScanMode.HORIZONTAL}] 扫描模式
+     * @property [gradientScan = true] 扫描面是否启用渐变色
+     * @property [gradientScanColors = [{@link Color.WHITESMOKE}, {@link Color.LIGHTYELLOW}, {@link Color.YELLOW}, {@link Color.ORANGE}, {@link Color.RED}]] 扫描有序渐变色组
+     * @property [gradientScanSteps = [0.2, 0.45, 0.65]] 扫描渐变占比
+     * @property [intersection = true] 是否显示与地球的相交线
+     * @property [intersectionColor = {@link Color.LAWNGREEN}.withAlpha(0.5)] 相交线颜色
+     * @property [intersectionWidth = 1] 相交线宽度
+     * @property [radarWave = true] 是否启用雷达波
+     */
+    export type Phased<T> = Layer.AddParam<T> & {
+      position: Cartesian3
+      radius: number
+      hpr?: HeadingPitchRoll
+      xHalfAngle?: number
+      yHalfAngle?: number
+      color?: Color
+      lineColor?: Color
+      scanPlane?: boolean
+      scanPlaneColor?: Color
+      scanPlaneRate?: number
+      scanMode?: ScanMode
+      gradientScan?: boolean
+      gradientScanColors?: [Color, Color, Color, Color, Color]
+      gradientScanSteps?: [number, number, number]
+      intersection?: boolean
+      intersectionColor?: Color
+      intersectionWidth?: number
+      radarWave?: boolean
+    }
+
+    /**
+     * @extends Layer.AddParam {@link Layer.AddParam}
+     * @property position {@link Cartesian3} 位置
+     * @property radius 切面半径，视觉发射长度`m`
+     * @property height 高度`m`
+     * @property [hpr] {@link HeadingPitchRoll} 欧拉角
+     * @property [color = {@link Color.LAWNGREEN}] 颜色
+     * @property [speed = 50] 波纹速度
+     * @property [thin = 0.25] 波纹厚度 `[0, 1]`
+     * @property [slices = 120] 圆锥侧面切片数
+     * @property [mode = {@link ConicMode.MATH}] 计算锥形的模式
+     */
+    export type Radar<T> = Layer.AddParam<T> & {
+      position: Cartesian3
+      radius: number
+      height: number
+      hpr?: HeadingPitchRoll
+      color?: Color
+      speed?: number
+      thin?: number
+      slices?: number
+      mode?: ConicMode
+    }
   }
 
   /**
@@ -5548,18 +5024,60 @@ declare module "@anstec/earth" {
     destroy(): void
   }
 
+  export namespace Weather {
+    export type WeatherType = "rain" | "snow" | "fog"
+
+    /**
+     * @property [id] ID
+     * @property [data] 附加数据
+     * @property position {@link Cartesian3} 位置
+     * @property type {@link WeatherType} 天气类型
+     * @property [effectRadius = 100000] 粒子发射器覆盖半径
+     * @property [particleSize] 粒子近似大小
+     */
+    export type AddParam<T> = {
+      id?: string
+      data?: T
+      position: Cartesian3
+      type: WeatherType
+      effectRadius?: number
+      particleSize?: number
+    }
+  }
+
   /**
    * @description 天气特效
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
    * const earth = useEarth()
+   * const weather = earth.weather
+   *
+   * //or
    * const weather = new Weather(earth)
    * ```
    */
   export class Weather<T = unknown> {
     scene: Scene
+    /**
+     * @description 大气/照明恢复的距离，仅当启用自然光照或大气层效果时生效
+     */
+    fadeInDistance: number
+    /**
+     * @description 一切都被点亮的距离，仅当启用自然光照或大气层效果时生效
+     */
+    fadeOutDistance: number
     constructor(earth: Earth)
+    /**
+     * @description 启用太阳光源的自然光照
+     * @param value 是否启用
+     */
+    useNaturalLight(value: boolean): void
+    /**
+     * @description 启用大气层效果
+     * @param value 是否启用
+     */
+    enableAtmosphere(value: boolean): void
     /**
      * @description 新增天气特效
      * @param param {@link Weather.AddParam} 天气参数
@@ -5595,6 +5113,130 @@ declare module "@anstec/earth" {
     destroy(): void
   }
 
+  export namespace WindField {
+    /**
+     * @description 维度
+     * @property lon 经度
+     * @property lat 纬度
+     * @property lev 高度
+     */
+    export type Dimensions = {
+      lon: number
+      lat: number
+      lev: number
+    }
+
+    /**
+     * @description 范围
+     * @property array 数据数组
+     * @property min 最小值
+     * @property max 最大值
+     */
+    export type Range = {
+      array: Float32Array | number[]
+      min: number
+      max: number
+    }
+
+    /**
+     * @description 数据
+     * @property dimensions {@link Dimensions} 维度
+     * @property lon {@link Range} 经度范围
+     * @property lat {@link Range} 纬度范围
+     * @property lev {@link Range} 高度范围
+     * @property U {@link Range} U范围
+     * @property V {@link Range} V范围
+     */
+    export type Data = {
+      dimensions: Dimensions
+      lon: Range
+      lat: Range
+      lev: Range
+      U: Range
+      V: Range
+    }
+
+    /**
+     * @property data {@link Data} 数据
+     * @property [params] {@link Param} 参数
+     */
+    export type ConstructorOptions = {
+      data: Data
+      params?: Param
+    }
+
+    /**
+     * @description 视图参数
+     * @property lonRange {@link Cartesian2} 经度范围
+     * @property latRange {@link Cartesian2} 纬度范围
+     * @property pixelSize 像素大小
+     */
+    export type ViewerParam = {
+      lonRange: Cartesian2
+      latRange: Cartesian2
+      pixelSize: number
+    }
+
+    /**
+     * @property [maxParticles = 4096] 最大粒子数`[0, 65536]`
+     * @property [particleHeight = 100] 粒子高度`[0, 10000]`
+     * @property [fadeOpacity = 0.9] 粒子拖尾`[0, 1]`
+     * @property [dropRate = 0.003] 粒子移动到随机位置频率，避免在重复位置出现`[0, 0.1]`
+     * @property [dropRateBump = 0.01] 基于粒子随机移动频率的补充`[0, 0.2]`
+     * @property [speedFactor = 0.4] 粒子移动速度`[0, 8]`
+     * @property [lineWidth = 2] 粒子宽度`[0, 16]`
+     * @property [particlesTextureSize] 粒子格栅大小，该值自动计算，无需手动添加
+     */
+    export type Param = {
+      maxParticles?: number
+      particleHeight?: number
+      fadeOpacity?: number
+      dropRate?: number
+      dropRateBump?: number
+      speedFactor?: number
+      lineWidth?: number
+      particlesTextureSize?: number
+    }
+
+    /**
+     * @description 纹理选项
+     * @property context 上下文
+     * @property [width] 宽度
+     * @property [height] 高度
+     * @property pixelFormat {@link PixelFormat} 像素格式
+     * @property pixelDatatype {@link PixelDatatype} 信息类型
+     * @property [flipY] Y
+     * @property [sampler] {@link Sampler} 采样
+     * @property [source] 源
+     */
+    export type TextureOptions = {
+      context: any
+      width?: number
+      height?: number
+      pixelFormat: PixelFormat
+      pixelDatatype: PixelDatatype
+      flipY?: boolean
+      sampler?: Sampler
+      source?: { arrayBufferView?: Float32Array }
+    }
+
+    /**
+     * @description 渲染状态
+     * @property depthTest 深度测试
+     * @property depthMask 开启深度
+     * @property blending 混合
+     */
+    export type RenderState = {
+      viewport: undefined
+      depthTest: {
+        enabled: boolean
+        func?: DepthFunction
+      }
+      depthMask: boolean
+      blending?: { enabled: boolean } | any
+    }
+  }
+
   /**
    * @description 风场、洋流
    * @param earth {@link Earth} 地球实例
@@ -5626,280 +5268,848 @@ declare module "@anstec/earth" {
     destroy(): void
   }
 
+  export namespace PhasedSensorPrimitive {
+    /**
+     * @property [id] ID
+     * @property [show = true] 是否显示
+     * @property [slice = 32] 切分程度
+     * @property [modelMatrix = {@link Matrix4.IDENTITY}] 矩阵模型
+     * @property [radius = {@link Number.POSITIVE_INFINITY}] 扫描半径
+     * @property [xHalfAngle = 0] 左右扫描半角，与行进方向垂直向上
+     * @property [yHalfAngle = 0] 前后扫描半角，与行进方向垂直向上
+     * @property [lineColor = {@link Color.WHITE}] 线条颜色
+     * @property [material] {@link Material} 统一材质
+     * @property [showSectorLines = true] 是否显示扇面的线
+     * @property [showSectorSegmentLines = true] 是否显示扇面和圆顶面连接的线
+     * @property [showLateralSurfaces = true] 是否显示侧面
+     * @property [lateralSurfaceMaterial] {@link Material} 侧面材质
+     * @property [showDomeSurfaces = true] 是否显示圆顶表面
+     * @property [domeSurfaceMaterial] {@link Material} 圆顶表面材质
+     * @property [showDomeLines = true] 是否显示圆顶面线
+     * @property [showIntersection = true] 是否显示与地球相交的线
+     * @property [intersectionColor = {@link Color.WHITE}] 与地球相交的线的颜色
+     * @property [intersectionWidth = 5] 与地球相交的线的宽度`px`
+     * @property [showThroughEllipsoid = false] 是否穿过地球
+     * @property [showWaves = false] 是否显示雷达波
+     * @property [showScanPlane = true] 是否显示扫描面
+     * @property [scanPlaneColor = {@link Color.WHITE}] 扫描面颜色
+     * @property [scanPlaneMode = {@link ScanMode.HORIZONTAL}] 扫描面模式
+     * @property [scanPlaneRate = 10] 扫描速率
+     * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 可视范围设置
+     * @property [showGradient = false] 是否启用渐变色
+     * @property [gradientColors] 有序渐变色组，固定5个
+     * @property [gradientSteps] 渐变色占比，取值`[0,1]`，固定3个
+     * @property [showGradientScan = false] 是否启用渐变色(扫描面)
+     * @property [gradientColorsScan] 有序渐变色组(扫描面)，固定5个
+     * @property [gradientStepsScan] 渐变色占比(扫描面)，取值(0,1)，固定3个
+     */
+    export type ConstructorOptions = {
+      id?: Object
+      show?: boolean
+      slice?: number
+      modelMatrix?: Matrix4
+      radius?: number
+      xHalfAngle?: number
+      yHalfAngle?: number
+      lineColor?: Color
+      material?: Material
+      showSectorLines?: boolean
+      showSectorSegmentLines?: boolean
+      showLateralSurfaces?: boolean
+      lateralSurfaceMaterial?: Material
+      showDomeSurfaces?: boolean
+      domeSurfaceMaterial?: Material
+      showDomeLines?: boolean
+      showIntersection?: boolean
+      intersectionColor?: Color
+      intersectionWidth?: number
+      showThroughEllipsoid?: boolean
+      showWaves?: boolean
+      showScanPlane?: boolean
+      scanPlaneColor?: Color
+      scanPlaneMode?: ScanMode
+      scanPlaneRate?: number
+      distanceDisplayCondition?: DistanceDisplayCondition
+      showGradient?: boolean
+      gradientColors?: Color[]
+      gradientSteps?: number[]
+      showGradientScan?: boolean
+      gradientColorsScan?: Color[]
+      gradientStepsScan?: number[]
+    }
+  }
+
   /**
-   * @description 地球
-   * @example
-   * ```
-   * //use hook
-   * //already have a viewer
-   * const earth = useEarth("my_earth", viewer)
-   *
-   * //use hook
-   * //no available viewer
-   * const earth = useEarth()
-   *
-   * //use class
-   * //already have a viewer
-   * const earth = new Earth(viewer)
-   *
-   * //use class
-   * //no available viewer
-   * const earth = new Earth("GisContainer", {
-   *  animation: true,
-   *  timeline: true,
-   *  shouldAnimate: true,
-   *  fullscreenButton: false,
-   *  geocoder: false,
-   *  homeButton: false,
-   *  sceneModePicker: false,
-   *  scene3DOnly: false,
-   *  sceneMode: SceneMode.SCENE3D,
-   *  selectionIndicator: false,
-   *  infoBox: false,
-   *  baseLayerPicker: false,
-   *  navigationHelpButton: false,
-   *  vrButton: false,
-   *  shadows: false,
-   *  mapMode2D: MapMode2D.INFINITE_SCROLL,
-   *  mapProjection: new WebMercatorProjection(Ellipsoid.WGS84),
-   * })
-   * ```
+   * @description 相控阵传感器图元
    */
-  export class Earth {
-    /**
-     * @description ID
-     */
-    id: string
-    /**
-     * @description HTML容器
-     */
-    container: HTMLElement
-    /**
-     * @description 视窗实列
-     */
-    viewer: Viewer
-    /**
-     * @description 场景实例
-     */
-    scene: Scene
-    /**
-     * @description 相机实例
-     */
-    camera: Camera
-    /**
-     * @description 时钟实例
-     */
-    clock: Clock
-    /**
-     * @description 坐标系
-     */
-    coordinate: Coordinate
-    /**
-     * @description 全局事件
-     */
-    globalEvent: GlobalEvent
-    /**
-     * @description 动画控件
-     */
-    animation: HTMLElement
-    /**
-     * @description 时间轴控件
-     */
-    timeline: HTMLElement
-    /**
-     * @description 构造器函数
-     * @param container 容器ID / 容器 / {@link Viewer} 实例
-     * @param cesiumOptions {@link Viewer.ConstructorOptions} 视图选项
-     * @param options {@link Earth.ConstructorOptions} 参数
-     */
-    constructor(
-      container: string | HTMLDivElement | Viewer,
-      cesiumOptions?: Viewer.ConstructorOptions,
-      options?: Earth.ConstructorOptions
-    )
-    /**
-     * @description 使用Echarts插件并映射坐标系统
-     * 1. 该坐标系统跟随Cesium视角调整Echarts坐标
-     * 2. 该坐标系统由于Echarts限制，仅支持单实例
-     * 3. 对应视图需要开启Echarts插件时运行该方法
-     * 4. 其他Echarts图形实例也可加载，但不随视图更新位置
-     * @example
-     * ```
-     * const earth = useEarth()
-     * earth.useEcharts()
-     * const overlay = new Overlay({ earth, echartsOption })
-     * ```
-     */
-    useEcharts(): void
-    /**
-     * @description 使用默认图层类
-     * @returns 默认暴露的图层类
-     */
-    useDefaultLayers(): GraphicsLayer
-    /**
-     * @description 使用默认测量类
-     * @returns 测量工具
-     */
-    useMeasure(): Measure
-    /**
-     * @description 使用默认绘制类
-     * @returns 绘制工具
-     */
-    useDraw(): Draw
-    /**
-     * @description 使用默认上下文菜单
-     * @returns 上下文菜单实例
-     */
-    useContextMenu(): ContextMenu
-    /**
-     * @description 锁定相机
-     * @param param {@link Earth.CameraLockOptions} 参数
-     * @example
-     * ```
-     * const earth = useEarth()
-     * earth.lockCamera({
-     *  enable: true,
-     *  rectangle: Rectangle.fromDegrees(72.004, 0.8293, 137.8347, 55.8271),
-     *  height: 1000000,
-     * })
-     * ```
-     */
-    lockCamera(param?: Earth.CameraLockOptions): void
-    /**
-     * @description 添加地图影像层
-     * @param provider 影像图层
-     * @example
-     * ```
-     * const earth = useEarth()
-     * const imageryProvider = useTileImageryProvider({ url: "/api/imagery", maximumLevel: 18 })
-     * earth.addImageryProvider(imageryProvider)
-     * ```
-     */
-    addImageryProvider(provider: ImageryProvider): ImageryLayer
-    /**
-     * @description 移除所有地图影像层
-     */
-    removeImageryProvider(): void
-    /**
-     * @description 移除地图影像层
-     * @param layer 图层
-     * @example
-     * ```
-     * const earth = useEarth()
-     * const imageryProvider = useTileImageryProvider({ url: "/api/imagery", maximumLevel: 18 })
-     *
-     * //remove one
-     * earth.removeImageryProvider(imageryProvider)
-     *
-     * //remove all
-     * earth.removeImageryProvider()
-     * ```
-     */
-    removeImageryProvider(layer: ImageryLayer): void
-    /**
-     * @description 设置地形
-     * @param terrainProvider 地形
-     * @example
-     * ```
-     * const earth = useEarth()
-     * const terrainProvider = await CesiumTerrainProvider.fromUrl("/api/terrain")
-     * earth.setTerrain(terrainProvider)
-     * ```
-     */
-    setTerrain(terrainProvider: TerrainProvider): void
-    /**
-     * @description 开启 / 关闭地形深度测试
-     * @param value
-     * @example
-     * ```
-     * const earth = useEarth()
-     *
-     * //turn on
-     * earth.setDepthTestAgainstTerrain(true)
-     *
-     * //turn off
-     * earth.setDepthTestAgainstTerrain(false)
-     * ```
-     */
-    setDepthTestAgainstTerrain(value: boolean): void
-    /**
-     * @description 移动相机到默认位置
-     */
-    flyHome(): void
-    /**
-     * @description 移动相机到指定位置
-     * @param target 目标位置参数
-     * @example
-     * ```
-     * const earth = useEarth()
-     * earth.flyTo({ position: Cartesian3.fromDegrees(104, 31) })
-     * ```
-     */
-    flyTo(target: {
-      position?: Cartesian3
-      rectangle?: Rectangle
-      duration?: number
-      orientation?: {
-        heading?: number
-        pitch?: number
-        roll?: number
-      }
-    }): void
-    flyTo(target: {
-      position?: Cartesian3
-      rectangle?: {
-        west: number
-        south: number
-        east: number
-        north: number
-      }
-      duration?: number
-      orientation?: {
-        heading?: number
-        pitch?: number
-        roll?: number
-      }
-    }): void
-    /**
-     * @description 设置地图视图模式
-     * @param mode  2D视图，3D视图
-     * @param duration 动画时间，默认`2s`
-     * @example
-     * ```
-     * const earth = useEarth()
-     *
-     * //2D
-     * earth.morphTo(MapMode.Scene2D)
-     *
-     * //3D
-     * earth.morphTo(MapMode.Scene3D)
-     * ```
-     */
-    morphTo(mode: DefaultContextMenuItem.Scene2D | DefaultContextMenuItem.Scene3D, duration?: number): void
-    /**
-     * @description 销毁
-     */
+  export class PhasedSensorPrimitive {
+    readonly id: Object | undefined
+    readonly show: boolean
+    readonly slice: number
+    readonly modelMatrix: Matrix4
+    readonly radius: number
+    readonly xHalfAngle: number
+    readonly yHalfAngle: number
+    readonly lineColor: Color
+    readonly material: Material
+    readonly showSectorLines: boolean
+    readonly showSectorSegmentLines: boolean
+    readonly showLateralSurfaces: boolean
+    readonly lateralSurfaceMaterial: Material
+    readonly showDomeSurfaces: boolean
+    readonly domeSurfaceMaterial: Material
+    readonly showDomeLines: boolean
+    readonly showIntersection: boolean
+    readonly intersectionColor: Color
+    readonly intersectionWidth: number
+    readonly showThroughEllipsoid: boolean
+    readonly showWaves: boolean
+    readonly showScanPlane: boolean
+    readonly scanPlaneColor: Color
+    readonly scanPlaneMode: ScanMode
+    readonly scanPlaneRate: number
+    readonly distanceDisplayCondition?: DistanceDisplayCondition
+    readonly showGradient: boolean
+    readonly gradientColors: Color[]
+    readonly gradientSteps: number[]
+    readonly showGradientScan: boolean
+    readonly gradientColorsScan: Color[]
+    readonly gradientStepsScan: number[]
+    constructor(options?: PhasedSensorPrimitive.ConstructorOptions)
+    update(frameState: FrameState): void
+    isDestroyed(): boolean
     destroy(): void
   }
 
-  /**
-   * @description 流动线条材质
-   */
-  export class PolylineFlowingDashMaterial extends Material {
-    constructor(options?: CustomMaterial.ConstructorOptions)
+  export namespace CameraTool {
+    /**
+     * @description 根据层级获取对应的最大高度
+     * @param level 层级
+     * @returns 最大高度
+     */
+    const getLevelMaxHeight: (level: number) => number
+    /**
+     * @description 根据高度获取所属层级信息
+     * @param height 高度
+     * @returns 层级
+     */
+    const getLevelByHeight: (height: number) => number
+    /**
+     * @description 锁定相机到矩形区域内
+     * @param camera 相机
+     * @param rect 锁定矩形区域范围
+     * @param [height] 锁定高度
+     */
+    const LockCameraInRectangle: (camera: Camera, rect: Rectangle, height?: number) => void
+    /**
+     * @description 根据屏幕坐标选取在地球上的笛卡尔三系坐标点
+     * @param point 屏幕坐标
+     * @param scene 当前场景
+     * @param camera 当前相机
+     * @returns 对应的笛卡尔三系坐标点或选取失败返回`undefined`
+     */
+    const PickPointOnEllipsoid: (point: Cartesian2, scene: Scene, camera: Camera) => Cartesian3 | undefined
+    /**
+     * @description 生成视图矩形范围
+     * @param [viewRectangle] 相机区域
+     * @returns 范围
+     */
+    const viewRectangleToLonLatRange: (viewRectangle?: Rectangle) => {
+      lon: {
+        min: number
+        max: number
+      }
+      lat: {
+        min: number
+        max: number
+      }
+    }
   }
 
   /**
-   * @description 波动线条材质
+   * @description 算法
+   * 1. 电子围栏
+   * 2. 航线交汇
+   * 3. 区域告警
+   * 4. 路线规划
+   * 5. 动态绘制
+   * 6. 地形测量
    */
-  export class PolylineFlowingWaveMaterial extends Material {
-    constructor(options?: CustomMaterial.ConstructorOptions)
+  export namespace Figure {
+    export type Coordinate = Cartographic | Geographic
+    export type GeoTurple = [number, number]
+    export type Units =
+      | "meters"
+      | "millimeters"
+      | "centimeters"
+      | "kilometers"
+      | "acres"
+      | "miles"
+      | "nauticalmiles"
+      | "inches"
+      | "yards"
+      | "feet"
+      | "radians"
+      | "degrees"
+      | "hectares"
+    /**
+     * @description 叉乘
+     * 1. 多边形凹凸性
+     * 2. 点所处直线的方位
+     * 3. 三点构成的向量的顺逆时针方向
+     * @param a 夹角点 [经度，纬度]
+     * @param b 边缘点 [经度，纬度]
+     * @param c 边缘点 [经度，纬度]
+     * @returns 返回`number`值
+     * 1. 返回值小于`0`则表示向量ac在ab的逆时针方向
+     * 2. 返回值大于`0`则表示向量ac在ab的顺时针方向
+     * 3. 返回值等于`0`则表示向量ab与ac共线
+     */
+    const CrossProduct: (a: GeoTurple, b: GeoTurple, c: GeoTurple) => number
+    /**
+     * @description 计算球体上两点的最近距离
+     * @param from 坐标点
+     * @param to 坐标点
+     * @param [units = "meters"] 单位
+     * @returns 距离
+     */
+    const CalcDistance: <T extends Coordinate>(from: T, to: T, units?: Units) => number
+    /**
+     * @description 计算球体上两点的大圆距离
+     * @param from 坐标点
+     * @param to 坐标点
+     * @param [units = "meters"] 单位
+     * @returns 距离
+     */
+    const CalcRhumbDistance: <T extends Coordinate>(from: T, to: T, units?: Units) => number
+    /**
+     * @description 计算球体上两点的贴地距离
+     * @param from 坐标点
+     * @param to 坐标点
+     * @param scene 场景
+     * @param terrainProvider 地形图层
+     * @returns 距离 `m`
+     */
+    const CalcGroundDistance: <T extends Coordinate>(
+      from: T,
+      to: T,
+      scene: Scene,
+      terrainProvider: TerrainProvider
+    ) => Promise<number>
+    /**
+     * @description 根据经纬度，距离，角度计算另外一个点
+     * @param longitude 经度 <角度制>
+     * @param latitude 纬度 <角度制>
+     * @param distance 距离 `m`
+     * @param angle 角度 <角度制>
+     * @return 另外的点
+     */
+    const CalcPointByPointDistanceAngle: (
+      longitude: number,
+      latitude: number,
+      distance: number,
+      angle: number
+    ) => number[]
+    /**
+     * @description 计算点是否在矩形中
+     * @param point 坐标点
+     * @param rectangle 矩形
+     * @returns `boolean`值
+     */
+    const PointInRectangle: (point: Cartographic, rectangle: Rectangle) => boolean
+    /**
+     * @description 计算点是否在圆内
+     * @param point 坐标点
+     * @param center 圆心
+     * @param radius 半径
+     * @param [units = "meters"] 单位
+     * @returns `boolean`值
+     */
+    const PointInCircle: <T extends Coordinate>(point: T, center: T, radius: number, units?: Units) => boolean
+    /**
+     * @description 计算点是否在多边形内
+     * @param point 坐标点
+     * @param polygon 多边形点坐标
+     * @returns `boolean`值
+     */
+    const PointInPolygon: <T extends Coordinate>(point: T, polygon: T[]) => boolean
+    /**
+     * @description 计算两条线段是否相交
+     * @param line1 线段1
+     * @param line2 线段2
+     * @returns `boolean`值
+     */
+    const PolylineIntersectPolyline: <T extends Coordinate>(line1: [T, T], line2: [T, T]) => boolean
+    /**
+     * @description 计算折线段是否与矩形相交
+     * @param polyline 折线段
+     * @param rectangle 矩形
+     * @returns `boolean`值
+     */
+    const PolylineIntersectRectangle: (polyline: Cartographic[], rectangle: Rectangle) => boolean
+    /**
+     * @description 计算角度，以正北方向为基准
+     * @param from 基准原点
+     * @param to 参考点
+     * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
+     */
+    const CalcBearing: <T extends Coordinate>(from: T, to: T) => number
+    /**
+     * @description 计算大圆角度，以正北方向为基准
+     * @param from 基准原点
+     * @param to 参考点
+     * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
+     */
+    const CalcRhumbBearing: <T extends Coordinate>(from: T, to: T) => number
+    /**
+     * @description 计算三点夹角
+     * @param a 夹角点
+     * @param b 边缘点
+     * @param c 边缘点
+     * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
+     */
+    const CalcAngle: <T extends Coordinate>(a: T, b: T, c: T) => number
+    /**
+     * @description 计算两点中心点
+     * @param point1
+     * @param point2
+     * @returns 中心点
+     */
+    const CalcMidPoint: <T extends Coordinate>(point1: T, point2: T) => Coordinate
+    /**
+     * @description 计算多边形 / 多点的平面质心
+     * @param points 多边形或平面的顶点
+     * @param [withHeight = false] 是否计算时考虑高度
+     * @returns 质心
+     * @exception Polygon needs at least 4 vertexes.
+     */
+    const CalcMassCenter: (points: Coordinate[], withHeight?: boolean) => Coordinate
+    /**
+     * @description 计算一个一定位于多边形上的点
+     * @param polygon 多边形
+     * @returns 任意多边形上的点
+     * @exception Polygon needs at least 4 vertexes.
+     */
+    const CalcPointOnPolygon: (polygon: Coordinate[]) => Coordinate
+    /**
+     * @descript 计算多边形面积
+     * @param polygon 多边形坐标
+     * @returns 面积 `㎡`
+     */
+    const CalcPolygonArea: (polygon: Coordinate[]) => number
+    /**
+     * @description 根据经纬度、椭圆半径及其旋转，生成对地投影椭圆 / 包络
+     * @param x 经度 <角度制>
+     * @param y 纬度 <角度制>
+     * @param radius1 x 轴半径 米
+     * @param radius2 y 轴半径 米
+     * @param rotate 旋转 <弧度制>
+     * @returns 包络点集合
+     */
+    const CalcEnvelope: (x: number, y: number, radius1: number, radius2: number, rotate: number) => number[][]
+    /**
+     * @description 根据高度和大圆弧长计算圆锥的真实高度和半径
+     * @param height 对地高度
+     * @param arc 大圆弧长
+     * @returns 真实高度和半径
+     */
+    const CalcConic: (height: number, arc: number) => { radius: number; heihgt: number }
+    /**
+     * @description 计算数学累进距离
+     * @param positions 坐标
+     * @returns 距离
+     */
+    const CalcMathDistance: (positions: GeoTurple[]) => number
+    /**
+     * @description 根基两点构成的直线及夹角、半径计算第三点
+     * @param target 基准点
+     * @param origin 起始点
+     * @param angle 角度
+     * @param radius 半径
+     * @param [revert = false] 是否逆时针
+     * @returns 第三点
+     */
+    const CalcThirdPoint: (
+      target: GeoTurple,
+      origin: GeoTurple,
+      angle: number,
+      radius: number,
+      revert?: boolean
+    ) => GeoTurple
+    /**
+     * @description 计算两点构成的数学角度、以正北方向为基准
+     * @param target 点1
+     * @param origin 点2
+     * @returns 角度 <弧度制>
+     */
+    const CalcAzimuth: (target: GeoTurple, origin: GeoTurple) => number
+    /**
+     * @description 计算三点的数学夹角
+     * @param a 边缘点
+     * @param b 夹角点
+     * @param c 边缘点
+     * @returns 数学角度值 <弧度制>
+     */
+    const CalcMathAngle: (a: GeoTurple, b: GeoTurple, c: GeoTurple) => number
+  }
+
+  export namespace Utils {
+    /**
+     * @description 获取随机ID
+     * @param [symbol = "-"] 连接符
+     * @returns 随机ID
+     */
+    const RandomUUID: (symbol?: UidFormat) => string
+    /**
+     * @description ID编码
+     * @param id ID
+     * @param [module] 模块
+     * @returns 编码结果
+     * @exception Invaid type of id, id must be string.
+     * @exception Invaid id string 'Ω'.
+     */
+    const EncodeId: (id: string, module?: string) => string
+    /**
+     * @description ID解码
+     * @param id 已编码ID
+     * @returns ID 模块
+     */
+    const DecodeId: (id: string) => { id: string; module?: string }
+    /**
+     * @description 格式化经度
+     * @param longitude 经度
+     * @param [format = CoorFormat.DMS] {@link CoorFormat} 格式
+     * @return 格式化结果
+     */
+    const formatGeoLongitude: (longitude: number, format?: CoorFormat) => string
+    /**
+     * @description 格式化纬度
+     * @param latitude 纬度
+     * @param format [format = CoorFormat.DMS] {@link CoorFormat} 格式
+     * @return 格式化结果
+     */
+    const formatGeoLatitude: (latitude: number, format?: CoorFormat) => string
+    /**
+     * @description 将SVG图片格式转换为Canvas
+     * @param svg SVG图片
+     * @param [width = 48] 宽度
+     * @param [height = 48] 高度
+     * @returns Canvas结果
+     */
+    const ConvertSvg2Canvas: (svg: string, width?: number, height?: number) => HTMLCanvasElement
   }
 
   /**
-   * @description 拖尾线条材质
+   * @description 动态绘制的状态管理
    */
-  export class PolylineTrailingMaterial extends Material {
-    constructor(options?: CustomMaterial.ConstructorOptions)
+  export class State {
+    static start(): void
+    static end(): void
+    static isOperate(): boolean
   }
+
+  /**
+   * @description 动态笔触
+   */
+  export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 笔触不支持编辑，添加对象仅增加图形
+     * @param option 笔触参数
+     */
+    add(option: PolylineLayer.AddParam<T>): void
+    /**
+     * @description 笔触
+     * @param param {@link Draw.Stroke} 笔触参数
+     * @returns 笔触沿途点
+     */
+    draw(param: Draw.Stroke): Promise<Draw.StrokeReturn>
+    edit(id: string): Promise<unknown>
+  }
+
+  /**
+   * @description 动态绘制攻击箭头
+   */
+  export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 添加可编辑对象
+     * @param option 新增参数以及可编辑附加数据
+     */
+    add(option: PolygonLayer.AddParam<Dynamic.AttackArrow>): void
+    /**
+     * @description 动态画攻击箭头
+     * @param param {@link Draw.AttackArrow} 画箭头参数
+     * @returns 攻击发起点和沿途选点的坐标
+     */
+    draw(param: Draw.AttackArrow): Promise<Draw.AttackArrowReturn>
+    /**
+     * @description 编辑
+     * @param id 目标ID
+     * @returns
+     */
+    edit(id: string): Promise<Draw.AttackArrowReturn>
+  }
+
+  /**
+   * @description 动态绘制广告牌
+   */
+  export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 添加可编辑对象
+     * @param option 新增参数以及可编辑附加数据
+     */
+    add(option: BillboardLayer.AddParam<Dynamic.Billboard>): void
+    /**
+     * @description 动态画广告牌
+     * @param param {@link Draw.Billboard} 画广告牌参数
+     * @returns 点的坐标
+     */
+    draw(param: Draw.Billboard): Promise<Draw.BillboardReturn[]>
+    /**
+     * @description 编辑
+     * @param id 目标ID
+     * @returns
+     */
+    edit(id: string): Promise<Draw.BillboardReturn>
+  }
+
+  /**
+   * @description 动态绘制圆
+   */
+  export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 添加可编辑对象
+     * @param option 新增参数以及可编辑附加数据
+     */
+    add(option: EllipseLayer.AddParam<Dynamic.Circle>): void
+    /**
+     * @description 动态画圆
+     * @param param {@link Draw.Circle} 画圆参数
+     * @returns 圆心坐标和半径
+     */
+    draw(param: Draw.Circle): Promise<Draw.CircleReturn>
+    /**
+     * @description 编辑
+     * @param id 目标ID
+     * @returns
+     */
+    edit(id: string): Promise<unknown>
+  }
+
+  /**
+   * @description 动态绘制标签
+   */
+  export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 添加可编辑对象
+     * @param option 新增参数以及可编辑附加数据
+     */
+    add(option: LabelLayer.AddParam<Dynamic.Label>): void
+    /**
+     * @description 动态画标签
+     * @param param {@link Draw.Label} 画标签参数
+     * @returns 标签的坐标
+     */
+    draw(param: Draw.Label): Promise<Draw.LabelReturn[]>
+    /**
+     * @description 编辑
+     * @param id 目标ID
+     * @returns
+     */
+    edit(id: string): Promise<Draw.LabelReturn>
+  }
+
+  /**
+   * @description 动态绘制模型
+   */
+  export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 添加可编辑对象
+     * @param option 新增参数以及可编辑附加数据
+     */
+    add(option: ModelLayer.AddParam<Dynamic.Model>): void
+    /**
+     * @description 动态画模型
+     * @param param {@link Draw.Model} 画模型参数
+     * @returns 点的坐标
+     */
+    draw(param: Draw.Model): Promise<Draw.ModelReturn[]>
+    /**
+     * @description 编辑
+     * @param id 目标ID
+     * @returns
+     */
+    edit(id: string): Promise<Draw.ModelReturn>
+  }
+
+  /**
+   * @description 动态绘制嵌击箭头
+   */
+  export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 添加可编辑对象
+     * @param option 新增参数以及可编辑附加数据
+     */
+    add(option: PolygonLayer.AddParam<Dynamic.PincerArrow>): void
+    /**
+     * @description 动态画钳击箭头
+     * @param param {@link Draw.PincerArrow} 画箭头参数
+     * @returns 沿途选点的坐标
+     */
+    draw(param: Draw.PincerArrow): Promise<Draw.PincerArrowReturn>
+    /**
+     * @description 编辑
+     * @param id 目标ID
+     * @returns
+     */
+    edit(id: string): Promise<unknown>
+  }
+
+  /**
+   * @description 动态绘制点
+   */
+  export class PointDynamic extends Dynamic<PointLayer<Dynamic.Point>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 添加可编辑对象
+     * @param option 新增参数以及可编辑附加数据
+     */
+    add(option: PointLayer.AddParam<Dynamic.Point>): void
+    /**
+     * @description 动态画点
+     * @param param {@link Draw.Point} 画点参数
+     * @returns 点的坐标
+     */
+    draw(param: Draw.Point): Promise<Draw.PointReturn[]>
+    /**
+     * @description 编辑
+     * @param id 目标ID
+     * @returns
+     */
+    edit(id: string): Promise<Draw.PointReturn>
+  }
+
+  /**
+   * @description 动态绘制多边形
+   */
+  export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 添加可编辑对象
+     * @param option 新增参数以及可编辑附加数据
+     */
+    add(option: PolygonLayer.AddParam<Dynamic.Polygon>): void
+    /**
+     * @description 动态画多边形
+     * @param param {@link Draw.Polygon} 画多边形参数
+     * @returns 多边形点的坐标
+     */
+    draw(param: Draw.Polygon): Promise<Draw.PolygonReturn>
+    /**
+     * @description 编辑
+     * @param id 目标ID
+     * @returns
+     */
+    edit(id: string): Promise<Draw.PolygonReturn>
+  }
+
+  /**
+   * @description 动态绘制折线段
+   */
+  export class PolylineDynamic extends Dynamic<PolylineLayer<Dynamic.Polyline>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 添加可编辑对象
+     * @param option 新增参数以及可编辑附加数据
+     */
+    add(option: PolylineLayer.AddParam<Dynamic.Polyline>): void
+    /**
+     * @description 动态画线段
+     * @param param {@link Draw.Polyline} 画线段参数
+     * @returns 线段点的坐标
+     * @exception A certain material type is required.
+     */
+    draw(param: Draw.Polyline): Promise<Draw.PolylineReturn>
+    /**
+     * @description 编辑
+     * @param id 目标ID
+     * @returns
+     */
+    edit(id: string): Promise<Draw.PolylineReturn>
+  }
+
+  /**
+   * @description 动态绘制矩形
+   */
+  export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 添加可编辑对象
+     * @param option 新增参数以及可编辑附加数据
+     */
+    add(option: RectangleLayer.AddParam<Dynamic.Rectangle>): void
+    /**
+     * @description 动态画矩形
+     * @param param {@link Draw.Rectangle} 画矩形参数
+     * @returns 矩形
+     */
+    draw(param: Draw.Rectangle): Promise<Draw.RectangleReturn>
+    /**
+     * @description 编辑
+     * @param id 目标ID
+     * @returns
+     */
+    edit(id: string): Promise<Draw.RectangleReturn>
+  }
+
+  /**
+   * @description 动态绘制直线箭头
+   */
+  export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightArrow>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 添加可编辑对象
+     * @param option 新增参数以及可编辑附加数据
+     */
+    add(option: PolygonLayer.AddParam<Dynamic.StraightArrow>): void
+    /**
+     * @description 动态画直线箭头
+     * @param param {@link Draw.StraightArrow} 画箭头参数
+     * @returns 起始和结束点的坐标
+     */
+    draw(param: Draw.StraightArrow): Promise<Draw.StraightArrowReturn>
+    /**
+     * @description 编辑
+     * @param id 目标ID
+     * @returns
+     */
+    edit(id: string): Promise<unknown>
+  }
+
+  /**
+   * @description 动态绘制墙体
+   */
+  export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
+    type: string
+    constructor(earth: Earth)
+    /**
+     * @description 添加可编辑对象
+     * @param option 新增参数以及可编辑附加数据
+     */
+    add(option: WallLayer.AddParam<Dynamic.Wall>): void
+    /**
+     * @description 动态画墙体
+     * @param param {@link Draw.Wall} 画墙体参数
+     * @returns 墙体点的坐标
+     */
+    draw(param: Draw.Wall): Promise<Draw.WallReturn>
+    /**
+     * @description 编辑
+     * @param id 目标ID
+     * @returns
+     */
+    edit(id: string): Promise<Draw.WallReturn>
+  }
+
+  /**
+   * @description 默认提供图形类
+   * @example
+   * ```
+   * const earth = useEarth()
+   * const layers = new GraphicsLayer(earth)
+   * //or
+   * const layers = earth.useDefaultLayers()
+   * ```
+   */
+  export class GraphicsLayer {
+    readonly allowDestroy: boolean
+    billboard: BillboardLayer
+    ellipse: EllipseLayer
+    point: PointLayer
+    polygon: PolygonLayer
+    polyline: PolylineLayer
+    rectangle: RectangleLayer
+    /**
+     * @deprecated 已废弃，请使用 `WallLayer` 手动初始化
+     */
+    wall: WallLayer
+    constructor(earth: Earth)
+    /**
+     * @description 重置图层
+     * @example
+     * ```
+     * const earth = useEarth()
+     * const layers = new GraphicsLayer(earth)
+     * layers.reset()
+     * ```
+     */
+    reset(): void
+    /**
+     * @description 强制销毁
+     * @example
+     * ```
+     * const earth = useEarth()
+     * const layers = new GraphicsLayer(earth)
+     * layers.forceDestroy()
+     * ```
+     */
+    forceDestroy(): void
+  }
+
+  /**
+   * @description 初始化地球
+   * @param [id = "GisContainer"] 当前地球的ID
+   * @param [ref = "GisContainer"] 容器ID / 容器实例 / Viewer实例
+   * @param [cesiumOptions] Cesium设置
+   * @param [options] 设置
+   * @returns 地球实例
+   */
+  export const useEarth: (
+    id?: string,
+    ref?: string | HTMLDivElement | Viewer,
+    cesiumOptions?: Viewer.ConstructorOptions,
+    options?: Earth.ConstructorOptions
+  ) => Earth
+
+  /**
+   * @description 销毁指定地球并回收相关资源
+   * @param [id = "GisContainer"] 指定ID的地球
+   * @returns 成功返回 `true`，未找到指定地球返回 `false`
+   */
+  export const useEarthRecycle: (id?: string) => void
+
+  /**
+   * @description 使用CesiumNavigation初始化控制摇杆
+   * @param earth 地球
+   * @param [option] 控制摇杆参数
+   * @returns 控制遥杆
+   */
+  export const useNavigation: (earth: Earth, option?: CesiumNavigation.ConstructorOptions) => CesiumNavigation
+
+  /**
+   * @description 创建URL模板的地图瓦片图层
+   * @param option {@link UrlTemplateImageryProvider.ConstructorOptions} 参数
+   * @returns {UrlTemplateImageryProvider} 地图瓦片
+   */
+  export const useTileImageryProvider: (
+    option: UrlTemplateImageryProvider.ConstructorOptions
+  ) => UrlTemplateImageryProvider
 }

@@ -149,7 +149,7 @@ export class EllipseLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
       })
     }
 
-    super.save(ellipse.id, { primitive, data: { data: param.data } })
+    super.save(ellipse.id, { primitive, data: { module: param.module, data: param.data } })
   }
 
   /**

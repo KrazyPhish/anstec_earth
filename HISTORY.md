@@ -1,104 +1,80 @@
-# @anstec/earth
+## @anstec/earth
 
-Earth 模块源码
+### 版本更新历史记录
 
-src/  
-├── components/ 组件构成  
-│   ├── animation/ AnimationManager.ts 动画管理  
-│   ├── bus/ 事件总线
-│   │   ├── EventBus.ts 事件管理  
-│   │   └── GlobalEvent.ts 全局事件  
-│   ├── cluster/ 聚合图层  
-│   │   ├── Cluster.ts 聚合类  
-│   │   └── PrimitiveCluster.ts 图元聚合类  
-│   ├── coordinate/ 坐标  
-│   │   ├── Coordinate.ts 坐标转换  
-│   │   └── Geographic.ts 地理坐标实现  
-│   ├── covering/ Covering.ts 自定义覆盖物  
-│   ├── draw/ 动态绘制  
-│   │   ├── AttackArrowDynamic.ts 攻击箭头  
-│   │   ├── BillboardDynamic.ts 广告牌  
-│   │   ├── CircleDynamic.ts 圆  
-│   │   ├── Draw.ts 暴露的动态绘制类  
-│   │   ├── Dynamic.ts 各动态绘制抽象类  
-│   │   ├── LabelDynamic.ts 标签  
-│   │   ├── ModelDynamic.ts 模型  
-│   │   ├── PincerArrowDynamic.ts 钳击箭头  
-│   │   ├── PointDynamic.ts 点  
-│   │   ├── PolygonDynamic.ts 多边形  
-│   │   ├── PolylineDynamic.ts 折线段  
-│   │   ├── RectangleDynamic.ts 矩形  
-│   │   ├── StraightArrowDynamic.ts 直角箭头  
-│   │   ├── StrokeDynamic.ts 笔触  
-│   │   └── WallDynamic.ts 墙体  
-│   ├── heatmap/ Heatmap.ts 热力图  
-│   ├── layers/ 图层实现  
-│   │   ├── BillboardLayer.ts 广告牌图层  
-│   │   ├── DiffusePointLayer.ts 扩散点图层  
-│   │   ├── EllipseLayer.ts 圆、椭圆图层  
-│   │   ├── EllipsoidLayer.ts 椭球图层、模型包络实现  
-│   │   ├── GraphicsLayer.ts Earth默认提供的图层集合  
-│   │   ├── LabelLayer.ts 标签图层  
-│   │   ├── Layer 基本图层抽象类  
-│   │   ├── ModelLayer.ts 模型图层  
-│   │   ├── ParticleLayer.ts 粒子系统  
-│   │   ├── PointLayer.ts 点图层  
-│   │   ├── PolygonLayer.ts 折线段图层  
-│   │   ├── PolylineLayer.ts 线段图层  
-│   │   ├── RectangleLayer.ts 矩形图层  
-│   │   └── WallLayer.ts 墙体图层  
-│   ├── material/ 材质  
-│   │   ├── CustomMaterial.ts 自定义材质缓存Cache  
-│   │   ├── PolylineFlowingDashMaterial.ts 自定义流动线条材质  
-│   │   ├── PolylineFlowingWaveMaterial.ts 自定义波动线条材质  
-│   │   └── PolylineTrailingMaterial.ts 自定义拖尾线条材质  
-│   ├── measure/ Measure.ts 测量  
-│   ├── menu/ ContextMenu.ts 上下文菜单  
-│   ├── overlay/ EchartsOverlay.ts Echarts图表工具集成  
-│   ├── radar/ Radar.ts 雷达  
-│   ├── sensor/ Sensor.ts 传感器  
-│   ├── weather/ Weather.ts 天气特效  
-│   └── wind/ WindField.ts 风场  
-├── hooks/ 钩子  
-│   ├── useEarth.ts 初始化Earth / 托管Viewer  
-│   ├── useNavigation.ts 初始化地图控制摇杆  
-│   └── useTileImageryProvider.ts 生成Provider  
-├── images/ 图片资源  
-├── shaders/ 着色器  
-├── style/ 样式（上下文菜单、自定义覆盖物、动态扩散点等）  
-├── utils/ 其他工具  
-│   ├── Camera.ts 相机工具方法  
-│   ├── Figure.ts 功能算法  
-│   ├── State.ts 状态（绘制、测量）管理  
-│   └── Utils.ts 工具方法  
-└── cesium.extend.d.ts Cesium补充导出类型  
+#### Version 2.2.0
+1. 新增积云图层类，提供积云图层展示
+2. 类 `Geographic` 新增若干方法
+3. 类 `Coordinate` 新增若干方法
+4. 修正若干类型声明错误
+5. 废弃 `GraphicsLayer.wall`
+6. 废弃 `Polyline.addFlowingDash`
+7. 废弃 `Polyline.addFlowingWave`
+8. 废弃 `Earth.useDraw`，现 `Earth.drawTool` 可直接访问
+9. 废弃 `Earth.useDefaultLayers`，现 `Earth.layers` 可直接访问
+10. 废弃 `Earth.useMeasure`，现 `Earth.measure` 可直接访问
+11. 废弃 `Earth.useContextMenu`，现 `Earth.contextMenu` 可直接访问
 
-## 打包Earth模块
+#### Version 2.1.0
+1. 新增全局事件类，提供全局鼠标事件订阅
+2. 修订若干类型声明错误
 
-```sh
-npm run build
-```
+#### Version 2.0.0
+1. 新增动画管理器类，简化播放开发流程（entity实现，性能不如primitive）
+2. 发布至npm公开版本，版本号重置为2.0.0
 
-## 自动化生成说明文档并生成Vuepress设置
+#### Version 1.1.7
+1. 动态绘制类新增方法，订阅绘制或编辑时事件
+2. 动态绘制类新增方法，取消订阅绘制或编辑时事件
+3. 新增动画控件，支持随时间播放相关目标、轨迹
+4. 废弃枚举 `EditEventType` 改用 `SubEventType` 
+5. 热力图初始化参数中废弃接口 `useEntitiesIfAvailable`
+6. 模型参数中废弃接口 `timestamp`
+7. 模型运动参数中废弃接口 `projection`
+8. 多边形参数中废弃接口 `outlineColor` 和 `outlineWidth` 改用 `outline`
+9. 各图形参数废弃接口 `color` 改用 `materialType` 及 `materialUniforms`
+10. 波动线条废弃接口 `measure` 改用 `length`
+11. 地球实例废弃方法 `setViewer` 和 `setOption`
 
-```sh
-npm run doc
-```
 
-## 本地运行Vuepress在线文档
+#### Version 1.1.6
+1. 重构多边形的轮廓线实现，支持多种自定义材质类型
+2. 动态绘制类新增方法，手动添加可编辑对象
+3. 动态绘制类新增方法，订阅编辑对象结束事件
+4. 动态绘制类新增方法，取消订阅编辑对象结束事件
 
-```sh
-npm run doc:dev
-```
+#### Version 1.1.5
+1. 新增Earth集成Echarts视图
+2. EchartsGL坐标同步Cesium渲染
+3. 重构模型运动逻辑为单模型运动
+4. 现模型运动支持模拟非直线运动
+5. 模型包络不在随模型运动自动更新，更改为手动
+6. 相机工具中新增层级与高度相互关系获取
+7. 修复在没有地形数据的情况下三角测量失效的问题
+8. 扩散点图层类新增修改位置及附加数据方法
 
-## 打包文档
+#### Version 1.1.4
+1. 修复热力图在隐藏的情况下依然会重复刷新渲染的问题
+2. 新增扩散点图层（扩散特效）
+3. 重构天气特效类
+4. 天气特效类现由单一场景实现替换为粒子效果实现
+5. 新增天气特效可以按坐标添加
+6. 新增天气特效在具体范围内实现
+7. 新增天气特效附加数据管理
 
-```sh
-npm run doc:build
-```
+#### Version 1.1.3
+1. 新增动态画标签的功能  
+2. 新增自定义覆盖物工具
+3. 覆盖物可拖拽，实现信息框、信息提示
+4. 覆盖物可跟随，并自定义锚点
 
-## 打包Earth模块并生成发布的.d.ts
+#### Version 1.1.0  
+1. 删除绝大部分导出的接口  
+2. 重构接口到相对应的类的命名空间中  
+3. 优化接口命名  
 
-```sh
-npm run release
-```
+#### Version 1.0.17  
+1. 新增svg图片转canvas工具  
+2. 新增拖尾线条自定义材质  
+3. 重构波动线条和流动线条两种自定义材质  
+4. 修复热力图更新渲染问题，修正若干ts类型声明问题

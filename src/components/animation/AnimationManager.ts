@@ -1,6 +1,7 @@
 import {
   BillboardGraphics,
   Cartesian3,
+  DeveloperError,
   Entity,
   JulianDate,
   ModelGraphics,
@@ -42,6 +43,8 @@ export namespace AnimationManager {
 
 /**
  * @description 动画管理器
+ * @param earth {@link Earth} 地球实例
+ * @exception The instance of 'AnimationManager' can only be constructed once for each earth.
  * @example
  * ```
  * const earth = useEarth()
@@ -55,8 +58,8 @@ export namespace AnimationManager {
  *  billboard: {
  *    image: "/billboard.png",
  *    scale: 1,
- *  }, 
- })
+ *  },
+ * })
  */
 export class AnimationManager {
   private static recordCache: Map<string, boolean> = new Map()
@@ -66,7 +69,7 @@ export class AnimationManager {
 
   constructor(earth: Earth) {
     if (AnimationManager.recordCache.has(earth.id)) {
-      throw new Error("The instance of 'AnimationManager' can only be constructed once for each earth.")
+      throw new DeveloperError("The instance of 'AnimationManager' can only be constructed once for each earth.")
     }
     this.id = earth.id
     this.viewer = earth.viewer

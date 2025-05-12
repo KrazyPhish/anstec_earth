@@ -150,7 +150,7 @@ export class RectangleLayer<T = unknown> extends Layer<
       })
     }
 
-    super.save(rectangle.id, { primitive, data: { data: param.data } })
+    super.save(rectangle.id, { primitive, data: { module: param.module, data: param.data } })
   }
 
   /**

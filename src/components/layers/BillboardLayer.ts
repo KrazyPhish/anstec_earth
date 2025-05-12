@@ -135,7 +135,7 @@ export class BillboardLayer<T = unknown> extends Layer<BillboardCollection, Bill
 
     super.save(id, {
       primitive: new Billboard(option, this.collection),
-      data: { data: param.data },
+      data: { module: param.module, data: param.data },
     })
   }
 

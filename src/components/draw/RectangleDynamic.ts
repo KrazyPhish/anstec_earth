@@ -20,7 +20,7 @@ import { Dynamic } from "./Dynamic"
 const { min, max } = window.Math
 
 /**
- * @description 动态绘制点
+ * @description 动态绘制矩形
  */
 export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>> {
   public type: string = "Rectangle"

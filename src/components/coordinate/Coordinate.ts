@@ -3,6 +3,7 @@ import {
   Cartesian2,
   Cartesian3,
   Cartographic,
+  DeveloperError,
   Ellipsoid,
   Math,
   Scene,
@@ -173,7 +174,7 @@ export class Coordinate {
    * const geo = coordinate.screenToGeographic(position)
    * ```
    */
-  public screenToGeographic(position: Cartesian2) {
+  public screenToGeographic(position: Cartesian2): Geographic | undefined {
     const cartesian = this.screenToCartesian(position)
     if (!cartesian) return
     const cartographic = Cartographic.fromCartesian(cartesian)
@@ -193,9 +194,26 @@ export class Coordinate {
    * const carto = coordinate.screenToCartographic(position)
    * ```
    */
-  public screenToCartographic(position: Cartesian2) {
+  public screenToCartographic(position: Cartesian2): Cartographic | undefined {
     const cartesian = this.screenToCartesian(position)
     if (!cartesian) return
     return Cartographic.fromCartesian(cartesian)
+  }
+
+  /**
+   * @description 获取坐标处位置的地面高度
+   * @param position {@link Cartographic} | {@link Geographic} 地理或经纬度坐标
+   * @returns 高度
+   * @exception Invaid position type, use cartographic or geographic.
+   */
+  public positionSurfaceHeight(position: Cartographic | Geographic): number | undefined {
+    if (position instanceof Cartographic) {
+      return this.scene.globe.getHeight(position)
+    } else if (position instanceof Geographic) {
+      const geo = position.toCartographic()
+      return this.scene.globe.getHeight(geo)
+    } else {
+      throw new DeveloperError("Invaid position type, use cartographic or geographic.")
+    }
   }
 }

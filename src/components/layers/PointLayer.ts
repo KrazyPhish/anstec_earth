@@ -96,7 +96,7 @@ export class PointLayer<T = unknown> extends Layer<PointPrimitiveCollection, Poi
       disableDepthTestDistance,
       distanceDisplayCondition,
     } as PointPrimitive
-    super.save(id, { primitive, data: { data } })
+    super.save(id, { primitive, data: { data, module } })
   }
 
   /**

@@ -12,6 +12,7 @@ import {
   PolylineDashMaterialProperty,
   PolylineGlowMaterialProperty,
   PolylineOutlineMaterialProperty,
+  DeveloperError,
 } from "cesium"
 import { Earth } from "components/Earth"
 import { PolylineLayer } from "components/layers"
@@ -20,6 +21,9 @@ import { Utils, State } from "utils"
 import { Draw } from "./Draw"
 import { Dynamic } from "./Dynamic"
 
+/**
+ * @description 动态绘制折线段
+ */
 export class PolylineDynamic extends Dynamic<PolylineLayer<Dynamic.Polyline>> {
   public type: string = "Polyline"
   constructor(earth: Earth) {
@@ -54,7 +58,7 @@ export class PolylineDynamic extends Dynamic<PolylineLayer<Dynamic.Polyline>> {
         })
       }
       default: {
-        throw new Error("A certain material type is required.")
+        throw new DeveloperError("A certain material type is required.")
       }
     }
   }
@@ -89,6 +93,7 @@ export class PolylineDynamic extends Dynamic<PolylineLayer<Dynamic.Polyline>> {
    * @description 动态画线段
    * @param param {@link Draw.Polyline} 画线段参数
    * @returns 线段点的坐标
+   * @exception A certain material type is required.
    */
   public draw({
     id = Utils.RandomUUID(),

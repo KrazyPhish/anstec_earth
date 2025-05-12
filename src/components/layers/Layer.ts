@@ -1,6 +1,7 @@
 import {
   Billboard,
   Camera,
+  CumulusCloud,
   GroundPolylinePrimitive,
   GroundPrimitive,
   Label,
@@ -19,6 +20,7 @@ export namespace Layer {
    */
   export type Primitives =
     | Billboard
+    | CumulusCloud
     | Label
     | Model
     | ParticleSystem
@@ -223,14 +225,15 @@ export abstract class Layer<C extends Layer.Collection, P extends Layer.Primitiv
    * @param id ID
    * @returns 返回`boolean`值
    */
-  public shown(id?: string): boolean
+  public shown(id: string): boolean
   public shown(id?: string): boolean {
     if (id) {
       const cache = this.getEntity(id)
       if (cache) {
         return cache.primitive.show
       } else {
-        throw new Error(`The primitive '${id}' is inexistent.`)
+        console.warn(`The primitive '${id}' is inexistent.`)
+        return false
       }
     } else {
       return this.collection.show

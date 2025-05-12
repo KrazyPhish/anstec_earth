@@ -19,6 +19,9 @@ import { Dynamic } from "./Dynamic"
 
 const { pow, PI } = window.Math
 
+/**
+ * @description 动态绘制直线箭头
+ */
 export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightArrow>> {
   public type: string = "Straight_Arrow"
   constructor(earth: Earth) {

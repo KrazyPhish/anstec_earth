@@ -198,7 +198,7 @@ export class PolygonLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
       })
     }
 
-    super.save(polygon.id, { primitive, data: { data: param.data } })
+    super.save(polygon.id, { primitive, data: { module: param.module, data: param.data } })
   }
 
   //TODO set 方法

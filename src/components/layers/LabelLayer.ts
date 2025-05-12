@@ -128,7 +128,7 @@ export class LabelLayer<T = unknown> extends Layer<LabelCollection, Label, Layer
     }
     super.save(id, {
       primitive: new Label(option, this.collection),
-      data: { data: param.data },
+      data: { module: param.module, data: param.data },
     })
   }
 

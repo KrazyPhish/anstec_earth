@@ -17,6 +17,9 @@ import { Utils, State } from "utils"
 import { Draw } from "./Draw"
 import { Dynamic } from "./Dynamic"
 
+/**
+ * @description 动态绘制多边形
+ */
 export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
   public type: string = "Polygon"
   constructor(earth: Earth) {

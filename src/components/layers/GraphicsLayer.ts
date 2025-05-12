@@ -27,6 +27,9 @@ export class GraphicsLayer {
   public polygon: PolygonLayer
   public polyline: PolylineLayer
   public rectangle: RectangleLayer
+  /**
+   * @deprecated 已废弃，请使用 `WallLayer` 手动初始化
+   */
   public wall: WallLayer
 
   constructor(earth: Earth) {

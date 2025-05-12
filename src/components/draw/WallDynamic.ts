@@ -14,6 +14,9 @@ import { Utils, State } from "utils"
 import { Draw } from "./Draw"
 import { Dynamic } from "./Dynamic"
 
+/**
+ * @description 动态绘制墙体
+ */
 export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
   public type: string = "Wall"
   constructor(earth: Earth) {

@@ -7,6 +7,7 @@ import {
   Scene,
   sampleTerrainMostDetailed,
   PolylinePipeline,
+  DeveloperError,
 } from "cesium"
 import * as turf from "@turf/turf"
 import { Geographic } from "../components/coordinate"
@@ -357,11 +358,13 @@ export namespace Figure {
   /**
    * @description 计算多边形 / 多点的平面质心
    * @param points 多边形或平面的顶点
+   * @param [withHeight = false] 是否计算时考虑高度
    * @returns 质心
+   * @exception Polygon needs at least 4 vertexes.
    */
   export const CalcMassCenter = (points: Coordinate[], withHeight = false): Coordinate => {
     if (points.length < 4) {
-      throw new Error(`Polygon needs at least 4 vertexes.`)
+      throw new DeveloperError(`Polygon needs at least 4 vertexes.`)
     }
     const divisor = getDivisor(points[0])
     const feature = turf.polygon([points.map((p) => [p.longitude * divisor, p.latitude * divisor])])
@@ -387,10 +390,11 @@ export namespace Figure {
    * @description 计算一个一定位于多边形上的点
    * @param polygon 多边形
    * @returns 任意多边形上的点
+   * @exception Polygon needs at least 4 vertexes.
    */
   export const CalcPointOnPolygon = (polygon: Coordinate[]): Coordinate => {
     if (polygon.length < 4) {
-      throw new Error(`Polygon needs at least 4 vertexes.`)
+      throw new DeveloperError(`Polygon needs at least 4 vertexes.`)
     }
     const divisor = getDivisor(polygon[0])
     const pl = polygon.reduce((prev, curr) => {

@@ -33,6 +33,7 @@ import { Measure } from "./measure"
 import { ContextMenu } from "./menu"
 import { DefaultContextMenuItem as MapMode } from "enum"
 import { GlobalEvent } from "./bus"
+import { Weather } from "./weather"
 
 export namespace Earth {
   /**
@@ -63,6 +64,9 @@ export namespace Earth {
 
 /**
  * @description 地球
+ * @param container 容器ID / 容器 / {@link Viewer} 实例
+ * @param cesiumOptions {@link Viewer.ConstructorOptions} 视图选项
+ * @param options {@link Earth.ConstructorOptions} 参数
  * @example
  * ```
  * //use hook
@@ -108,31 +112,59 @@ export class Earth {
   /**
    * @description HTML容器
    */
-  public container: HTMLElement
+  public readonly container: HTMLElement
   /**
    * @description 视窗实列
    */
-  public viewer: Viewer
+  public readonly viewer: Viewer
   /**
    * @description 场景实例
    */
-  public scene: Scene
+  public readonly scene: Scene
   /**
    * @description 相机实例
    */
-  public camera: Camera
+  public readonly camera: Camera
   /**
    * @description 时钟实例
    */
-  public clock: Clock
+  public readonly clock: Clock
+  /**
+   * @description 动画控件
+   */
+  public readonly animation: HTMLElement
+  /**
+   * @description 时间轴控件
+   */
+  public readonly timeline: HTMLElement
   /**
    * @description 坐标系
    */
-  public coordinate: Coordinate
+  public readonly coordinate: Coordinate
   /**
    * @description 全局事件
    */
-  public global: GlobalEvent
+  public readonly global: GlobalEvent
+  /**
+   * @description 默认图层实例
+   */
+  public readonly layers: GraphicsLayer
+  /**
+   * @description 测量组件
+   */
+  public readonly measure: Measure
+  /**
+   * @description 动态绘制
+   */
+  public readonly drawTool: Draw
+  /**
+   * @description 菜单组件
+   */
+  public readonly contextMenu: ContextMenu
+  /**
+   * @description 天气场景特效
+   */
+  public readonly weather: Weather
   /**
    * @description cesium视图选项
    */
@@ -141,39 +173,8 @@ export class Earth {
    * @description {@link Earth.ConstructorOptions} 参数
    */
   private options: Earth.ConstructorOptions
-  /**
-   * @description 动画控件
-   */
-  public animation: HTMLElement
-  /**
-   * @description 时间轴控件
-   */
-  public timeline: HTMLElement
-  /**
-   * @description 默认图层实例
-   */
-  private layers: GraphicsLayer
-  /**
-   * @description 测量组件
-   */
-  private measure: Measure
-  /**
-   * @description 动态绘制
-   */
-  private draw: Draw
-  /**
-   * @description 菜单组件
-   */
-  private contextMenu: ContextMenu
-
   private preRenderCallback?: Event.RemoveCallback
 
-  /**
-   * @description 构造器函数
-   * @param container 容器ID / 容器 / {@link Viewer} 实例
-   * @param cesiumOptions {@link Viewer.ConstructorOptions} 视图选项
-   * @param options {@link Earth.ConstructorOptions} 参数
-   */
   constructor(
     container: string | HTMLDivElement | Viewer,
     cesiumOptions?: Viewer.ConstructorOptions,
@@ -205,8 +206,9 @@ export class Earth {
     this.coordinate = new Coordinate(this)
     this.layers = new GraphicsLayer(this)
     this.measure = new Measure(this)
-    this.draw = new Draw(this)
+    this.drawTool = new Draw(this)
     this.contextMenu = new ContextMenu(this)
+    this.weather = new Weather(this)
 
     this.lockCamera()
     this.addSceneRenderListener()
@@ -395,6 +397,7 @@ export class Earth {
   /**
    * @description 使用默认图层类
    * @returns 默认暴露的图层类
+   * @deprecated Now can directly read the public value `earth.layers`
    */
   public useDefaultLayers() {
     return this.layers
@@ -403,6 +406,7 @@ export class Earth {
   /**
    * @description 使用默认测量类
    * @returns 测量工具
+   * @deprecated Now can directly read the public value `earth.measure`
    */
   public useMeasure() {
     return this.measure
@@ -411,14 +415,16 @@ export class Earth {
   /**
    * @description 使用默认绘制类
    * @returns 绘制工具
+   * @deprecated Now can directly read the public value `earth.drawTool`
    */
   public useDraw() {
-    return this.draw
+    return this.drawTool
   }
 
   /**
    * @description 使用默认上下文菜单
    * @returns 上下文菜单实例
+   * @deprecated Now can directly read the public value `earth.contextMenu`
    */
   public useContextMenu() {
     return this.contextMenu
@@ -627,18 +633,8 @@ export class Earth {
   public destroy() {
     this.viewer.destroy()
     this.layers.forceDestroy()
-    this.layers = undefined as any
-    this.animation = undefined as any
-    this.timeline = undefined as any
-    this.camera = undefined as any
-    this.scene = undefined as any
-    this.viewer = undefined as any
-    this.measure = undefined as any
-    this.draw.destroy()
-    this.draw = undefined as any
+    this.drawTool.destroy()
     this.contextMenu.destroy()
-    this.contextMenu = undefined as any
     this.global.destroy()
-    this.global = undefined as any
   }
 }

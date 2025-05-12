@@ -1,10 +1,23 @@
-import { ScreenSpaceEventHandler, Cartesian2, ScreenSpaceEventType, Entity } from "cesium"
+import { ScreenSpaceEventHandler, Cartesian2, ScreenSpaceEventType, Entity, DeveloperError } from "cesium"
 import { Earth } from "components/Earth"
 import { MenuEventType, DefaultContextMenuItem } from "enum"
 import { State, Utils } from "utils"
 
 export namespace ContextMenu {
-  export type Callback = (param: { id?: string; module?: string; key?: string; type: MenuEventType }) => void
+  /**
+   * @property [id] ID
+   * @property [module] 模块名
+   * @property [key] 菜单键名
+   * @property type {@link MenuEventType} 菜单事件类型
+   */
+  export type CallbackParam = {
+    id?: string
+    module?: string
+    key?: string
+    type: MenuEventType
+  }
+
+  export type Callback = (param: CallbackParam) => void
 
   /**
    * @property belong 归属
@@ -420,7 +433,8 @@ export class ContextMenu {
    * @description 新增模块菜单项
    * @param module 模块名称
    * @param menus 菜单项
-   * @param callback 右键回调
+   * @param [callback] {@link ContextMenu.Callback} 右键回调
+   * @exception Argument param 'module' cannot be '' or 'default'.
    * @example
    * ```
    * const earth = useEarth()
@@ -443,7 +457,7 @@ export class ContextMenu {
    */
   public add(module: string, menus: ContextMenu.Item[], callback?: ContextMenu.Callback) {
     if (module === "" || module === "default") {
-      throw new Error("Argument param 'module' cannot be '' or 'default'.")
+      throw new DeveloperError("Argument param 'module' cannot be '' or 'default'.")
     }
     if (!this.cache.get(module)) {
       this.cache.set(module, { menus, callback })

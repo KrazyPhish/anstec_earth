@@ -1,4 +1,4 @@
-import { Cartesian3, Cartographic, Ellipsoid, Math } from "cesium"
+import { Cartesian3, Cartographic, DeveloperError, Ellipsoid, Math } from "cesium"
 import { Utils } from "../../utils"
 import { CoorFormat } from "../../enum"
 
@@ -112,6 +112,32 @@ export class Geographic {
   }
 
   /**
+   * @description 从已知地理坐标克隆结果
+   * @param geo {@link Geographic} 需要克隆的对象
+   * @param [result] {@link Geographic} 存储结果对象
+   * @returns 地理坐标
+   */
+  public static clone(geo: Geographic, result?: Geographic) {
+    if (result) {
+      result.longitude = geo.longitude
+      result.latitude = geo.latitude
+      result.height = geo.height
+    }
+    return result ?? geo.clone()
+  }
+
+  /**
+   * @description 比较两个地理坐标是否全等
+   * @param left {@link Geographic} 左值
+   * @param right {@link Geographic} 右值
+   */
+  public static equals(left: Geographic, right: Geographic) {
+    if (left === right) return true
+    else if (left.longitude === right.longitude && left.latitude === right.latitude && left.height === right.height)
+      return true
+  }
+
+  /**
    * @description 从弧度制的数据转换
    * @param longitude 经度 <弧度制>
    * @param latitude 纬度 <弧度制>
@@ -179,6 +205,8 @@ export class Geographic {
   /**
    * @description 数组批量转坐标
    * @param coordinates 数组坐标
+   * @exception Array length must be a mutiple of 2.
+   * @exception Invaid longitude or latitude value.
    * @example
    * ```
    * const arr = [104, 31]
@@ -187,14 +215,14 @@ export class Geographic {
    */
   public static fromDegreesArray(coordinates: number[]) {
     if (coordinates.length % 2) {
-      throw new Error("Invaid array length of degrees.")
+      throw new DeveloperError("Array length must be a mutiple of 2.")
     }
     const geographics: Geographic[] = []
     for (let i = 0; i < coordinates.length; i += 2) {
       const lon = coordinates[i]
       const lat = coordinates[i + 1]
       if (lon < -180 || lon > 180 || lat < -90 || lat > 90) {
-        throw new Error("Invaid longitude or latitude value.")
+        throw new DeveloperError("Invaid longitude or latitude value.")
       }
       geographics.push(new Geographic(lon, lat))
     }
@@ -204,6 +232,8 @@ export class Geographic {
   /**
    * @description 带高程的数组批量转坐标
    * @param coordinates 带高程的数组坐标
+   * @exception Array length must be a mutiple of 3.
+   * @exception Invaid longitude or latitude value.
    * @example
    * ```
    * const arr = [104, 31, 500]
@@ -212,14 +242,14 @@ export class Geographic {
    */
   public static fromDegreesArrayHeights(coordinates: number[]) {
     if (coordinates.length % 3) {
-      throw new Error("Invaid array length of degrees.")
+      throw new DeveloperError("Array length must be a mutiple of 3.")
     }
     const geographics: Geographic[] = []
     for (let i = 0; i < coordinates.length; i += 3) {
       const lon = coordinates[i]
       const lat = coordinates[i + 1]
       if (lon < -180 || lon > 180 || lat < -90 || lat > 90) {
-        throw new Error("Invaid longitude or latitude value.")
+        throw new DeveloperError("Invaid longitude or latitude value.")
       }
       geographics.push(new Geographic(lon, lat, coordinates[i + 2]))
     }

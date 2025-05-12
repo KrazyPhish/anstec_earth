@@ -13,6 +13,9 @@ import { Utils, State } from "utils"
 import { Draw } from "./Draw"
 import { Dynamic } from "./Dynamic"
 
+/**
+ * @description 动态绘制点
+ */
 export class PointDynamic extends Dynamic<PointLayer<Dynamic.Point>> {
   public type: string = "Point"
   constructor(earth: Earth) {

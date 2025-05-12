@@ -2,6 +2,7 @@ import {
   Appearance,
   ComponentDatatype,
   defined,
+  DeveloperError,
   Framebuffer,
   Geometry,
   GeometryAttribute,
@@ -45,13 +46,15 @@ export namespace Utils {
    * @param id ID
    * @param [module] 模块
    * @returns 编码结果
+   * @exception Invaid type of id, id must be string.
+   * @exception Invaid id string 'Ω'.
    */
   export const EncodeId = (id: string, module?: string) => {
     if (typeof id !== "string") {
-      throw new Error("Invaid type of id, id must be string.")
+      throw new DeveloperError("Invaid type of id, id must be string.")
     }
     if (id.includes(separator)) {
-      throw new Error(`Invaid id string '${separator}'.`)
+      throw new DeveloperError(`Invaid id string '${separator}'.`)
     }
     return module ? `${encodeURIComponent(id)}${separator}${encodeURIComponent(module)}` : id
   }
@@ -154,6 +157,7 @@ export namespace Utils {
     })
     return framebuffer
   }
+  
   export const createRawRenderState = (options: WindField.RenderState) => {
     const translucent = true
     const closed = false

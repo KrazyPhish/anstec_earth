@@ -271,7 +271,7 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
 
     super.save(Utils.DecodeId(mo.id).id, {
       primitive: mo,
-      data: { position, hpr, data },
+      data: { position, hpr, data, module: param.module, },
     })
 
     if (label) {

@@ -473,7 +473,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
     const entity = this.collection.add(particleSys)
     this.cache.set(id, {
       primitive: entity,
-      data: { data: option.data },
+      data: { module: param.module, data: option.data },
     })
 
     if (option.lifetime && option.lifetime !== Number.MAX_VALUE) {

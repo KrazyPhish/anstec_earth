@@ -315,6 +315,7 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
     super.save(ellipsoid.id, {
       primitive: instancePrimitive,
       data: {
+        module,
         center,
         radii,
         hpr: hpr ?? ellipsoid.hpr,
@@ -324,6 +325,7 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
     super.save(ellipsoid.id + "_outline", {
       primitive: outlinePrimitive,
       data: {
+        module,
         center,
         radii,
         hpr: hpr ?? ellipsoid.hpr,

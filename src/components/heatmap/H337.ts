@@ -490,6 +490,11 @@ class Store {
   }
 }
 
+/**
+ * @description H337
+ * @param config {@link H337.ConstructorOptions} 配置
+ * @exception Plugin 'plugin' not found. Maybe it was not registered.
+ */
 export class H337 {
   private defaults: any = {
     radius: 40,

@@ -12,7 +12,7 @@ import {
   PrimitiveCollection,
 } from "cesium"
 import { Earth } from "components/Earth"
-import { CustomMaterial, PolylineFlowingDashMaterial, PolylineFlowingWaveMaterial } from "components/material"
+import { CustomMaterial } from "components/material"
 import { Utils } from "utils"
 import { Layer } from "./Layer"
 
@@ -148,6 +148,6 @@ export class PolylineLayer<T = unknown> extends Layer<
     }
     const primitive = ground ? new GroundPolylinePrimitive(option) : new Primitive(option)
 
-    super.save(id, { primitive, data: { data } })
+    super.save(id, { primitive, data: { data, module } })
   }
 }

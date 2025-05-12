@@ -122,7 +122,7 @@ export class WallLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive
       appearance: new PerInstanceColorAppearance(),
     })
 
-    super.save(id, { primitive, data: { data } })
+    super.save(id, { primitive, data: { data, module } })
 
     if (outline) {
       const out = new GeometryInstance({
@@ -147,7 +147,7 @@ export class WallLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive
         }),
       })
 
-      super.save(id + "_outline", { primitive: outPrimitive, data: { data } })
+      super.save(id + "_outline", { primitive: outPrimitive, data: { data, module } })
     }
   }
 

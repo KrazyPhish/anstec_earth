@@ -29,6 +29,9 @@ type OptionParam = {
 
 const { pow, sin, PI } = window.Math
 
+/**
+ * @description 动态绘制攻击箭头
+ */
 export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow>> {
   public type: string = "Attack_Arrow"
   constructor(earth: Earth) {

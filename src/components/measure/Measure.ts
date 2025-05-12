@@ -5,10 +5,10 @@ import {
   Cartesian3,
   Cartographic,
   Color,
+  DeveloperError,
   Entity,
   LabelStyle,
   Math,
-  PolygonHierarchy,
   PolylineArrowMaterialProperty,
   PolylineDashMaterialProperty,
   PolylineGlowMaterialProperty,
@@ -257,7 +257,7 @@ export class Measure {
     const interData: Cartographic[] = interGeos.map((g) => Cartographic.fromDegrees(g[0], g[1]))
 
     if (!this.viewer.terrainProvider) {
-      throw new Error("Lack of terrian data, or load terrian failed.")
+      throw new DeveloperError("Lack of terrian data, or load terrian failed.")
     } else {
       const res = await sampleTerrainMostDetailed(this.viewer.terrainProvider, interData)
       return res.map((position) => Geographic.fromCartographic(position))
@@ -1014,6 +1014,8 @@ export class Measure {
    * @description 剖面测量
    * @param param {@link Measure.Section} 参数
    * @returns {Measure.SectionReturn} 测量结果
+   * @exception Lack of terrian data, or load terrian failed.
+   * @exception A certain material type is required.
    * @example
    * ```
    * const earth = useEarth()
@@ -1059,7 +1061,7 @@ export class Measure {
           })
         }
         default: {
-          throw new Error("A certain material type is required.")
+          throw new DeveloperError("A certain material type is required.")
         }
       }
     }
