@@ -1,0 +1,61 @@
+{
+  "name": "@anstec/earth",
+  "author": "anstec",
+  "version": "2.1.0",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "npm run clean && rollup -c rollup.config.ts --bundleConfigAsCjs",
+    "clean": "rimraf -rf dist/",
+    "doc": "npm run doc:clean && npx typedoc --options ./typedoc.json && npm run press",
+    "doc:build": "vuepress build docs",
+    "doc:clean": "rimraf -rf docs/",
+    "doc:dev": "vuepress dev docs",
+    "press": "rimraf -rf docs/.vuepress && ts-node createVuepress.ts",
+    "release": "npm run build && npm run type",
+    "type": "ts-node createRelease.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KrazyPhish/anstec_earth"
+  },
+  "keywords": ["cesium", "turf", "gis", "geo", "map"],
+  "license": "MIT",
+  "dependencies": {
+    "@turf/turf": "^6.5.0",
+    "cesium": "^1.113.0",
+    "cesium-navigation-es6": "^3.0.9",
+    "echarts": "^5.5.0",
+    "kdbush": "^4.0.2",
+    "mitt": "^3.0.1",
+    "scss": "^0.2.4"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.2",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^15.3.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^20.14.15",
+    "@vuepress/bundler-vite": "^2.0.0-rc.14",
+    "@vuepress/theme-default": "^2.0.0-rc.37",
+    "autoprefixer": "^10.4.19",
+    "cssnano": "^7.0.3",
+    "npm-run-all2": "^6.1.2",
+    "prettier": "3.3.2",
+    "rimraf": "^5.0.7",
+    "rollup": "^4.18.0",
+    "rollup-plugin-postcss": "^4.0.2",
+    "sass": "^1.77.1",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
+    "typedoc": "^0.26.3",
+    "typedoc-plugin-markdown": "^4.1.1",
+    "typescript": "~5.4.0",
+    "vue": "^3.4.31",
+    "vuepress": "^2.0.0-rc.14"
+  }
+}

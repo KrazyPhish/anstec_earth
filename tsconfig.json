@@ -1,0 +1,28 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "ESNext",
+    "declaration": false,
+    "downlevelIteration": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": "./src",
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "sourceMap": false,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "skipLibCheck": true
+  },
+  "exclude": [
+    "createRelease.ts",
+    "createVuepress.ts",
+    "rollup.config.ts",
+    "vuepress.config.ts",
+    "node_modules"
+  ],
+  "include": ["src/**/*.ts"]
+}

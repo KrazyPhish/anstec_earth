@@ -1,0 +1,31 @@
+@keyframes morph {
+  0% {
+    stroke-width: 5;
+    stroke-opacity: 0.1;
+  }
+
+  25% {
+    stroke-width: 10;
+    stroke-opacity: 0.3;
+  }
+
+  50% {
+    stroke-width: 15;
+    stroke-opacity: 0.5;
+  }
+
+  75% {
+    stroke-width: 20;
+    stroke-opacity: 0.2;
+  }
+
+  100% {
+    stroke-width: 25;
+    stroke-opacity: 0.0;
+  }
+}
+
+.diffuse-point {
+  -webkit-animation: morph 0.75s ease infinite;
+  animation: morph 0.75s ease infinite;
+}

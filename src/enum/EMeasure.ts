@@ -1,0 +1,10 @@
+export enum MeasureType {
+  SPACE_DISTANCE,
+  GROUND_DISTANCE,
+  SPACE_AREA,
+  HEIGHT,
+  TRIANGLE,
+  POSITION,
+  AZIMUTH,
+  SECTION,
+}

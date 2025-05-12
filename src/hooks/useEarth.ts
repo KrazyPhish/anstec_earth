@@ -1,0 +1,71 @@
+import {
+  buildModuleUrl,
+  Ellipsoid,
+  ImageryLayer,
+  MapMode2D,
+  TileMapServiceImageryProvider,
+  Viewer,
+  WebMercatorProjection,
+} from "cesium"
+import { Earth } from ".."
+
+const earths = new Map<string, Earth>()
+
+/**
+ * @description 初始化地球
+ * @param id 当前地球的ID
+ * @param ref 容器ID / 容器实例 / Viewer实例
+ * @param cesiumOptions Cesium设置
+ * @param options 设置
+ * @returns 地球实例
+ */
+export const useEarth = (
+  id?: string,
+  ref?: string | HTMLDivElement | Viewer,
+  cesiumOptions?: Viewer.ConstructorOptions,
+  options?: Earth.ConstructorOptions
+): Earth => {
+  const el = id ?? "GisContainer"
+  if (earths.has(el)) {
+    return earths.get(el)!
+  }
+  const earth = new Earth(
+    ref ?? el,
+    {
+      animation: true,
+      timeline: true,
+      shouldAnimate: true,
+      fullscreenButton: false,
+      geocoder: false,
+      homeButton: false,
+      sceneModePicker: false,
+      scene3DOnly: false,
+      sceneMode: cesiumOptions?.sceneMode,
+      selectionIndicator: false,
+      infoBox: false,
+      baseLayerPicker: false,
+      navigationHelpButton: false,
+      vrButton: false,
+      shadows: false,
+      mapMode2D: MapMode2D.INFINITE_SCROLL,
+      mapProjection: new WebMercatorProjection(Ellipsoid.WGS84),
+      baseLayer: ImageryLayer.fromProviderAsync(
+        TileMapServiceImageryProvider.fromUrl(buildModuleUrl("Assets/Textures/NaturalEarthII")),
+        {}
+      ),
+      ...cesiumOptions,
+    },
+    options
+  )
+  earths.set(el, earth)
+  return earth
+}
+
+export const useEarthRecycle = (id?: string) => {
+  const _id = id ?? "GisContainer"
+  const earth = earths.get(_id)
+  if (earth) {
+    earth.destroy()
+    earths.delete(_id)
+  }
+}

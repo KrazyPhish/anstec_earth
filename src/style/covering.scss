@@ -1,0 +1,29 @@
+.covering-container {
+  color: #7da1b3;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  min-width: 200px;
+  min-height: 140px;
+  user-select: none;
+  pointer-events: none;
+  background-color: rgba(43, 44, 47, 0.8);
+  box-shadow: 0 0 8px 0 rgba(43, 44, 47, 0.9) inset;
+}
+
+.covering-title {
+  font-weight: bold;
+  min-width: 100px;
+  min-height: 20px;
+  text-align: center;
+  padding: 5px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.covering-content {
+  padding: 5px;
+  user-select: none;
+  pointer-events: none;
+}
