@@ -2,18 +2,27 @@
 
 ### 版本更新历史记录
 
+#### Version 2.2.2
+1. 新增属性 `PointLayer.labelLayer`，现在点图层也可以添加附属标签
+2. 修正 `EChartsOverlay` 的构造器函数的入参
+3. 废弃参数 `EChartsOverlay.ConstructionOptions.earth`
+4. 修正若干类型声明错误
+
+#### Version 2.2.1
+1. 修复若干类型声明错误
+
 #### Version 2.2.0
 1. 新增积云图层类，提供积云图层展示
 2. 类 `Geographic` 新增若干方法
 3. 类 `Coordinate` 新增若干方法
 4. 修正若干类型声明错误
-5. 废弃 `GraphicsLayer.wall`
-6. 废弃 `Polyline.addFlowingDash`
-7. 废弃 `Polyline.addFlowingWave`
-8. 废弃 `Earth.useDraw`，现 `Earth.drawTool` 可直接访问
-9. 废弃 `Earth.useDefaultLayers`，现 `Earth.layers` 可直接访问
-10. 废弃 `Earth.useMeasure`，现 `Earth.measure` 可直接访问
-11. 废弃 `Earth.useContextMenu`，现 `Earth.contextMenu` 可直接访问
+5. 废弃属性 `GraphicsLayer.wall`
+6. 废弃方法 `Polyline.addFlowingDash`
+7. 废弃方法 `Polyline.addFlowingWave`
+8. 废弃方法 `Earth.useDraw`，现通过属性 `Earth.drawTool` 访问
+9. 废弃方法 `Earth.useDefaultLayers`，现属性 `Earth.layers` 访问
+10. 废弃方法 `Earth.useMeasure`，现通过属性 `Earth.measure` 访问
+11. 废弃方法 `Earth.useContextMenu`，现通过属性 `Earth.contextMenu` 访问
 
 #### Version 2.1.0
 1. 新增全局事件类，提供全局鼠标事件订阅

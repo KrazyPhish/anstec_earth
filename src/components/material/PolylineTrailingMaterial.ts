@@ -3,6 +3,10 @@ import { trail } from "../../images"
 import { trailing } from "../../shaders"
 import { CustomMaterial } from "."
 
+/**
+ * @description 拖尾线条材质
+ * @param [options] {@link CustomMaterial.ConstructorOptions} 参数
+ */
 export class PolylineTrailingMaterial extends Material {
   constructor(options?: CustomMaterial.ConstructorOptions) {
     const _options: CustomMaterial.ConstructorOptions = {

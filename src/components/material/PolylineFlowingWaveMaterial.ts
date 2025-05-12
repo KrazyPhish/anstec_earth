@@ -4,6 +4,7 @@ import { CustomMaterial } from "."
 
 /**
  * @description 波动线条材质
+ * @param [options] {@link CustomMaterial.ConstructorOptions} 参数
  */
 export class PolylineFlowingWaveMaterial extends Material {
   constructor(options?: CustomMaterial.ConstructorOptions) {

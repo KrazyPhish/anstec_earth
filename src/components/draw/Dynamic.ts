@@ -124,7 +124,7 @@ export abstract class Dynamic<L extends Dynamic.Layer> {
   /**
    * @description 屏幕坐标获取球体上的点
    * @param point {@link Cartesian2} 屏幕坐标
-   * @returns 
+   * @returns
    */
   protected getPointOnEllipsoid(point: Cartesian2) {
     return CameraTool.PickPointOnEllipsoid(point, this.scene, this.camera)
@@ -143,15 +143,15 @@ export abstract class Dynamic<L extends Dynamic.Layer> {
 
   /**
    * @description 添加实体的抽象方法
-   * @param option 选项
+   * @param param 选项
    */
-  public abstract add(option: any): void
+  public abstract add(param: any): void
 
   /**
    * @description 动态绘制的抽象方法
-   * @param option 选项
+   * @param param 选项
    */
-  public abstract draw(option: any): Promise<unknown>
+  public abstract draw(param: any): Promise<unknown>
 
   /**
    * @description 动态编辑的抽象方法

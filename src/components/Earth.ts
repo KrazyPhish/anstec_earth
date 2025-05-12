@@ -65,8 +65,8 @@ export namespace Earth {
 /**
  * @description 地球
  * @param container 容器ID / 容器 / {@link Viewer} 实例
- * @param cesiumOptions {@link Viewer.ConstructorOptions} 视图选项
- * @param options {@link Earth.ConstructorOptions} 参数
+ * @param [cesiumOptions] {@link Viewer.ConstructorOptions} 视图选项
+ * @param [options] {@link Earth.ConstructorOptions} 参数
  * @example
  * ```
  * //use hook
@@ -231,7 +231,7 @@ export class Earth {
   /**
    * @description 地图默认选项
    * @param cesiumOptions cesium视图选项
-   * @param options {@link Earth.ConstructorOptions} 参数
+   * @param [options] {@link Earth.ConstructorOptions} 参数
    */
   private defaultOptions(cesiumOptions?: Viewer.ConstructorOptions, options?: Earth.ConstructorOptions) {
     Object.assign(

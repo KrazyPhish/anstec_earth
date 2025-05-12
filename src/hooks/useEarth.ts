@@ -13,10 +13,10 @@ const earths = new Map<string, Earth>()
 
 /**
  * @description 初始化地球
- * @param id 当前地球的ID
- * @param ref 容器ID / 容器实例 / Viewer实例
- * @param cesiumOptions Cesium设置
- * @param options 设置
+ * @param [id = "GisContainer"] 当前地球的ID
+ * @param [ref = "GisContainer"] 容器ID / 容器实例 / Viewer实例
+ * @param [cesiumOptions] Cesium设置
+ * @param [options] 设置
  * @returns 地球实例
  */
 export const useEarth = (
@@ -61,6 +61,10 @@ export const useEarth = (
   return earth
 }
 
+/**
+ * @description 销毁指定ID地球实例并回收相关资源
+ * @param [id = "GisContainer"] ID
+ */
 export const useEarthRecycle = (id?: string) => {
   const _id = id ?? "GisContainer"
   const earth = earths.get(_id)

@@ -116,6 +116,7 @@ const attributeLocations = {
 
 /**
  * @description 相控阵传感器图元
+ * @param [options] {@link PhasedSensorPrimitive.ConstructorOptions} 参数
  */
 export class PhasedSensorPrimitive {
   _modelMatrix: Matrix4

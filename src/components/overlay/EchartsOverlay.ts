@@ -5,12 +5,10 @@ import { Utils } from "../../utils"
 
 export namespace EChartsOverlay {
   /**
-   * @property earth {@link Earth} 地球实例
    * @property [id] ID
    * @property [option] {@link EChartsOption} Echarts设置
    */
   export type ConstructorOptions = {
-    earth: Earth
     id?: string
     option?: EChartsOption
   }
@@ -18,11 +16,12 @@ export namespace EChartsOverlay {
 
 /**
  * @description Echarts插件图层
+ * @param earth {@link Earth} 地球实例
  * @param param {@link EChartsOverlay.ConstructorOptions} 参数
  * @example
  * ```
  * const earth = useEarth()
- * const overlay = EchartsOverlay({ id: "echarts-map", earth })
+ * const overlay = EchartsOverlay(earth, { id: "echarts-map" })
  * overlay.updateOverlay(echartsOption)
  * ```
  */
@@ -32,12 +31,12 @@ export class EChartsOverlay {
   private scene: Scene
   private container?: HTMLElement
   private overlay?: ECharts
-  constructor({ id, earth, option }: EChartsOverlay.ConstructorOptions) {
-    this.id = id ?? Utils.RandomUUID()
+  constructor(earth: Earth, options: EChartsOverlay.ConstructorOptions) {
+    this.id = options.id ?? Utils.RandomUUID()
     this.viewer = earth.viewer
     this.scene = earth.scene
     this.overlay = this.createChartOverlay()
-    if (option) this.updateOverlay(option)
+    if (options.option) this.updateOverlay(options.option)
   }
 
   private createChartOverlay() {

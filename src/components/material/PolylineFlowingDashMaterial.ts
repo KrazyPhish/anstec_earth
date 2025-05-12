@@ -4,6 +4,7 @@ import { CustomMaterial } from "."
 
 /**
  * @description 流动线条材质
+ * @param [options] {@link CustomMaterial.ConstructorOptions} 参数
  */
 export class PolylineFlowingDashMaterial extends Material {
   constructor(options?: CustomMaterial.ConstructorOptions) {

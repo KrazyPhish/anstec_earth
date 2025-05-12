@@ -288,8 +288,8 @@ declare module "@anstec/earth" {
   /**
    * @description 地球
    * @param container 容器ID / 容器 / {@link Viewer} 实例
-   * @param cesiumOptions {@link Viewer.ConstructorOptions} 视图选项
-   * @param options {@link Earth.ConstructorOptions} 参数
+   * @param [cesiumOptions] {@link Viewer.ConstructorOptions} 视图选项
+   * @param [options] {@link Earth.ConstructorOptions} 参数
    * @example
    * ```
    * //use hook
@@ -787,7 +787,7 @@ declare module "@anstec/earth" {
   /**
    * @description 聚合广告牌，标签，点图层
    * @param earth 地球
-   * @param options {@link Cluster.ConstructorOptions} 自定义聚合参数
+   * @param [options] {@link Cluster.ConstructorOptions} 自定义聚合参数
    * @example
    * ```
    * const earth = useEarth()
@@ -2137,14 +2137,14 @@ declare module "@anstec/earth" {
     protected setViewControl(value: boolean): void
     /**
      * @description 添加实体的抽象方法
-     * @param option 选项
+     * @param param 选项
      */
-    abstract add(option: any): void
+    abstract add(param: any): void
     /**
      * @description 动态绘制的抽象方法
-     * @param option 选项
+     * @param param 选项
      */
-    abstract draw(option: any): Promise<unknown>
+    abstract draw(param: any): Promise<unknown>
     /**
      * @description 动态编辑的抽象方法
      * @param id 编辑的实体ID
@@ -2248,6 +2248,8 @@ declare module "@anstec/earth" {
 
   /**
    * @description 热力图
+   * @param earth {@link Earth} 地球实例
+   * @param [options] {@link Heatmap.ConstructorOptions} 参数
    * @example
    * ```
    * const earth = useEarth()
@@ -2471,7 +2473,7 @@ declare module "@anstec/earth" {
    * @decription 积云图层
    * @extends Layer {@link Layer} 图层基类
    * @param earth {@link Earth} 地球实例
-   * @param options {@link CloudLayer.ConstructorOptions} 参数
+   * @param [options] {@link CloudLayer.ConstructorOptions} 参数
    * @example
    * ```
    * const earth = useEarth()
@@ -2479,7 +2481,7 @@ declare module "@anstec/earth" {
    * ```
    */
   export class CloudLayer<T = unknown> extends Layer<CloudCollection, CumulusCloud, Layer.Data<T>> {
-    constructor(earth: Earth, options: CloudLayer.ConstructorOptions)
+    constructor(earth: Earth, options?: CloudLayer.ConstructorOptions)
     /**
      * @description 新增积云
      * @param param {@link CloudLayer.AddParam} 新增参数
@@ -3061,7 +3063,11 @@ declare module "@anstec/earth" {
      * @returns `primitive`图元实例
      */
     protected save(id: string, param: Layer.Cache<P, D>): P
-    abstract add(option: any): void
+    /**
+     * @description 抽象新增方法
+     * @param param 参数
+     */
+    abstract add(param: any): void
     /**
      * @description 根据ID获取实体
      * @param id ID
@@ -3678,6 +3684,10 @@ declare module "@anstec/earth" {
   }
 
   export namespace PointLayer {
+    export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
+
+    export type LabelSetParam<T> = Omit<LabelLayer.SetParam<T>, "position">
+
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property position {@link Cartesian3} 位置
@@ -3688,6 +3698,7 @@ declare module "@anstec/earth" {
      * @property [scaleByDistance] {@link NearFarScalar} 按距离设置缩放
      * @property [disableDepthTestDistance] 按距离禁用地形深度检测
      * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
+     * @property [label] {@link LabelAddParam}
      */
     export type AddParam<T> = Layer.AddParam<T> & {
       position: Cartesian3
@@ -3698,9 +3709,12 @@ declare module "@anstec/earth" {
       scaleByDistance?: NearFarScalar
       disableDepthTestDistance?: number
       distanceDisplayCondition?: DistanceDisplayCondition
+      label?: LabelAddParam<T>
     }
 
-    export type SetParam<T> = Partial<Omit<AddParam<T>, "id" | "module" | "data">>
+    export type SetParam<T> = Partial<Omit<AddParam<T>, "id" | "module" | "data" | "label">> & {
+      label?: LabelSetParam<T>
+    }
   }
 
   /**
@@ -4142,6 +4156,7 @@ declare module "@anstec/earth" {
 
   /**
    * @description 流动线条材质
+   * @param [options] {@link CustomMaterial.ConstructorOptions} 参数
    */
   export class PolylineFlowingDashMaterial extends Material {
     constructor(options?: CustomMaterial.ConstructorOptions)
@@ -4149,6 +4164,7 @@ declare module "@anstec/earth" {
 
   /**
    * @description 波动线条材质
+   * @param [options] {@link CustomMaterial.ConstructorOptions} 参数
    */
   export class PolylineFlowingWaveMaterial extends Material {
     constructor(options?: CustomMaterial.ConstructorOptions)
@@ -4156,6 +4172,7 @@ declare module "@anstec/earth" {
 
   /**
    * @description 拖尾线条材质
+   * @param [options] {@link CustomMaterial.ConstructorOptions} 参数
    */
   export class PolylineTrailingMaterial extends Material {
     constructor(options?: CustomMaterial.ConstructorOptions)
@@ -4637,11 +4654,13 @@ declare module "@anstec/earth" {
 
   export namespace EChartsOverlay {
     /**
-     * @property earth {@link Earth} 地球实例
      * @property [id] ID
      * @property [option] {@link EChartsOption} Echarts设置
      */
     export type ConstructorOptions = {
+      /**
+       * @deprecated
+       */
       earth: Earth
       id?: string
       option?: EChartsOption
@@ -4650,16 +4669,17 @@ declare module "@anstec/earth" {
 
   /**
    * @description Echarts插件图层
+   * @param earth {@link Earth} 地球实例
    * @param options {@link EChartsOverlay.ConstructorOptions} 参数
    * @example
    * ```
    * const earth = useEarth()
-   * const overlay = EchartsOverlay({ id: "echarts-map", earth })
+   * const overlay = EchartsOverlay(earth, { id: "echarts-map" })
    * overlay.updateOverlay(echartsOption)
    * ```
    */
   export class EChartsOverlay {
-    constructor(options: EChartsOverlay.ConstructorOptions)
+    constructor(earth: Earth, options?: EChartsOverlay.ConstructorOptions)
     /**
      * @description 加载Echarts设置
      * @param option {@link EChartsOption} Echarts设置
@@ -5341,6 +5361,7 @@ declare module "@anstec/earth" {
 
   /**
    * @description 相控阵传感器图元
+   * @param [options] {@link PhasedSensorPrimitive.ConstructorOptions} 参数
    */
   export class PhasedSensorPrimitive {
     readonly id: Object | undefined
@@ -5716,9 +5737,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 笔触不支持编辑，添加对象仅增加图形
-     * @param option 笔触参数
+     * @param param 笔触参数
      */
-    add(option: PolylineLayer.AddParam<T>): void
+    add(param: PolylineLayer.AddParam<T>): void
     /**
      * @description 笔触
      * @param param {@link Draw.Stroke} 笔触参数
@@ -5736,9 +5757,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @param param 新增参数以及可编辑附加数据
      */
-    add(option: PolygonLayer.AddParam<Dynamic.AttackArrow>): void
+    add(param: PolygonLayer.AddParam<Dynamic.AttackArrow>): void
     /**
      * @description 动态画攻击箭头
      * @param param {@link Draw.AttackArrow} 画箭头参数
@@ -5761,9 +5782,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @param param 新增参数以及可编辑附加数据
      */
-    add(option: BillboardLayer.AddParam<Dynamic.Billboard>): void
+    add(param: BillboardLayer.AddParam<Dynamic.Billboard>): void
     /**
      * @description 动态画广告牌
      * @param param {@link Draw.Billboard} 画广告牌参数
@@ -5786,9 +5807,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @param param 新增参数以及可编辑附加数据
      */
-    add(option: EllipseLayer.AddParam<Dynamic.Circle>): void
+    add(param: EllipseLayer.AddParam<Dynamic.Circle>): void
     /**
      * @description 动态画圆
      * @param param {@link Draw.Circle} 画圆参数
@@ -5811,9 +5832,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @param param 新增参数以及可编辑附加数据
      */
-    add(option: LabelLayer.AddParam<Dynamic.Label>): void
+    add(param: LabelLayer.AddParam<Dynamic.Label>): void
     /**
      * @description 动态画标签
      * @param param {@link Draw.Label} 画标签参数
@@ -5836,9 +5857,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @param param 新增参数以及可编辑附加数据
      */
-    add(option: ModelLayer.AddParam<Dynamic.Model>): void
+    add(param: ModelLayer.AddParam<Dynamic.Model>): void
     /**
      * @description 动态画模型
      * @param param {@link Draw.Model} 画模型参数
@@ -5861,9 +5882,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @param param 新增参数以及可编辑附加数据
      */
-    add(option: PolygonLayer.AddParam<Dynamic.PincerArrow>): void
+    add(param: PolygonLayer.AddParam<Dynamic.PincerArrow>): void
     /**
      * @description 动态画钳击箭头
      * @param param {@link Draw.PincerArrow} 画箭头参数
@@ -5886,9 +5907,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @param param 新增参数以及可编辑附加数据
      */
-    add(option: PointLayer.AddParam<Dynamic.Point>): void
+    add(param: PointLayer.AddParam<Dynamic.Point>): void
     /**
      * @description 动态画点
      * @param param {@link Draw.Point} 画点参数
@@ -5911,9 +5932,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @param param 新增参数以及可编辑附加数据
      */
-    add(option: PolygonLayer.AddParam<Dynamic.Polygon>): void
+    add(param: PolygonLayer.AddParam<Dynamic.Polygon>): void
     /**
      * @description 动态画多边形
      * @param param {@link Draw.Polygon} 画多边形参数
@@ -5936,9 +5957,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @param param 新增参数以及可编辑附加数据
      */
-    add(option: PolylineLayer.AddParam<Dynamic.Polyline>): void
+    add(param: PolylineLayer.AddParam<Dynamic.Polyline>): void
     /**
      * @description 动态画线段
      * @param param {@link Draw.Polyline} 画线段参数
@@ -5962,9 +5983,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @param param 新增参数以及可编辑附加数据
      */
-    add(option: RectangleLayer.AddParam<Dynamic.Rectangle>): void
+    add(param: RectangleLayer.AddParam<Dynamic.Rectangle>): void
     /**
      * @description 动态画矩形
      * @param param {@link Draw.Rectangle} 画矩形参数
@@ -5987,9 +6008,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @param param 新增参数以及可编辑附加数据
      */
-    add(option: PolygonLayer.AddParam<Dynamic.StraightArrow>): void
+    add(param: PolygonLayer.AddParam<Dynamic.StraightArrow>): void
     /**
      * @description 动态画直线箭头
      * @param param {@link Draw.StraightArrow} 画箭头参数
@@ -6012,9 +6033,9 @@ declare module "@anstec/earth" {
     constructor(earth: Earth)
     /**
      * @description 添加可编辑对象
-     * @param option 新增参数以及可编辑附加数据
+     * @param param 新增参数以及可编辑附加数据
      */
-    add(option: WallLayer.AddParam<Dynamic.Wall>): void
+    add(param: WallLayer.AddParam<Dynamic.Wall>): void
     /**
      * @description 动态画墙体
      * @param param {@link Draw.Wall} 画墙体参数
@@ -6079,7 +6100,7 @@ declare module "@anstec/earth" {
    * @param [id = "GisContainer"] 当前地球的ID
    * @param [ref = "GisContainer"] 容器ID / 容器实例 / Viewer实例
    * @param [cesiumOptions] Cesium设置
-   * @param [options] 设置
+   * @param [options] {@link Earth.ConstructorOptions} 设置
    * @returns 地球实例
    */
   export const useEarth: (

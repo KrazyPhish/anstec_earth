@@ -47,7 +47,7 @@ export namespace CloudLayer {
  * @decription 积云图层
  * @extends Layer {@link Layer} 图层基类
  * @param earth {@link Earth} 地球实例
- * @param options {@link CloudLayer.ConstructorOptions} 参数
+ * @param [options] {@link CloudLayer.ConstructorOptions} 参数
  * @example
  * ```
  * const earth = useEarth()
