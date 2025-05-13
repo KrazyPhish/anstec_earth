@@ -1179,6 +1179,12 @@ declare module "@anstec/earth" {
      */
     set(id: string, param: Covering.SetParam<T>): void
     /**
+     * @description 按ID查看覆盖物是否存在
+     * @param id ID
+     * @returns 是否存在覆盖物
+     */
+    has(id: string): boolean
+    /**
      * @description 获取附加数据
      * @param id ID
      */

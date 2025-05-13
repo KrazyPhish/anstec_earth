@@ -10,7 +10,6 @@ export namespace Covering {
     content: string
     position: Cartesian3
     reference: HTMLDivElement
-    refShell: HTMLDivElement
     tail: SVGElement
     data?: T
     callback: () => void
@@ -81,10 +80,7 @@ export class Covering<T = unknown> {
 
   private createCallback({
     id,
-    title,
-    content,
     reference,
-    refShell,
     tail,
     tailLast,
     position,
@@ -92,10 +88,7 @@ export class Covering<T = unknown> {
     connectionLine,
   }: {
     id: string
-    title: string
-    content: string
     reference: HTMLDivElement
-    refShell: HTMLDivElement
     tail: SVGSVGElement
     tailLast: { x: number; y: number }
     position: Cartesian3
@@ -120,12 +113,6 @@ export class Covering<T = unknown> {
     const canvasCoordinate = this.scene.cartesianToCanvasCoordinates(position)
     const refLeft = canvasCoordinate.x + left
     const refTop = canvasCoordinate.y + top
-    reference.style.left = `${refLeft}px`
-    reference.style.top = `${refTop}px`
-    refShell.style.left = `${refLeft}px`
-    refShell.style.top = `${refTop}px`
-    refShell.style.width = `${reference.clientWidth}px`
-    refShell.style.height = `${reference.clientHeight}px`
     tail.style.width = `${this.scene.canvas.width}px`
     tail.style.height = `${this.scene.canvas.height}px`
     tail.style.position = "absolute"
@@ -141,22 +128,29 @@ export class Covering<T = unknown> {
       y2: tailLast.y,
       opacity: this.draggable ? (connectionLine ? 1 : 0) : 0,
     })
+    let initialize = true
     return () => {
-      const ent = this.cache.get(id)
-      const _position = ent?.position ?? position
-      ;(reference.firstChild! as HTMLDivElement).innerHTML = ent?.title ?? title
-      ;(reference.lastChild! as HTMLDivElement).innerHTML = ent?.content ?? content
+      let _position: Cartesian3
+      if (initialize) {
+        _position = position
+      } else {
+        const ent = this.cache.get(id)
+        _position = ent!.position
+      }
       const canvasCoordinate = this.scene.cartesianToCanvasCoordinates(_position)
       if (!this.draggable) {
         const refLeft = canvasCoordinate.x + left
         const refTop = canvasCoordinate.y + top
-        refShell.style.left = `${refLeft}px`
-        refShell.style.top = `${refTop}px`
         tailLast.x = refLeft + reference.clientWidth / 2
         tailLast.y = refTop + reference.clientHeight / 2
+        reference.style.left = `${refLeft}px`
+        reference.style.top = `${refTop}px`
       }
-      reference.style.left = `${parseInt(refShell.style.getPropertyValue("left").slice(0, -2))}px`
-      reference.style.top = `${parseInt(refShell.style.getPropertyValue("top").slice(0, -2))}px`
+      if (initialize) {
+        reference.style.left = `${refLeft}px`
+        reference.style.top = `${refTop}px`
+        initialize = false
+      }
       tail.innerHTML = this.createConnectionLine({
         x1: canvasCoordinate.x,
         y1: canvasCoordinate.y,
@@ -243,51 +237,45 @@ export class Covering<T = unknown> {
       reference.appendChild(contentDiv)
     }
     const tail = document.createElementNS("http://www.w3.org/2000/svg", "svg")
-    const refShell = document.createElement("div")
-    this.viewer.container.appendChild(refShell)
-    refShell.style.position = "absolute"
-    refShell.draggable = false
-    refShell.style.opacity = "0"
+    this.viewer.container.appendChild(reference)
+    this.viewer.container.appendChild(tail)
+    reference.style.position = "absolute"
+    reference.draggable = false
     const tailLast = { x: 0, y: 0 }
-    refShell.addEventListener("mousedown", (event: MouseEvent) => {
+    reference.addEventListener("mousedown", (event: MouseEvent) => {
       if (!this.draggable) return
       let downX = event.clientX
       let downY = event.clientY
-      const onShellMove = (ev: MouseEvent) => {
+      const onReferenceMove = (ev: MouseEvent) => {
         const moveX = ev.clientX
         const moveY = ev.clientY
         const offsetX = moveX - downX
         const offsetY = moveY - downY
         downX = moveX
         downY = moveY
-        const lastLeft = parseInt(refShell.style.getPropertyValue("left").slice(0, -2))
-        const lastTop = parseInt(refShell.style.getPropertyValue("top").slice(0, -2))
+        const lastLeft = parseInt(reference.style.getPropertyValue("left").slice(0, -2))
+        const lastTop = parseInt(reference.style.getPropertyValue("top").slice(0, -2))
         if (
           lastLeft + offsetX <= 0 ||
           lastTop + offsetY <= 0 ||
-          lastLeft + offsetX + refShell.clientWidth >= this.scene.canvas.width ||
-          lastTop + offsetY + refShell.clientHeight >= this.scene.canvas.height
+          lastLeft + offsetX + reference.clientWidth >= this.scene.canvas.width ||
+          lastTop + offsetY + reference.clientHeight >= this.scene.canvas.height
         ) {
           return
         }
         tailLast.x = lastLeft + reference.clientWidth / 2
         tailLast.y = lastTop + reference.clientHeight / 2
-        refShell.style.left = `${lastLeft + offsetX}px`
-        refShell.style.top = `${lastTop + offsetY}px`
+        reference.style.left = `${lastLeft + offsetX}px`
+        reference.style.top = `${lastTop + offsetY}px`
       }
-      document.addEventListener("mousemove", onShellMove)
+      document.addEventListener("mousemove", onReferenceMove)
       document.addEventListener("mouseup", () => {
-        document.removeEventListener("mousemove", onShellMove)
+        document.removeEventListener("mousemove", onReferenceMove)
       })
     })
-    this.viewer.container.appendChild(reference)
-    this.viewer.container.appendChild(tail)
     const callback = this.createCallback({
       id,
-      title,
-      content,
       reference,
-      refShell,
       tail,
       tailLast,
       position,
@@ -295,7 +283,7 @@ export class Covering<T = unknown> {
       connectionLine,
     })
     this.scene.preRender.addEventListener(callback)
-    this.cache.set(id, { title, content, position, reference, refShell, tail, data, callback })
+    this.cache.set(id, { title, content, position, reference, tail, data, callback })
   }
 
   /**
@@ -320,6 +308,15 @@ export class Covering<T = unknown> {
   }
 
   /**
+   * @description 按ID查看覆盖物是否存在
+   * @param id ID
+   * @returns 是否存在覆盖物
+   */
+  public has(id: string) {
+    return this.cache.has(id)
+  }
+
+  /**
    * @description 获取附加数据
    * @param id ID
    */
@@ -340,14 +337,12 @@ export class Covering<T = unknown> {
     if (id) {
       const ent = this.cache.get(id)
       if (ent) {
-        document.body.removeChild(ent.refShell)
         this.viewer.container.removeChild(ent.tail)
         this.viewer.container.removeChild(ent.reference)
         this.scene.preRender.removeEventListener(ent.callback)
       }
     } else {
       this.cache.forEach((ent) => {
-        document.body.removeChild(ent.refShell)
         this.viewer.container.removeChild(ent.tail)
         this.viewer.container.removeChild(ent.reference)
         this.scene.preRender.removeEventListener(ent.callback)
