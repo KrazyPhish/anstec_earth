@@ -1,6 +1,6 @@
-import { Camera, Cartesian3, DeveloperError, Ellipsoid, EllipsoidalOccluder, Scene, Viewer } from "cesium"
-import { Earth } from "../Earth"
-import { Utils } from "../../utils"
+import { Camera, Cartesian3, DeveloperError, Ellipsoid, EllipsoidalOccluder, Scene, SceneMode, Viewer } from "cesium"
+import { Earth } from "components/Earth"
+import { Utils } from "utils"
 
 export namespace Covering {
   export type AnchorPosition = "TOP_LEFT" | "TOP_RIGHT" | "BOTTOM_LEFT" | "BOTTOM_RIGHT"
@@ -46,6 +46,7 @@ export namespace Covering {
 
 /**
  * @description 自定义覆盖物
+ * @param earth {@link Earth} 地球实例
  * @example
  * ```
  * const earth = useEarth
@@ -117,17 +118,16 @@ export class Covering<T = unknown> {
       top = 0
     }
     const canvasCoordinate = this.scene.cartesianToCanvasCoordinates(position)
-    const _offset = this.scene.canvas.getBoundingClientRect()
-    const refLeft = canvasCoordinate.x + _offset.left + left
-    const refTop = canvasCoordinate.y + _offset.top + top
+    const refLeft = canvasCoordinate.x + left
+    const refTop = canvasCoordinate.y + top
     reference.style.left = `${refLeft}px`
     reference.style.top = `${refTop}px`
     refShell.style.left = `${refLeft}px`
     refShell.style.top = `${refTop}px`
     refShell.style.width = `${reference.clientWidth}px`
     refShell.style.height = `${reference.clientHeight}px`
-    tail.style.width = `100%`
-    tail.style.height = `100%`
+    tail.style.width = `${this.scene.canvas.width}px`
+    tail.style.height = `${this.scene.canvas.height}px`
     tail.style.position = "absolute"
     tail.style.pointerEvents = "none"
     tail.style.left = `0px`
@@ -135,8 +135,8 @@ export class Covering<T = unknown> {
     tailLast.x = refLeft + reference.clientWidth / 2
     tailLast.y = refTop + reference.clientHeight / 2
     tail.innerHTML = this.createConnectionLine({
-      x1: canvasCoordinate.x + _offset.left,
-      y1: canvasCoordinate.y + _offset.top,
+      x1: canvasCoordinate.x,
+      y1: canvasCoordinate.y,
       x2: tailLast.x,
       y2: tailLast.y,
       opacity: this.draggable ? (connectionLine ? 1 : 0) : 0,
@@ -147,10 +147,9 @@ export class Covering<T = unknown> {
       ;(reference.firstChild! as HTMLDivElement).innerHTML = ent?.title ?? title
       ;(reference.lastChild! as HTMLDivElement).innerHTML = ent?.content ?? content
       const canvasCoordinate = this.scene.cartesianToCanvasCoordinates(_position)
-      const _offset = this.scene.canvas.getBoundingClientRect()
       if (!this.draggable) {
-        const refLeft = canvasCoordinate.x + _offset.left + left
-        const refTop = canvasCoordinate.y + _offset.top + top
+        const refLeft = canvasCoordinate.x + left
+        const refTop = canvasCoordinate.y + top
         refShell.style.left = `${refLeft}px`
         refShell.style.top = `${refTop}px`
         tailLast.x = refLeft + reference.clientWidth / 2
@@ -159,8 +158,8 @@ export class Covering<T = unknown> {
       reference.style.left = `${parseInt(refShell.style.getPropertyValue("left").slice(0, -2))}px`
       reference.style.top = `${parseInt(refShell.style.getPropertyValue("top").slice(0, -2))}px`
       tail.innerHTML = this.createConnectionLine({
-        x1: canvasCoordinate.x + _offset.left,
-        y1: canvasCoordinate.y + _offset.top,
+        x1: canvasCoordinate.x,
+        y1: canvasCoordinate.y,
         x2: tailLast.x,
         y2: tailLast.y,
         opacity: this.draggable ? (connectionLine ? 1 : 0) : 0,
@@ -171,7 +170,7 @@ export class Covering<T = unknown> {
         canvasCoordinate.y < 0 ||
         canvasCoordinate.x > this.scene.canvas.clientWidth ||
         canvasCoordinate.y > this.scene.canvas.clientHeight ||
-        !cameraOccluder.isPointVisible(_position)
+        (this.scene.mode === SceneMode.SCENE3D && !cameraOccluder.isPointVisible(_position))
       ) {
         reference.style.display = "none"
         tail.style.opacity = "0"
@@ -245,9 +244,8 @@ export class Covering<T = unknown> {
     }
     const tail = document.createElementNS("http://www.w3.org/2000/svg", "svg")
     const refShell = document.createElement("div")
-    document.body.appendChild(refShell)
-    refShell.style.position = "fixed"
-    refShell.style.zIndex = "999"
+    this.viewer.container.appendChild(refShell)
+    refShell.style.position = "absolute"
     refShell.draggable = false
     refShell.style.opacity = "0"
     const tailLast = { x: 0, y: 0 }
@@ -264,12 +262,11 @@ export class Covering<T = unknown> {
         downY = moveY
         const lastLeft = parseInt(refShell.style.getPropertyValue("left").slice(0, -2))
         const lastTop = parseInt(refShell.style.getPropertyValue("top").slice(0, -2))
-        const bounding = this.scene.canvas.getBoundingClientRect()
         if (
-          lastLeft + offsetX <= bounding.left ||
-          lastTop + offsetY <= bounding.top ||
-          lastLeft + offsetX + refShell.clientWidth >= bounding.right ||
-          lastTop + offsetY + refShell.clientHeight >= bounding.bottom
+          lastLeft + offsetX <= 0 ||
+          lastTop + offsetY <= 0 ||
+          lastLeft + offsetX + refShell.clientWidth >= this.scene.canvas.width ||
+          lastTop + offsetY + refShell.clientHeight >= this.scene.canvas.height
         ) {
           return
         }

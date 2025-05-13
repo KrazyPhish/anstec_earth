@@ -136,18 +136,18 @@ declare module "@anstec/earth" {
    * @description 可编辑类型
    */
   export enum EditableType {
-    ATTACK_ARROW,
-    BILLBOARD,
-    CIRCLE,
-    LABEL,
-    MODEL,
-    PINCER_ARROW,
-    POINT,
-    POLYGON,
-    POLYLINE,
-    RECTANGLE,
-    STRAIGHT_ARROW,
-    WALL,
+    ATTACK_ARROW = 0,
+    BILLBOARD = 1,
+    CIRCLE = 2,
+    LABEL = 3,
+    MODEL = 4,
+    PINCER_ARROW = 5,
+    POINT = 6,
+    POLYGON = 7,
+    POLYLINE = 8,
+    RECTANGLE = 9,
+    STRAIGHT_ARROW = 10,
+    WALL = 11,
   }
 
   /**
@@ -208,12 +208,12 @@ declare module "@anstec/earth" {
 
   /**
    * @description 圆锥计算模式
-   * 1. `MATH` - 将`radius`当作标准的数学值计算
-   * 2. `RHUMB` - 将`radius`当作大圆圆弧的值计算
+   * 1. `MATH` 将`radius`当作标准的数学值计算
+   * 2. `RHUMB` 将`radius`当作大圆圆弧的值计算
    */
   export enum ConicMode {
-    MATH,
-    RHUMB,
+    MATH = 0,
+    RHUMB = 1,
   }
 
   /**
@@ -1132,6 +1132,7 @@ declare module "@anstec/earth" {
 
   /**
    * @description 自定义覆盖物
+   * @param earth {@link Earth} 地球实例
    * @example
    * ```
    * const earth = useEarth
@@ -4661,7 +4662,7 @@ declare module "@anstec/earth" {
       /**
        * @deprecated
        */
-      earth: Earth
+      earth?: Earth
       id?: string
       option?: EChartsOption
     }
