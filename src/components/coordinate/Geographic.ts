@@ -203,7 +203,7 @@ export class Geographic {
   }
 
   /**
-   * @description 数组批量转坐标
+   * @description 数组批量转坐标 <角度制>
    * @param coordinates 数组坐标
    * @exception Array length must be a mutiple of 2.
    * @exception Invaid longitude or latitude value.
@@ -230,7 +230,34 @@ export class Geographic {
   }
 
   /**
-   * @description 带高程的数组批量转坐标
+   * @description 数组批量转坐标 <弧度制>
+   * @param coordinates 数组坐标
+   * @exception Array length must be a mutiple of 2.
+   * @exception Invaid longitude or latitude value.
+   * @example
+   * ```
+   * const arr = [2.1, 1.04]
+   * const geoArr = Geographic.fromRadiansArray(arr)
+   * ```
+   */
+  public static fromRadiansArray(coordinates: number[]) {
+    if (coordinates.length % 2) {
+      throw new DeveloperError("Array length must be a mutiple of 2.")
+    }
+    const geographics: Geographic[] = []
+    for (let i = 0; i < coordinates.length; i += 2) {
+      const lon = coordinates[i]
+      const lat = coordinates[i + 1]
+      if (lon < -Math.PI || lon > Math.PI || lat < -Math.PI_OVER_TWO || lat > Math.PI_OVER_TWO) {
+        throw new DeveloperError("Invaid longitude or latitude value.")
+      }
+      geographics.push(new Geographic(Math.toDegrees(lon), Math.toDegrees(lat)))
+    }
+    return geographics
+  }
+
+  /**
+   * @description 带高程的数组批量转坐标 <角度制>
    * @param coordinates 带高程的数组坐标
    * @exception Array length must be a mutiple of 3.
    * @exception Invaid longitude or latitude value.
@@ -252,6 +279,33 @@ export class Geographic {
         throw new DeveloperError("Invaid longitude or latitude value.")
       }
       geographics.push(new Geographic(lon, lat, coordinates[i + 2]))
+    }
+    return geographics
+  }
+
+  /**
+   * @description 带高程的数组批量转坐标 <弧度制>
+   * @param coordinates 带高程的数组坐标
+   * @exception Array length must be a mutiple of 3.
+   * @exception Invaid longitude or latitude value.
+   * @example
+   * ```
+   * const arr = [2.1, 1.03, 500]
+   * const geoArr = Geographic.fromRadiansArrayHeights(arr)
+   * ```
+   */
+  public static fromRadiansArrayHeights(coordinates: number[]) {
+    if (coordinates.length % 3) {
+      throw new DeveloperError("Array length must be a mutiple of 3.")
+    }
+    const geographics: Geographic[] = []
+    for (let i = 0; i < coordinates.length; i += 3) {
+      const lon = coordinates[i]
+      const lat = coordinates[i + 1]
+      if (lon < -Math.PI || lon > Math.PI || lat < -Math.PI_OVER_TWO || lat > Math.PI_OVER_TWO) {
+        throw new DeveloperError("Invaid longitude or latitude value.")
+      }
+      geographics.push(new Geographic(Math.toDegrees(lon), Math.toDegrees(lat), coordinates[i + 2]))
     }
     return geographics
   }

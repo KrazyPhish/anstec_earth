@@ -362,7 +362,7 @@ export class Earth {
       public pointToData(point: number[]) {
         const pt = new Cartesian2(point[0] + this.mapOffset[0], point[1] + this.mapOffset[1])
         const cartesian = this.scene.pickPosition(pt)
-        if (!cartesian) return [999, 999]
+        if (!cartesian) return [undefined, undefined]
         const carto = Cartographic.fromCartesian(cartesian)
         return [carto.longitude, carto.latitude]
       }

@@ -25,6 +25,7 @@ export namespace Covering {
    * @property [data] 附加数据
    * @property [anchorPosition = "TOP_LEFT"] 覆盖物锚点方位
    * @property [connectionLine = true] 连接线，拖拽禁用时连接线将始终隐藏
+   * @property [lineStroke = "rgba(43, 44, 47, 0.8)"] 连接线颜色
    * @property position {@link Cartesian3} 位置
    */
   export type AddParam<T> = {
@@ -37,6 +38,7 @@ export namespace Covering {
     data?: T
     anchorPosition?: AnchorPosition
     connectionLine?: boolean
+    lineStroke?: string
     position: Cartesian3
   }
 
@@ -64,7 +66,15 @@ export class Covering<T = unknown> {
     this.camera = earth.camera
   }
 
-  private createConnectionLine(param: { x1: number; x2: number; y1: number; y2: number; opacity: number }) {
+  private createConnectionLine(param: {
+    x1: number
+    x2: number
+    y1: number
+    y2: number
+    opacity: number
+    stroke?: string
+  }) {
+    const stroke = param.stroke ?? "rgba(43, 44, 47, 0.8)"
     return `
       <line 
         id="line"
@@ -73,7 +83,7 @@ export class Covering<T = unknown> {
         x2="${param.x2}"
         y2="${param.y2}"
         opacity="${param.opacity}"
-        stroke="rgba(43, 44, 47, 0.8)"
+        stroke="${stroke}"
         stroke-width="1"
       />`
   }
@@ -81,6 +91,7 @@ export class Covering<T = unknown> {
   private createCallback({
     id,
     reference,
+    lineStroke,
     tail,
     tailLast,
     position,
@@ -91,6 +102,7 @@ export class Covering<T = unknown> {
     reference: HTMLDivElement
     tail: SVGSVGElement
     tailLast: { x: number; y: number }
+    lineStroke: string
     position: Cartesian3
     anchorPosition: Covering.AnchorPosition
     connectionLine: boolean
@@ -127,6 +139,7 @@ export class Covering<T = unknown> {
       x2: tailLast.x,
       y2: tailLast.y,
       opacity: this.draggable ? (connectionLine ? 1 : 0) : 0,
+      stroke: lineStroke,
     })
     let initialize = true
     return () => {
@@ -157,6 +170,7 @@ export class Covering<T = unknown> {
         x2: tailLast.x,
         y2: tailLast.y,
         opacity: this.draggable ? (connectionLine ? 1 : 0) : 0,
+        stroke: lineStroke,
       })
       const cameraOccluder = new EllipsoidalOccluder(Ellipsoid.WGS84, this.camera.position)
       if (
@@ -215,6 +229,7 @@ export class Covering<T = unknown> {
     content = "",
     anchorPosition = "TOP_LEFT",
     connectionLine = true,
+    lineStroke = "rgba(43, 44, 47, 0.8)",
     reference,
     position,
     data,
@@ -276,6 +291,7 @@ export class Covering<T = unknown> {
     const callback = this.createCallback({
       id,
       reference,
+      lineStroke,
       tail,
       tailLast,
       position,
@@ -340,6 +356,7 @@ export class Covering<T = unknown> {
         this.viewer.container.removeChild(ent.tail)
         this.viewer.container.removeChild(ent.reference)
         this.scene.preRender.removeEventListener(ent.callback)
+        this.cache.delete(id)
       }
     } else {
       this.cache.forEach((ent) => {
@@ -347,6 +364,7 @@ export class Covering<T = unknown> {
         this.viewer.container.removeChild(ent.reference)
         this.scene.preRender.removeEventListener(ent.callback)
       })
+      this.cache.clear()
     }
   }
 

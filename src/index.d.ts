@@ -1086,6 +1086,18 @@ declare module "@anstec/earth" {
      */
     static fromDegreesArray(coordinates: number[]): Geographic[]
     /**
+     * @description 数组批量转坐标 <弧度制>
+     * @param coordinates 数组坐标
+     * @exception Array length must be a mutiple of 2.
+     * @exception Invaid longitude or latitude value.
+     * @example
+     * ```
+     * const arr = [2.1, 1.04]
+     * const geoArr = Geographic.fromRadiansArray(arr)
+     * ```
+     */
+    static fromRadiansArray(coordinates: number[]): Geographic[]
+    /**
      * @description 带高程的数组批量转坐标
      * @param coordinates 带高程的数组坐标
      * @exception Array length must be a mutiple of 3.
@@ -1097,6 +1109,18 @@ declare module "@anstec/earth" {
      * ```
      */
     static fromDegreesArrayHeights(coordinates: number[]): Geographic[]
+    /**
+     * @description 带高程的数组批量转坐标 <弧度制>
+     * @param coordinates 带高程的数组坐标
+     * @exception Array length must be a mutiple of 3.
+     * @exception Invaid longitude or latitude value.
+     * @example
+     * ```
+     * const arr = [2.1, 1.03, 500]
+     * const geoArr = Geographic.fromRadiansArrayHeights(arr)
+     * ```
+     */
+    static fromRadiansArrayHeights(coordinates: number[]): Geographic[]
   }
 
   export namespace Covering {
@@ -4712,8 +4736,13 @@ declare module "@anstec/earth" {
     hide(): void
     /**
      * @description 销毁
+     * @deprecated Please use `destroy`
      */
     dispose(): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   export namespace Radar {

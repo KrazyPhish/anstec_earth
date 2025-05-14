@@ -100,8 +100,16 @@ export class EChartsOverlay {
 
   /**
    * @description 销毁
+   * @deprecated Please use `destroy`
    */
   public dispose() {
+    this.destroy()
+  }
+
+  /**
+   * @description 销毁
+   */
+  public destroy() {
     if (this.container) {
       this.viewer.container.removeChild(this.container)
       this.container = undefined

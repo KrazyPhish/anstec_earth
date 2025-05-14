@@ -2,6 +2,11 @@
 
 ### 版本更新历史记录
 
+#### Version 2.2.5
+1. `Geographic` 类新增静态方法 `fromRadiansArray` 和 `fromRadiansArrayHeights` 用于批量弧度坐标转换
+2. `EChartsOverlay` 新增方法 `destroy` 用于替代原 `dispose` 方法以保持方法命名统一
+3. 修复覆盖物移除未清理键值对缓存的问题
+
 #### Version 2.2.4
 1. `Covering` 类新增方法 `has`用于判断是否有具体条目
 2. 修复覆盖物元素自定义时错误更新内容的问题
@@ -54,7 +59,6 @@
 9. 各图形参数废弃接口 `color` 改用 `materialType` 及 `materialUniforms`
 10. 波动线条废弃接口 `measure` 改用 `length`
 11. 地球实例废弃方法 `setViewer` 和 `setOption`
-
 
 #### Version 1.1.6
 1. 重构多边形的轮廓线实现，支持多种自定义材质类型
