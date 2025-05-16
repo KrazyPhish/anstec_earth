@@ -7,9 +7,9 @@ import { Utils } from "utils"
 export namespace GlobalEvent {
   /**
    * @property position {@link Cartesian2} 屏幕坐标
-   * @property [id] 如果点击的是对象则有ID属性
-   * @property [module] 如果点击的是对象则有模块属性
-   * @property [target] 如果点击的是对象则有对象实体
+   * @property [id] 如果事件触发的是对象则有ID属性
+   * @property [module] 如果事件触发的是对象则有模块属性
+   * @property [target] 如果事件触发的是对象则有对象实体
    */
   export type CallbackParam = {
     position: Cartesian2
@@ -36,34 +36,58 @@ export namespace GlobalEvent {
 export class GlobalEvent {
   private bus: EventBus
   private handler: ScreenSpaceEventHandler
-  private static readonly types: number[] = [0, 1, 2, 3, 5, 6, 7, 10, 11, 12]
+  private static readonly types: number[] = [0, 1, 2, 3, 5, 6, 7, 10, 11, 12, 15]
 
   constructor(earth: Earth) {
     this.bus = new EventBus()
     this.handler = new ScreenSpaceEventHandler(earth.viewer.canvas)
     for (const type of GlobalEvent.types) {
-      this.handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const pick = earth.scene.pick(position)
-        if (!pick) {
-          this.bus.emit(`undefined_${type}`, { position })
-        } else {
-          let id = ""
-          if (typeof pick.id === "string") {
-            id = pick.id
-          } else if (pick.id instanceof Entity) {
-            id = pick.id.id
-          }
-          if (id) {
-            const ent = Utils.DecodeId(id)
-            if (ent) {
-              this.bus.emit(`*_${type}`, { ...ent, target: pick })
+      if (type === 15) {
+        this.handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
+          const pick = earth.scene.pick(endPosition)
+          if (!pick) return
+          else {
+            let id = ""
+            if (typeof pick.id === "string") {
+              id = pick.id
+            } else if (pick.id instanceof Entity) {
+              id = pick.id.id
             }
-            if (ent && ent.module) {
-              this.bus.emit(`${ent.module}_${type}`, { ...ent, target: pick })
+            if (id) {
+              const ent = Utils.DecodeId(id)
+              if (ent) {
+                this.bus.emit(`*_${type}`, { ...ent, target: pick })
+              }
+              if (ent && ent.module) {
+                this.bus.emit(`${ent.module}_${type}`, { ...ent, target: pick })
+              }
             }
           }
-        }
-      }, type)
+        }, type)
+      } else {
+        this.handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
+          const pick = earth.scene.pick(position)
+          if (!pick) {
+            this.bus.emit(`undefined_${type}`, { position })
+          } else {
+            let id = ""
+            if (typeof pick.id === "string") {
+              id = pick.id
+            } else if (pick.id instanceof Entity) {
+              id = pick.id.id
+            }
+            if (id) {
+              const ent = Utils.DecodeId(id)
+              if (ent) {
+                this.bus.emit(`*_${type}`, { ...ent, target: pick })
+              }
+              if (ent && ent.module) {
+                this.bus.emit(`${ent.module}_${type}`, { ...ent, target: pick })
+              }
+            }
+          }
+        }, type)
+      }
     }
   }
 

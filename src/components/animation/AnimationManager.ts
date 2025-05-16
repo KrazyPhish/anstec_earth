@@ -108,6 +108,50 @@ export class AnimationManager {
   }
 
   /**
+   * @description 显示所有动画
+   */
+  public show(): void
+  /**
+   * @description 按ID控制动画显示
+   * @param id ID
+   */
+  public show(id: string): void
+  public show(id?: string) {
+    if (id) {
+      const ent = this.cache.get(id)
+      if (ent) {
+        ent.show = true
+      }
+    } else {
+      this.cache.forEach((ent) => {
+        ent.show = true
+      })
+    }
+  }
+
+  /**
+   * @description 隐藏所有动画
+   */
+  public hide(): void
+  /**
+   * @description 按ID控制动画隐藏
+   * @param id ID
+   */
+  public hide(id: string): void
+  public hide(id?: string) {
+    if (id) {
+      const ent = this.cache.get(id)
+      if (ent) {
+        ent.show = false
+      }
+    } else {
+      this.cache.forEach((ent) => {
+        ent.show = false
+      })
+    }
+  }
+
+  /**
    * @description 根据ID移除动画对象
    * @param id ID
    */

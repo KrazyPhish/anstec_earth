@@ -59,10 +59,7 @@ export namespace Dynamic {
 
   export type Polygon = Data<DrawType.POLYGON, Omit<Draw.Polygon, "onEvery" | "onFinish" | "onMove" | "keep" | "id">>
 
-  export type Polyline = Data<
-    DrawType.POLYLINE,
-    Pick<Draw.Polyline, "width" | "ground" | "module" | "materialType" | "materialUniforms">
-  >
+  export type Polyline = Data<DrawType.POLYLINE, Omit<Draw.Polyline, "id" | "keep" | "onMove" | "onEvery" | "onFinish">>
 
   export type Rectangle = Data<DrawType.RECTANGLE, Pick<Draw.Rectangle, "color" | "ground" | "module">>
 

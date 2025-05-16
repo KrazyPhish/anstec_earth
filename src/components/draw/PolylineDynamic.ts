@@ -100,6 +100,7 @@ export class PolylineDynamic extends Dynamic<PolylineLayer<Dynamic.Polyline>> {
     module = DefaultModuleName.POLYLINE,
     width = 2,
     ground = false,
+    loop = false,
     keep = true,
     materialType = "Color",
     materialUniforms = { color: Color.RED },
@@ -153,12 +154,13 @@ export class PolylineDynamic extends Dynamic<PolylineLayer<Dynamic.Polyline>> {
           this.cacheEntity = ent = this.viewer.entities.add({
             polyline: {
               positions: new CallbackProperty(() => {
-                return points
+                const _points = loop ? [...points, points[0]] : points
+                return _points
               }, false),
               material: this.getMaterial(materialType, materialUniforms),
               width,
               clampToGround: ground,
-              arcType: ground ? ArcType.GEODESIC : ArcType.RHUMB,
+              arcType: ArcType.GEODESIC,
             },
           })
         }
@@ -178,6 +180,7 @@ export class PolylineDynamic extends Dynamic<PolylineLayer<Dynamic.Polyline>> {
               module,
               materialType,
               materialUniforms,
+              loop,
               ground,
               width,
               lines: [points],
@@ -187,6 +190,7 @@ export class PolylineDynamic extends Dynamic<PolylineLayer<Dynamic.Polyline>> {
                 attr: {
                   width,
                   ground,
+                  loop,
                   module,
                   materialType,
                   materialUniforms,
@@ -248,7 +252,8 @@ export class PolylineDynamic extends Dynamic<PolylineLayer<Dynamic.Polyline>> {
     ent = this.viewer.entities.add({
       polyline: {
         positions: new CallbackProperty(() => {
-          return positions
+          const _positions = data.attr.loop ? [...positions, positions[0]] : positions
+          return _positions
         }, false),
         material: this.getMaterial(data.attr.materialType, data.attr.materialUniforms),
         width: data.attr.width,

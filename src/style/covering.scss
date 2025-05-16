@@ -10,6 +10,17 @@
   box-shadow: 0 0 8px 0 rgba(43, 44, 47, 0.9) inset;
 }
 
+.covering-btn {
+  position: absolute;
+  color: red;
+  height: 12px;
+  width: 5px;
+  top: 5px;
+  right: 10px;
+  cursor: pointer;
+  z-index: 10;
+}
+
 .covering-title {
   font-weight: bold;
   min-width: 100px;

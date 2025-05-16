@@ -196,6 +196,10 @@ declare module "@anstec/earth" {
     MIDDLE_DOWN = 10,
     MIDDLE_UP = 11,
     MIDDLE_CLICK = 12,
+    /**
+     * @description 该事件仅对模块对象有效
+     */
+    HOVER = 15,
   }
 
   /**
@@ -617,6 +621,24 @@ declare module "@anstec/earth" {
      */
     add(param: AnimationManager.AddParam): void
     /**
+     * @description 显示所有动画
+     */
+    show(): void
+    /**
+     * @description 按ID控制动画显示
+     * @param id ID
+     */
+    show(id: string): void
+    /**
+     * @description 隐藏所有动画
+     */
+    hide(): void
+    /**
+     * @description 按ID控制动画隐藏
+     * @param id ID
+     */
+    hide(id: string): void
+    /**
      * @description 根据ID移除动画对象
      * @param id ID
      */
@@ -635,9 +657,9 @@ declare module "@anstec/earth" {
   export namespace GlobalEvent {
     /**
      * @property position {@link Cartesian2} 屏幕坐标
-     * @property [id] 如果点击的是对象则有ID属性
-     * @property [module] 如果点击的是对象则有模块属性
-     * @property [target] 如果点击的是对象则有对象实体
+     * @property [id] 如果事件触发的是对象则有ID属性
+     * @property [module] 如果事件触发的是对象则有模块属性
+     * @property [target] 如果事件触发的是对象则有对象实体
      */
     export type CallbackParam = {
       position: Cartesian2
@@ -1136,6 +1158,8 @@ declare module "@anstec/earth" {
      * @property [data] 附加数据
      * @property [anchorPosition = "TOP_LEFT"] 覆盖物锚点方位
      * @property [connectionLine = true] 连接线，拖拽禁用时连接线将始终隐藏
+     * @property [closeable = true] 覆盖物是否可关闭
+     * @property [lineStroke = "rgba(43, 44, 47, 0.8)"] 连接线颜色
      * @property position {@link Cartesian3} 位置
      */
     export type AddParam<T> = {
@@ -1148,6 +1172,8 @@ declare module "@anstec/earth" {
       data?: T
       anchorPosition?: AnchorPosition
       connectionLine?: boolean
+      closeable?: boolean
+      lineStroke?: string
       position: Cartesian3
     }
 
@@ -1172,7 +1198,7 @@ declare module "@anstec/earth" {
     setDraggable(value: boolean): void
     /**
      * @description 新增覆盖物
-     * @param param {@link Covering.AddParam<T>} 参数
+     * @param param {@link Covering.AddParam} 参数
      * @exception Reference element is required when customizing.
      * @example
      * ```
@@ -1198,7 +1224,7 @@ declare module "@anstec/earth" {
     /**
      * @description 按ID设置覆盖物的属性
      * @param id ID
-     * @param param {@link Covering.SetParam<T>} 参数
+     * @param param {@link Covering.SetParam} 参数
      * @returns
      */
     set(id: string, param: Covering.SetParam<T>): void
@@ -1456,6 +1482,7 @@ declare module "@anstec/earth" {
      * @property [width = 2] 线条宽度
      * @property [keep = true] 是否保留绘制图形
      * @property [ground = false] 图形是否贴地
+     * @property [loop = false] 图形是否首尾相连
      * @property [onMove] 绘制时鼠标移动的回调
      * @property [onEvery] 每一个点绘制的回调
      * @property [onFinish] 绘制结束的回调
@@ -1466,6 +1493,7 @@ declare module "@anstec/earth" {
       width?: number
       keep?: boolean
       ground?: boolean
+      loop?: boolean
       onMove?: (position: Cartesian3, lastIndex: number) => void
       onEvery?: (position: Cartesian3, index: number) => void
       onFinish?: (positions: Cartesian3[]) => void
@@ -2121,7 +2149,7 @@ declare module "@anstec/earth" {
 
     export type Polyline = Data<
       DrawType.POLYLINE,
-      Pick<Draw.Polyline, "width" | "ground" | "module" | "materialType" | "materialUniforms">
+      Omit<Draw.Polyline, "id" | "keep" | "onMove" | "onEvery" | "onFinish">
     >
 
     export type Rectangle = Data<DrawType.RECTANGLE, Pick<Draw.Rectangle, "color" | "ground" | "module">>
@@ -2605,13 +2633,13 @@ declare module "@anstec/earth" {
     getAllowDestroy(): boolean
     /**
      * @description 新增一个扩散点
-     * @param param 参数
+     * @param param {@link DiffusePointLayer.AddParam} 参数
      */
     add(param: DiffusePointLayer.AddParam<T>): void
     /**
      * @description 设置扩散点的位置和数据信息
      * @param id ID
-     * @param param {@link DiffusePointLayer.SetParam}，参数
+     * @param param {@link DiffusePointLayer.SetParam} 参数
      */
     set(id: string, param: DiffusePointLayer.SetParam<T>): void
     /**
@@ -2619,6 +2647,24 @@ declare module "@anstec/earth" {
      * @param id ID
      */
     getData(id: string): T
+    /**
+     * @description 显示所有扩散点
+     */
+    show(): void
+    /**
+     * @description 按ID显示扩散点
+     * @param id ID
+     */
+    show(id: string): void
+    /**
+     * @description 隐藏所有扩散点
+     */
+    hide(): void
+    /**
+     * @description 按ID隐藏扩散点
+     * @param id ID
+     */
+    hide(id: string): void
     /**
      * @description 移除所有扩散点
      */
@@ -3812,6 +3858,7 @@ declare module "@anstec/earth" {
      * @property [color = {@link Color.RED}] 填充色
      * @property [usePointHeight = false] 多边形顶点使用其自身高度
      * @property [ground = false] 是否贴地
+     * @property [arcType = {@link ArcType.GEODESIC}] 线段弧度类型，贴地时无效
      * @property [outline] {@link OutlineAddParam} 轮廓线
      * @property [label] {@link LabelAddParam} 对应标签
      */
@@ -3821,6 +3868,7 @@ declare module "@anstec/earth" {
       color?: Color
       usePointHeight?: boolean
       ground?: boolean
+      arcType?: ArcType
       outline?: OutlineAddParam<T>
       label?: LabelAddParam<T>
     }
@@ -3933,6 +3981,7 @@ declare module "@anstec/earth" {
      * @property [materialType = "Color"] {@link MaterialType} 材质类型
      * @property [materialUniforms = { color: {@link Color.RED} }] {@link MaterialUniforms} 材质参数
      * @property [ground = false] 是否贴地
+     * @property [loop = false] 是否首尾相接
      */
     export type AddParam<T> = Layer.AddParam<T> & {
       lines: Cartesian3[][]
@@ -3942,6 +3991,7 @@ declare module "@anstec/earth" {
       materialType?: MaterialType
       materialUniforms?: MaterialUniforms
       ground?: boolean
+      loop?: boolean
     }
   }
 
@@ -6097,6 +6147,9 @@ declare module "@anstec/earth" {
    * ```
    */
   export class GraphicsLayer {
+    /**
+     * @deprecated 现不再限制销毁
+     */
     readonly allowDestroy: boolean
     billboard: BillboardLayer
     ellipse: EllipseLayer
@@ -6121,6 +6174,7 @@ declare module "@anstec/earth" {
     reset(): void
     /**
      * @description 强制销毁
+     * @deprecated Please use `destroy`
      * @example
      * ```
      * const earth = useEarth()
@@ -6129,6 +6183,144 @@ declare module "@anstec/earth" {
      * ```
      */
     forceDestroy(): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
+  }
+
+  export namespace Queue {
+    export type Comparator<T> = (a: T, b: T) => number
+  }
+
+  /**
+   * @description 队列，先进先出
+   * @param array 数组
+   * @example
+   * ```
+   * const queue = Stack.fromArray(taskArray)
+   * const next = queue.dequeue()
+   * next()
+   *
+   * //get the front task
+   * const front = queue.front()
+   * ```
+   */
+  export class Queue<T = unknown> {
+    constructor(array?: T[])
+    /**
+     * @description 当前队列长度
+     */
+    readonly length: number
+    /**
+     * @description 以数组形式获取队列中的所有元素
+     */
+    readonly elements: T[]
+    /**
+     * @description 克隆当前队列
+     * @returns 新的队列
+     */
+    clone(): Queue
+    /**
+     * @description 排队元素
+     * @param elements 元素
+     * @returns 当前队列的长度
+     */
+    enqueue(elements: T[]): number
+    /**
+     * @description 出队元素
+     * @returns 出队的元素
+     */
+    dequeue(): T | undefined
+    /**
+     * @description 获取队列头部的元素
+     * @returns 队列头部的元素
+     */
+    front(): T | undefined
+    /**
+     * @description 排序当前队列
+     * @param comparator {@link Stack.Comparator} 排序函数
+     */
+    sort(comparator?: Queue.Comparator<T>): void
+    /**
+     * @description 从数组转换队列
+     * @param array 数组
+     * @returns 队列
+     */
+    static fromArray<T = unknown>(array: T[]): Queue
+    /**
+     * @description 从栈转换队列
+     * @param stack 栈
+     * @returns 队列
+     */
+    static fromStack<T = unknown>(stack: Stack<T>): Queue
+  }
+
+  export namespace Stack {
+    export type Comparator<T> = (a: T, b: T) => number
+  }
+
+  /**
+   * @description 栈，先进后出
+   * @param array 数组
+   * @example
+   * ```
+   * const stack = Stack.fromArray(taskArray)
+   * const next = stack.pop()
+   * next()
+   *
+   * //get the bottom task
+   * const bottom = stack.bottom()
+   * ```
+   */
+  export class Stack<T = unknown> {
+    constructor(array?: T[])
+    /**
+     * @description 当前栈长度
+     */
+    readonly length: number
+    /**
+     * @description 以数组形式获取栈中的所有元素
+     */
+    readonly elements: T[]
+    /**
+     * @description 克隆当前栈
+     * @returns 新的栈
+     */
+    clone(): Stack
+    /**
+     * @description 压入元素
+     * @param elements 元素
+     * @returns 当前栈的长度
+     */
+    push(elements: T[]): number
+    /**
+     * @description 弹出元素
+     * @returns 弹出的元素
+     */
+    pop(): T | undefined
+    /**
+     * @description 获取栈底的元素
+     * @returns 栈底的元素
+     */
+    bottom(): T | undefined
+    /**
+     * @description 排序当前栈
+     * @param comparator {@link Stack.Comparator} 排序函数
+     */
+    sort(comparator?: Stack.Comparator<T>): void
+    /**
+     * @description 从数组转换栈
+     * @param array 数组
+     * @returns 栈
+     */
+    static fromArray<T = unknown>(array: T[]): Stack
+    /**
+     * @description 从队列转换栈
+     * @param queue 队列
+     * @returns 栈
+     */
+    static fromQueue<T = unknown>(queue: Queue<T>): Stack
   }
 
   /**

@@ -40,10 +40,11 @@ export namespace PolylineLayer {
    * @property lines {@link Cartesian3} 位置
    * @property [asynchronous = true] 是否异步渲染
    * @property [width = 2] 线宽
-   * @property [arcType = {@link ArcType.RHUMB}] 线段弧度类型
+   * @property [arcType = {@link ArcType.GEODESIC}] 线段弧度类型
    * @property [materialType = "Color"] {@link MaterialType} 材质类型
    * @property [materialUniforms = { color: {@link Color.RED} }] {@link MaterialUniforms} 材质参数
    * @property [ground = false] 是否贴地
+   * @property [loop = false] 是否首尾相接
    */
   export type AddParam<T> = Layer.AddParam<T> & {
     lines: Cartesian3[][]
@@ -53,6 +54,7 @@ export namespace PolylineLayer {
     materialType?: MaterialType
     materialUniforms?: MaterialUniforms
     ground?: boolean
+    loop?: boolean
   }
 }
 
@@ -104,8 +106,9 @@ export class PolylineLayer<T = unknown> extends Layer<
     lines,
     asynchronous = true,
     width = 2,
-    arcType = ArcType.RHUMB,
+    arcType = ArcType.GEODESIC,
     ground = false,
+    loop = false,
     materialType = "Color",
     materialUniforms = { color: Color.RED },
     show = true,
@@ -116,12 +119,13 @@ export class PolylineLayer<T = unknown> extends Layer<
     for (const positions of lines) {
       const geometry = ground
         ? new GroundPolylineGeometry({
+            loop: true,
             positions,
             width,
           })
         : new PolylineGeometry({
             arcType,
-            positions,
+            positions: loop ? [...positions, positions[0].clone()] : positions,
             width,
             vertexFormat: PolylineMaterialAppearance.VERTEX_FORMAT,
           })

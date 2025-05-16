@@ -139,7 +139,7 @@ export class DiffusePointLayer<T = unknown> {
   /**
    * @description 设置扩散点的位置和数据信息
    * @param id ID
-   * @param param {@link DiffusePointLayer.SetParam}，参数
+   * @param param {@link DiffusePointLayer.SetParam} 参数
    */
   public set(id: string, { position, data }: DiffusePointLayer.SetParam<T>) {
     const ent = this.cache.get(id)
@@ -158,6 +158,50 @@ export class DiffusePointLayer<T = unknown> {
    */
   public getData(id: string) {
     return this.cache.get(id)?.data
+  }
+
+  /**
+   * @description 显示所有扩散点
+   */
+  public show(): void
+  /**
+   * @description 按ID显示扩散点
+   * @param id ID
+   */
+  public show(id: string): void
+  public show(id?: string) {
+    if (id) {
+      const ent = this.cache.get(id)
+      if (ent) {
+        ent.pointSVG.style.display = "flex"
+      }
+    } else {
+      this.cache.forEach((ent) => {
+        ent.pointSVG.style.display = "flex"
+      })
+    }
+  }
+
+  /**
+   * @description 隐藏所有扩散点
+   */
+  public hide(): void
+  /**
+   * @description 按ID隐藏扩散点
+   * @param id ID
+   */
+  public hide(id: string): void
+  public hide(id?: string) {
+    if (id) {
+      const ent = this.cache.get(id)
+      if (ent) {
+        ent.pointSVG.style.display = "none"
+      }
+    } else {
+      this.cache.forEach((ent) => {
+        ent.pointSVG.style.display = "none"
+      })
+    }
   }
 
   /**

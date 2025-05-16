@@ -25,6 +25,7 @@ export namespace Covering {
    * @property [data] 附加数据
    * @property [anchorPosition = "TOP_LEFT"] 覆盖物锚点方位
    * @property [connectionLine = true] 连接线，拖拽禁用时连接线将始终隐藏
+   * @property [closeable = true] 覆盖物是否可关闭
    * @property [lineStroke = "rgba(43, 44, 47, 0.8)"] 连接线颜色
    * @property position {@link Cartesian3} 位置
    */
@@ -38,6 +39,7 @@ export namespace Covering {
     data?: T
     anchorPosition?: AnchorPosition
     connectionLine?: boolean
+    closeable?: boolean
     lineStroke?: string
     position: Cartesian3
   }
@@ -229,11 +231,13 @@ export class Covering<T = unknown> {
     content = "",
     anchorPosition = "TOP_LEFT",
     connectionLine = true,
+    closeable = true,
     lineStroke = "rgba(43, 44, 47, 0.8)",
     reference,
     position,
     data,
   }: Covering.AddParam<T>) {
+    //TODO reference can also accept type of html string
     if (customize) {
       if (!reference) {
         throw new DeveloperError("Reference element is required when customizing.")
@@ -250,6 +254,15 @@ export class Covering<T = unknown> {
       contentDiv.innerHTML = content
       reference.appendChild(titleDiv)
       reference.appendChild(contentDiv)
+    }
+    if (closeable) {
+      const close = document.createElement("div")
+      reference.appendChild(close)
+      close.classList.add("covering-btn")
+      close.innerHTML = "X"
+      close.addEventListener("click", () => {
+        this.remove(id)
+      })
     }
     const tail = document.createElementNS("http://www.w3.org/2000/svg", "svg")
     this.viewer.container.appendChild(reference)
@@ -305,7 +318,7 @@ export class Covering<T = unknown> {
   /**
    * @description 按ID设置覆盖物的属性
    * @param id ID
-   * @param param {@link Covering.SetParam<T>} 参数
+   * @param param {@link Covering.SetParam} 参数
    * @returns
    */
   public set(id: string, { position, title, content, data }: Covering.SetParam<T>) {

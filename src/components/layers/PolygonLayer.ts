@@ -33,6 +33,7 @@ export namespace PolygonLayer {
    * @property [color = {@link Color.RED}] 填充色
    * @property [usePointHeight = false] 多边形顶点使用其自身高度
    * @property [ground = false] 是否贴地
+   * @property [arcType = {@link ArcType.GEODESIC}] 线段弧度类型，贴地时无效
    * @property [outline] {@link OutlineAddParam} 轮廓线
    * @property [label] {@link LabelAddParam} 对应标签
    */
@@ -42,6 +43,7 @@ export namespace PolygonLayer {
     color?: Color
     usePointHeight?: boolean
     ground?: boolean
+    arcType?: ArcType
     outline?: OutlineAddParam<T>
     label?: LabelAddParam<T>
   }
@@ -79,6 +81,7 @@ export class PolygonLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
         usePointHeight: param.usePointHeight ?? false,
         ground: param.ground ?? false,
         show: param.show ?? true,
+        arcType: param.arcType ?? ArcType.GEODESIC,
         outline: param.outline
           ? {
               width: param.outline?.width ?? 2,
@@ -127,10 +130,12 @@ export class PolygonLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
 
     const geometry = polygon.ground
       ? PolygonGeometry.fromPositions({
+          arcType: polygon.arcType,
           positions: polygon.positions,
           vertexFormat: PerInstanceColorAppearance.VERTEX_FORMAT,
         })
       : PolygonGeometry.fromPositions({
+          arcType: polygon.arcType,
           positions: polygon.positions,
           height: polygon.height,
           vertexFormat: PerInstanceColorAppearance.VERTEX_FORMAT,
@@ -163,8 +168,9 @@ export class PolygonLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
           id: polygon.id,
           module: param.module,
           data: param.data,
-          arcType: ArcType.NONE,
-          lines: [[...polygon.positions, polygon.positions[0].clone()]],
+          arcType: param.arcType,
+          lines: [polygon.positions],
+          loop: true,
           ground: false,
           materialType,
           materialUniforms,
@@ -179,7 +185,9 @@ export class PolygonLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
           id: polygon.id,
           module: param.module,
           data: param.data,
-          lines: [[...positions, positions[0].clone()]],
+          arcType: param.arcType,
+          lines: [positions],
+          loop: true,
           ground: polygon.ground,
           materialType,
           materialUniforms,

@@ -267,6 +267,7 @@ export namespace Draw {
    * @property [width = 2] 线条宽度
    * @property [keep = true] 是否保留绘制图形
    * @property [ground = false] 图形是否贴地
+   * @property [loop = false] 图形是否首尾相连
    * @property [onMove] 绘制时鼠标移动的回调
    * @property [onEvery] 每一个点绘制的回调
    * @property [onFinish] 绘制结束的回调
@@ -277,6 +278,7 @@ export namespace Draw {
     width?: number
     keep?: boolean
     ground?: boolean
+    loop?: boolean
     onMove?: (position: Cartesian3, lastIndex: number) => void
     onEvery?: (position: Cartesian3, index: number) => void
     onFinish?: (positions: Cartesian3[]) => void

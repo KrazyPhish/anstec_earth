@@ -9,7 +9,7 @@ import {
 } from "cesium"
 import { Geographic } from "components/coordinate"
 import { Earth } from "components/Earth"
-import { BillboardLayer, EllipseLayer } from "components/layers"
+import { EllipseLayer } from "components/layers"
 import { DrawType, DefaultModuleName, SubEventType } from "enum"
 import { Utils, State, Figure } from "utils"
 import { Draw } from "./Draw"

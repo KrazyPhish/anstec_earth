@@ -599,7 +599,7 @@ export class Earth {
    * earth.morphTo(MapMode.Scene3D)
    * ```
    */
-  public morphTo(mode: MapMode, duration: number = 3) {
+  public morphTo(mode: MapMode, duration: number = 2) {
     const viewCenter = new Cartesian2(
       Math.floor(this.viewer.canvas.clientWidth / 2),
       Math.floor(this.viewer.canvas.clientHeight / 2)
@@ -631,10 +631,10 @@ export class Earth {
    * @description 销毁
    */
   public destroy() {
-    this.viewer.destroy()
-    this.layers.forceDestroy()
+    this.layers.destroy()
     this.drawTool.destroy()
     this.contextMenu.destroy()
     this.global.destroy()
+    this.viewer.destroy()
   }
 }

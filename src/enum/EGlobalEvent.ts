@@ -12,4 +12,8 @@ export enum GlobalEventType {
   MIDDLE_DOWN = 10,
   MIDDLE_UP = 11,
   MIDDLE_CLICK = 12,
+  /**
+   * @description 该事件仅对模块对象有效
+   */
+  HOVER = 15,
 }

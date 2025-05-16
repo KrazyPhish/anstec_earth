@@ -2,19 +2,32 @@
 
 ### 版本更新历史记录
 
+#### Version 2.3.0
+1. 新增 `Queue` 类和 `Stack` 类，用于模拟队列和栈的管理工具
+2. `PolylineLayer.AddParam` 新增参数 `loop` 用于配置首尾相连的折线
+3. `PolylineDynamic` 类同步，即可绘制首尾相连的折线
+4. `AnimationManager` 类新增方法 `show` 和 `hide` 控制动画显示和隐藏
+5. `DiffusePointLayer` 类新增方法 `show` 和 `hide` 控制扩散点图层对象显示和隐藏
+6. `GlobalEvent` 全局事件类新增事件类型，仅支持对象触发的 `HOVER` 事件
+7. 废弃属性 `GraphicsLayer.allowDestroy` 现不再限制该默认图层的销毁操作
+8. 废弃方法 `GraphicsLayer.forceDestroy` 改用 `GraphicsLayer.destroy`
+9. 修复调用 `useEarthRecycle` 导致Vue页面崩溃的问题
+10. `Covering` 类新增参数中新增 `closeable` 属性，以给覆盖物增加可关闭吊牌的按钮
+11. `Covering` 覆盖物自定义连接线颜色
+
 #### Version 2.2.5
 1. `Geographic` 类新增静态方法 `fromRadiansArray` 和 `fromRadiansArrayHeights` 用于批量弧度坐标转换
 2. `EChartsOverlay` 新增方法 `destroy` 用于替代原 `dispose` 方法以保持方法命名统一
-3. 修复覆盖物移除未清理键值对缓存的问题
+3. 修复 `Covering` 覆盖物移除未清理键值对缓存的问题
 
 #### Version 2.2.4
 1. `Covering` 类新增方法 `has`用于判断是否有具体条目
-2. 修复覆盖物元素自定义时错误更新内容的问题
-3. 修复覆盖物元素自定义时元素定位错误的问题
+2. 修复 `Covering` 覆盖物元素自定义时错误更新内容的问题
+3. 修复 `Covering` 覆盖物元素自定义时元素定位错误的问题
 
 #### Version 2.2.3
 1. 修复 `Covering` 类在拉伸视图、缩放视图下错位、无法拖拽的若干问题
-2. 覆盖物定位方式从 `fixed` 切换至 `absolute`，如还有错位问题请将地球的父对象定位方式改为 `relative`
+2.  `Covering` 覆盖物定位方式从 `fixed` 切换至 `absolute`，如还有错位问题请将地球的父对象定位方式改为 `relative`
 3. `2D` 地图模式下加载覆盖物出现位置错误请等待地球视图加载完成后再加载（由 `Cesium` 二维坐标转换缺陷引起）
 
 #### Version 2.2.2
@@ -27,7 +40,7 @@
 1. 修复若干类型声明错误
 
 #### Version 2.2.0
-1. 新增积云图层类，提供积云图层展示
+1. 新增 `CloudLayer` 积云图层类，提供积云图层展示
 2. 类 `Geographic` 新增若干方法
 3. 类 `Coordinate` 新增若干方法
 4. 修正若干类型声明错误
@@ -44,7 +57,7 @@
 2. 修订若干类型声明错误
 
 #### Version 2.0.0
-1. 新增 `AnimationManager` 动画管理器类，简化播放开发流程（ `entity` 实现，性能不如 `primitive` ）
+1. 新增 `AnimationManager` 动画管理器类，简化播放开发流程
 2. 发布至npm公开版本，版本号重置为2.0.0
 
 #### Version 1.1.7

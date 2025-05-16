@@ -20,7 +20,10 @@ import {
  * ```
  */
 export class GraphicsLayer {
-  public readonly allowDestroy = false
+  /**
+   * @deprecated 现不再限制销毁
+   */
+  public readonly allowDestroy = true
   public billboard: BillboardLayer
   public ellipse: EllipseLayer
   public point: PointLayer
@@ -40,14 +43,6 @@ export class GraphicsLayer {
     this.polyline = new PolylineLayer(earth)
     this.rectangle = new RectangleLayer(earth)
     this.wall = new WallLayer(earth)
-
-    this.billboard.setAllowDestroy(false)
-    this.ellipse.setAllowDestroy(false)
-    this.point.setAllowDestroy(false)
-    this.polygon.setAllowDestroy(false)
-    this.polyline.setAllowDestroy(false)
-    this.rectangle.setAllowDestroy(false)
-    this.wall.setAllowDestroy(false)
   }
 
   /**
@@ -79,6 +74,7 @@ export class GraphicsLayer {
 
   /**
    * @description 强制销毁
+   * @deprecated Please use `destroy`
    * @example
    * ```
    * const earth = useEarth()
@@ -87,14 +83,13 @@ export class GraphicsLayer {
    * ```
    */
   public forceDestroy() {
-    this.billboard.setAllowDestroy(true)
-    this.ellipse.setAllowDestroy(true)
-    this.point.setAllowDestroy(true)
-    this.polygon.setAllowDestroy(true)
-    this.polyline.setAllowDestroy(true)
-    this.rectangle.setAllowDestroy(true)
-    this.wall.setAllowDestroy(true)
+    this.destroy()
+  }
 
+  /**
+   * @description 销毁
+   */
+  public destroy() {
     this.billboard.destroy()
     this.ellipse.destroy()
     this.point.destroy()
