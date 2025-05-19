@@ -50,6 +50,7 @@ export namespace Cluster {
  * ```
  */
 export class Cluster {
+  private destroyed: boolean = false
   private collection: PrimitiveCollection
   private cluster: PrimitiveCluster
   private pinBuilder = new PinBuilder()
@@ -167,9 +168,18 @@ export class Cluster {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     this.removeListener?.()
     this.earth.scene.primitives.remove(this.collection)
   }

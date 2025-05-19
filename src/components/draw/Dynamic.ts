@@ -72,6 +72,7 @@ export namespace Dynamic {
  * @description 动态绘制基类
  */
 export abstract class Dynamic<L extends Dynamic.Layer> {
+  private destroyed: boolean = false
   public abstract type: string
   protected layer: L
 
@@ -209,10 +210,20 @@ export abstract class Dynamic<L extends Dynamic.Layer> {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     this.interrupt()
+    this.remove()
     this.layer.destroy()
     this.editHandler.destroy()
     this.earth = undefined as any

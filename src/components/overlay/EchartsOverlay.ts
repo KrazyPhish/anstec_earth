@@ -26,11 +26,13 @@ export namespace EChartsOverlay {
  * ```
  */
 export class EChartsOverlay {
+  private destroyed: boolean = false
   private id: string
   private viewer: Viewer
   private scene: Scene
   private container?: HTMLElement
   private overlay?: ECharts
+
   constructor(earth: Earth, options: EChartsOverlay.ConstructorOptions) {
     this.id = options.id ?? Utils.RandomUUID()
     this.viewer = earth.viewer
@@ -107,9 +109,18 @@ export class EChartsOverlay {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     if (this.container) {
       this.viewer.container.removeChild(this.container)
       this.container = undefined

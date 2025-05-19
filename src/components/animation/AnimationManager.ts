@@ -66,6 +66,7 @@ export class AnimationManager {
   private id: string
   private cache: Map<string, Entity> = new Map()
   private viewer: Viewer
+  private destroyed: boolean = false
 
   constructor(earth: Earth) {
     if (AnimationManager.recordCache.has(earth.id)) {
@@ -173,9 +174,18 @@ export class AnimationManager {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     this.cache.forEach((entity) => {
       this.viewer.entities.remove(entity)
     })

@@ -86,6 +86,10 @@ export abstract class Layer<C extends Layer.Collection, P extends Layer.Primitiv
    */
   private allowDestroy: boolean = true
   /**
+   * @description 销毁状态
+   */
+  private destroyed: boolean = false
+  /**
    * @description 图元的集合
    */
   public collection: C
@@ -263,15 +267,27 @@ export abstract class Layer<C extends Layer.Collection, P extends Layer.Primitiv
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁图层
    * @returns 返回`boolean`值
    */
   public destroy(): boolean {
+    if (this.destroyed) {
+      console.warn("Current entity layer has already been destoryed.")
+      return true
+    }
     if (this.allowDestroy) {
       this.scene.primitives.remove(this.collection)
       this.cache.clear()
       this.collection = undefined as any
       this.cache = undefined as any
+      this.destroyed = true
       return true
     } else {
       console.warn("Current entity layer is not allowed to destory.")

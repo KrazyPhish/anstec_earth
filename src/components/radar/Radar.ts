@@ -89,6 +89,7 @@ const { abs, cos, round, sin, PI } = window.Math
  * ```
  */
 export class Radar<T = unknown> {
+  private destroyed: boolean = false
   private cache: Map<
     string,
     {
@@ -99,11 +100,8 @@ export class Radar<T = unknown> {
       data?: T
     }
   > = new Map()
-
   private scene: Scene
-
   private dataSource = new CustomDataSource("_radar_")
-
   private collection: EntityCollection = this.dataSource.entities
 
   constructor(private earth: Earth) {
@@ -536,9 +534,18 @@ export class Radar<T = unknown> {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     this.collection.removeAll()
     this.earth.viewer.dataSources.remove(this.dataSource)
     this.cache.clear()

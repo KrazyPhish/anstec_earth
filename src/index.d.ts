@@ -467,17 +467,6 @@ declare module "@anstec/earth" {
     /**
      * @description 移除地图影像层
      * @param layer 图层
-     * @example
-     * ```
-     * const earth = useEarth()
-     * const imageryProvider = useTileImageryProvider({ url: "/api/imagery", maximumLevel: 18 })
-     *
-     * //remove one
-     * earth.removeImageryProvider(imageryProvider)
-     *
-     * //remove all
-     * earth.removeImageryProvider()
-     * ```
      */
     removeImageryProvider(layer: ImageryLayer): void
     /**
@@ -560,6 +549,10 @@ declare module "@anstec/earth" {
      * ```
      */
     morphTo(mode: DefaultContextMenuItem.Scene2D | DefaultContextMenuItem.Scene3D, duration?: number): void
+    /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -649,6 +642,10 @@ declare module "@anstec/earth" {
      */
     remove(): void
     /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
+    /**
      * @description 销毁
      */
     destroy(): void
@@ -705,6 +702,10 @@ declare module "@anstec/earth" {
      * 3. 传入模块名则仅取消订阅该模块事件
      */
     unsubscribe(callback: GlobalEvent.Callback, event: GlobalEventType, module?: string): void
+    /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -843,6 +844,10 @@ declare module "@anstec/earth" {
      * @description 清空数据
      */
     clear(): void
+    /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -1159,6 +1164,7 @@ declare module "@anstec/earth" {
      * @property [anchorPosition = "TOP_LEFT"] 覆盖物锚点方位
      * @property [connectionLine = true] 连接线，拖拽禁用时连接线将始终隐藏
      * @property [closeable = true] 覆盖物是否可关闭
+     * @property [follow = true] 覆盖物是否跟随锚定位置移动，拖拽禁用时将总是跟随
      * @property [lineStroke = "rgba(43, 44, 47, 0.8)"] 连接线颜色
      * @property position {@link Cartesian3} 位置
      */
@@ -1173,6 +1179,7 @@ declare module "@anstec/earth" {
       anchorPosition?: AnchorPosition
       connectionLine?: boolean
       closeable?: boolean
+      follow?: boolean
       lineStroke?: string
       position: Cartesian3
     }
@@ -1248,6 +1255,10 @@ declare module "@anstec/earth" {
      * @param id ID
      */
     remove(id: string): void
+    /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -2090,6 +2101,10 @@ declare module "@anstec/earth" {
      */
     remove(option: Draw.RemoveOptions): void
     /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
+    /**
      * @description 销毁
      */
     destroy(): void
@@ -2248,6 +2263,10 @@ declare module "@anstec/earth" {
      */
     remove(id: string): void
     /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
+    /**
      * @description 销毁
      */
     destroy(): void
@@ -2339,6 +2358,10 @@ declare module "@anstec/earth" {
      * @description 移除地图上的热图
      */
     remove(): void
+    /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
     /**
      * @description 销毁热图
      */
@@ -2674,6 +2697,10 @@ declare module "@anstec/earth" {
      * @param id ID
      */
     remove(id: string): void
+    /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -3206,6 +3233,10 @@ declare module "@anstec/earth" {
      * @param id ID
      */
     remove(id: string): void
+    /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
     /**
      * @description 销毁图层
      * @returns 返回`boolean`值
@@ -4728,6 +4759,10 @@ declare module "@anstec/earth" {
      */
     unhide(keys: string[]): void
     /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
+    /**
      * @description 销毁
      */
     destroy(): void
@@ -4789,6 +4824,10 @@ declare module "@anstec/earth" {
      * @deprecated Please use `destroy`
      */
     dispose(): void
+    /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -4948,6 +4987,10 @@ declare module "@anstec/earth" {
      * @param id ID
      */
     remove(id: string): void
+    /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -5125,6 +5168,10 @@ declare module "@anstec/earth" {
      */
     remove(id: string): void
     /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
+    /**
      * @description 销毁
      */
     destroy(): void
@@ -5213,6 +5260,10 @@ declare module "@anstec/earth" {
      * @param id ID
      */
     remove(id: string): void
+    /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -5368,6 +5419,10 @@ declare module "@anstec/earth" {
      * @description 显示
      */
     show(): void
+    /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -6183,6 +6238,10 @@ declare module "@anstec/earth" {
      * ```
      */
     forceDestroy(): void
+    /**
+     * @description 获取销毁状态
+     */
+    isDestroyed(): boolean
     /**
      * @description 销毁
      */

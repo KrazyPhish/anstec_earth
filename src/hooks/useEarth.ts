@@ -9,7 +9,7 @@ import {
 } from "cesium"
 import { Earth } from ".."
 
-const earths = new Map<string, Earth>()
+const earthCache = new Map<string, Earth>()
 
 /**
  * @description 初始化地球
@@ -26,8 +26,8 @@ export const useEarth = (
   options?: Earth.ConstructorOptions
 ): Earth => {
   const el = id ?? "GisContainer"
-  if (earths.has(el)) {
-    return earths.get(el)!
+  if (earthCache.has(el)) {
+    return earthCache.get(el)!
   }
   const earth = new Earth(
     ref ?? el,
@@ -57,7 +57,7 @@ export const useEarth = (
     },
     options
   )
-  earths.set(el, earth)
+  earthCache.set(el, earth)
   return earth
 }
 
@@ -67,9 +67,9 @@ export const useEarth = (
  */
 export const useEarthRecycle = (id?: string) => {
   const _id = id ?? "GisContainer"
-  const earth = earths.get(_id)
+  const earth = earthCache.get(_id)
   if (earth) {
     earth.destroy()
-    earths.delete(_id)
+    earthCache.delete(_id)
   }
 }

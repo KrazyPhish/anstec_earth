@@ -54,6 +54,7 @@ export namespace DiffusePointLayer {
  * ```
  */
 export class DiffusePointLayer<T = unknown> {
+  private destroyed: boolean = false
   private allowDestroy: boolean = true
   private viewer: Viewer
   private scene: Scene
@@ -229,13 +230,22 @@ export class DiffusePointLayer<T = unknown> {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return true
     if (!this.allowDestroy) {
       console.warn("Current entity layer is not allowed to destory.")
       return false
     }
+    this.destroyed = true
     this.remove()
     this.cache.clear()
     this.cache = undefined as any

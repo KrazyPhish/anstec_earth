@@ -26,6 +26,7 @@ export namespace Covering {
    * @property [anchorPosition = "TOP_LEFT"] 覆盖物锚点方位
    * @property [connectionLine = true] 连接线，拖拽禁用时连接线将始终隐藏
    * @property [closeable = true] 覆盖物是否可关闭
+   * @property [follow = true] 覆盖物是否跟随锚定位置移动，拖拽禁用时将总是跟随
    * @property [lineStroke = "rgba(43, 44, 47, 0.8)"] 连接线颜色
    * @property position {@link Cartesian3} 位置
    */
@@ -40,6 +41,7 @@ export namespace Covering {
     anchorPosition?: AnchorPosition
     connectionLine?: boolean
     closeable?: boolean
+    follow?: boolean
     lineStroke?: string
     position: Cartesian3
   }
@@ -62,6 +64,8 @@ export class Covering<T = unknown> {
   private camera: Camera
   private cache: Map<string, Covering.Data<T>> = new Map()
   private draggable: boolean = false
+  private destroyed: boolean = false
+
   constructor(earth: Earth) {
     this.viewer = earth.viewer
     this.scene = earth.scene
@@ -99,6 +103,7 @@ export class Covering<T = unknown> {
     position,
     anchorPosition,
     connectionLine,
+    follow,
   }: {
     id: string
     reference: HTMLDivElement
@@ -108,6 +113,7 @@ export class Covering<T = unknown> {
     position: Cartesian3
     anchorPosition: Covering.AnchorPosition
     connectionLine: boolean
+    follow: boolean
   }) {
     let left: number = 0
     let top: number = 0
@@ -144,6 +150,7 @@ export class Covering<T = unknown> {
       stroke: lineStroke,
     })
     let initialize = true
+    const lastPosition = { x: canvasCoordinate.x, y: canvasCoordinate.y }
     return () => {
       let _position: Cartesian3
       if (initialize) {
@@ -153,9 +160,30 @@ export class Covering<T = unknown> {
         _position = ent!.position
       }
       const canvasCoordinate = this.scene.cartesianToCanvasCoordinates(_position)
+      const moveX = canvasCoordinate.x - lastPosition.x
+      const moveY = canvasCoordinate.y - lastPosition.y
+      lastPosition.x = canvasCoordinate.x
+      lastPosition.y = canvasCoordinate.y
       if (!this.draggable) {
         const refLeft = canvasCoordinate.x + left
         const refTop = canvasCoordinate.y + top
+        tailLast.x = refLeft + reference.clientWidth / 2
+        tailLast.y = refTop + reference.clientHeight / 2
+        reference.style.left = `${refLeft}px`
+        reference.style.top = `${refTop}px`
+      } else if (follow) {
+        let refLeft = parseFloat(reference.style.getPropertyValue("left").slice(0, -2)) + moveX
+        let refTop = parseFloat(reference.style.getPropertyValue("top").slice(0, -2)) + moveY
+        if (refLeft < 0) {
+          refLeft = 0
+        } else if (refLeft > this.scene.canvas.width - reference.clientWidth) {
+          refLeft = this.scene.canvas.width - reference.clientWidth
+        }
+        if (refTop < 0) {
+          refTop = 0
+        } else if (refTop > this.scene.canvas.height - reference.clientHeight) {
+          refTop = this.scene.canvas.height - reference.clientHeight
+        }
         tailLast.x = refLeft + reference.clientWidth / 2
         tailLast.y = refTop + reference.clientHeight / 2
         reference.style.left = `${refLeft}px`
@@ -232,6 +260,7 @@ export class Covering<T = unknown> {
     anchorPosition = "TOP_LEFT",
     connectionLine = true,
     closeable = true,
+    follow = true,
     lineStroke = "rgba(43, 44, 47, 0.8)",
     reference,
     position,
@@ -281,8 +310,8 @@ export class Covering<T = unknown> {
         const offsetY = moveY - downY
         downX = moveX
         downY = moveY
-        const lastLeft = parseInt(reference.style.getPropertyValue("left").slice(0, -2))
-        const lastTop = parseInt(reference.style.getPropertyValue("top").slice(0, -2))
+        const lastLeft = parseFloat(reference.style.getPropertyValue("left").slice(0, -2))
+        const lastTop = parseFloat(reference.style.getPropertyValue("top").slice(0, -2))
         if (
           lastLeft + offsetX <= 0 ||
           lastTop + offsetY <= 0 ||
@@ -310,6 +339,7 @@ export class Covering<T = unknown> {
       position,
       anchorPosition,
       connectionLine,
+      follow,
     })
     this.scene.preRender.addEventListener(callback)
     this.cache.set(id, { title, content, position, reference, tail, data, callback })
@@ -382,12 +412,20 @@ export class Covering<T = unknown> {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     this.remove()
     this.cache.clear()
-    this.cache = undefined as any
     this.viewer = undefined as any
     this.scene = undefined as any
     this.camera = undefined as any

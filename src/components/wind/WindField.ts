@@ -152,6 +152,7 @@ const { ceil, sqrt } = window.Math
  * ```
  */
 export class WindField {
+  private destroyed: boolean = false
   private scene: Scene
   private camera: Camera
   private viewerParameters: WindField.ViewerParam
@@ -308,7 +309,7 @@ export class WindField {
    * @description 更新
    * @param params {@link WindField.Param} 参数
    */
-  update(params: WindField.Param) {
+  public update(params: WindField.Param) {
     this.windParams = Object.assign(this.windParams, params)
     if (this.windParams.maxParticles) {
       this.windParams.particlesTextureSize = ceil(sqrt(this.windParams.maxParticles))
@@ -320,7 +321,7 @@ export class WindField {
   /**
    * @description 隐藏
    */
-  hide() {
+  public hide() {
     this.isShow = false
     const primitives = this.scene.primitives
     const length = primitives.length
@@ -336,7 +337,7 @@ export class WindField {
   /**
    * @description 显示
    */
-  show() {
+  public show() {
     this.isShow = true
     const primitives = this.scene.primitives
     const length = primitives.length
@@ -350,9 +351,18 @@ export class WindField {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
-  destroy() {
+  public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     if (this.morphStartEvent) {
       this.scene.morphStart.removeEventListener(this.morphStartEvent)
     }

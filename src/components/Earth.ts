@@ -105,6 +105,7 @@ export namespace Earth {
  * ```
  */
 export class Earth {
+  private destroyed: boolean = false
   /**
    * @description ID
    */
@@ -628,9 +629,18 @@ export class Earth {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     this.layers.destroy()
     this.drawTool.destroy()
     this.contextMenu.destroy()

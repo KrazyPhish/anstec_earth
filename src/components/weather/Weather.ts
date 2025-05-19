@@ -40,9 +40,8 @@ export namespace Weather {
  */
 export class Weather<T = unknown> {
   public scene: Scene
-
+  private destroyed: boolean = false
   private darkEffect?: PostProcessStage
-
   private particleLayer: ParticleLayer<T>
 
   constructor(earth: Earth) {
@@ -299,11 +298,21 @@ export class Weather<T = unknown> {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
+    this.useLight()
     this.remove()
-    this.scene = undefined as any
     this.particleLayer.destroy()
+    this.scene = undefined as any
   }
 }

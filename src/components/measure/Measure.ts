@@ -221,6 +221,7 @@ const { max } = window.Math
  * ```
  */
 export class Measure {
+  private destroyed: boolean = false
   private viewer: Viewer
   private camera: Camera
   private scene: Scene
@@ -1148,5 +1149,28 @@ export class Measure {
       this.polyline.remove()
       this.cache.clear()
     }
+  }
+
+  /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
+   * @description 销毁
+   */
+  public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
+    this.remove()
+    this.label.destroy()
+    this.polygon.destroy()
+    this.polyline.destroy()
+    this.camera = undefined as any
+    this.scene = undefined as any
+    this.viewer = undefined as any
+    this.earth = undefined as any
   }
 }

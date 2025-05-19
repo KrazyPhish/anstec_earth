@@ -76,7 +76,7 @@ export namespace Sensor {
     radarWave?: boolean
   }
 
-    /**
+  /**
    * @extends Layer.AddParam {@link Layer.AddParam}
    * @property position {@link Cartesian3} 位置
    * @property radius 切面半径，视觉发射长度`m`
@@ -111,6 +111,7 @@ export namespace Sensor {
  * ```
  */
 export class Sensor<T> {
+  private destroyed: boolean = false
   private cache: Map<
     string,
     {
@@ -375,9 +376,18 @@ export class Sensor<T> {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     this.collection.removeAll()
     this.cache.forEach((c) => {
       const callback = c.data.callback

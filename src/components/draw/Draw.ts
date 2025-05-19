@@ -524,7 +524,7 @@ export namespace Draw {
  */
 export class Draw {
   private scene: Scene
-
+  private destroyed: boolean = false
   private point: PointDynamic
   private billboard: BillboardDynamic
   private circle: CircleDynamic
@@ -538,7 +538,6 @@ export class Draw {
   private wall: WallDynamic
   private stroke: StrokeDynamic
   private label: LabelDynamic
-
   private editHandler: ScreenSpaceEventHandler
 
   constructor(earth: Earth) {
@@ -1241,9 +1240,18 @@ export class Draw {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     this.editHandler.destroy()
     this.attackArrow.destroy()
     this.billboard.destroy()

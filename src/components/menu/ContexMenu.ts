@@ -64,6 +64,7 @@ export namespace ContextMenu {
 export class ContextMenu {
   public animationClassName: string = "show"
   public classList: Set<string> = new Set(["context-menu"])
+  private destroyed: boolean = false
   private container: HTMLElement
   private handler: ScreenSpaceEventHandler
   private cache: Map<
@@ -559,9 +560,18 @@ export class ContextMenu {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     this.handler.destroy()
     this.cache.clear()
     this.toggleDfCache.clear()

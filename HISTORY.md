@@ -2,6 +2,13 @@
 
 ### 版本更新历史记录
 
+#### Version 2.3.1
+1. `Covering.AddParam` 新增参数 `follow` 用于设置覆盖物是否跟随锚定点
+2. 若干工具类新增 `isDestroyed` 方法以获取销毁状态：  
+  `AnimationManager`、`Cluster`、`ContextMenu`、`Covering`、`Draw`、`Dynamic`、`EChartsOverlay`、  
+  `Earth`、`GlobalEvent`、`GraphicsLayer`、`Layer`、`Measure`、`Radar`、`Sensor`、`Weather`
+3. 修复 `Covering` 覆盖物元素在移动时超出Canvas边界的问题
+
 #### Version 2.3.0
 1. 新增 `Queue` 类和 `Stack` 类，用于模拟队列和栈的管理工具
 2. `PolylineLayer.AddParam` 新增参数 `loop` 用于配置首尾相连的折线

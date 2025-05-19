@@ -34,9 +34,10 @@ export namespace GlobalEvent {
  * ```
  */
 export class GlobalEvent {
+  private static readonly types: number[] = [0, 1, 2, 3, 5, 6, 7, 10, 11, 12, 15]
   private bus: EventBus
   private handler: ScreenSpaceEventHandler
-  private static readonly types: number[] = [0, 1, 2, 3, 5, 6, 7, 10, 11, 12, 15]
+  private destroyed: boolean = false
 
   constructor(earth: Earth) {
     this.bus = new EventBus()
@@ -118,9 +119,18 @@ export class GlobalEvent {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     this.handler.destroy()
     this.bus = undefined as any
     this.handler = undefined as any

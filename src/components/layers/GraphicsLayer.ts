@@ -20,6 +20,7 @@ import {
  * ```
  */
 export class GraphicsLayer {
+  private destroyed: boolean = false
   /**
    * @deprecated 现不再限制销毁
    */
@@ -87,9 +88,18 @@ export class GraphicsLayer {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁
    */
   public destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
     this.billboard.destroy()
     this.ellipse.destroy()
     this.point.destroy()

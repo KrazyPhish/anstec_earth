@@ -86,6 +86,7 @@ const { PI, abs, floor, max, round } = window.Math
  */
 export class Heatmap {
   public id = Utils.RandomUUID()
+  private destroyed: boolean = false
   private defaults: Required<Heatmap.ConstructorOptions> = {
     minCanvasSize: 700,
     maxCanvasSize: 2000,
@@ -104,11 +105,8 @@ export class Heatmap {
     maxScaleDenominator: 4000000,
   }
   private WMP: WebMercatorProjection
-
   private _layer?: Entity | ImageryLayer
-
   private dom: HTMLDivElement
-
   private _heatmap?: H337
 
   private width = 0
@@ -550,9 +548,18 @@ export class Heatmap {
   }
 
   /**
+   * @description 获取销毁状态
+   */
+  public isDestroyed(): boolean {
+    return this.destroyed
+  }
+
+  /**
    * @description 销毁热图
    */
   public destory() {
+    if (this.destroyed) return
+    this.destroyed = true
     this.remove()
     this.dom.remove()
   }
