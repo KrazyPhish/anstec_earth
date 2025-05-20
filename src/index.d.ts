@@ -6276,10 +6276,20 @@ declare module "@anstec/earth" {
      */
     readonly elements: T[]
     /**
+     * @description 删除队列中所有元素
+     */
+    clear(): void
+    /**
      * @description 克隆当前队列
      * @returns 新的队列
      */
     clone(): Queue
+    /**
+     * @description 查询队列中是否包含某元素
+     * @param element 元素
+     * @returns 是否包含
+     */
+    contains(element: T): boolean
     /**
      * @description 排队元素
      * @param elements 元素
@@ -6343,10 +6353,20 @@ declare module "@anstec/earth" {
      */
     readonly elements: T[]
     /**
+     * @description 删除栈中所有元素
+     */
+    clear(): void
+    /**
      * @description 克隆当前栈
      * @returns 新的栈
      */
     clone(): Stack
+    /**
+     * @description 查询栈中是否包含某元素
+     * @param element 元素
+     * @returns 是否包含
+     */
+    contains(element: T): boolean
     /**
      * @description 压入元素
      * @param elements 元素

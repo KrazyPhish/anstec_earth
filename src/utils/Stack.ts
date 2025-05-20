@@ -39,11 +39,27 @@ export class Stack<T = unknown> {
   }
 
   /**
+   * @description 删除栈中所有元素
+   */
+  public clear() {
+    this.cache = []
+  }
+
+  /**
    * @description 克隆当前栈
    * @returns 新的栈
    */
   public clone() {
     return new Stack(this.cache)
+  }
+
+  /**
+   * @description 查询栈中是否包含某元素
+   * @param element 元素
+   * @returns 是否包含
+   */
+  public contains(element: T) {
+    return this.cache.some((value) => value === element)
   }
 
   /**

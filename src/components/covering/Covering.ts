@@ -144,8 +144,8 @@ export class Covering<T = unknown> {
     tail.innerHTML = this.createConnectionLine({
       x1: canvasCoordinate.x,
       y1: canvasCoordinate.y,
-      x2: tailLast.x,
-      y2: tailLast.y,
+      x2: isNaN(tailLast.x) ? canvasCoordinate.x : tailLast.x,
+      y2: isNaN(tailLast.y) ? canvasCoordinate.y : tailLast.y,
       opacity: this.draggable ? (connectionLine ? 1 : 0) : 0,
       stroke: lineStroke,
     })
@@ -197,8 +197,8 @@ export class Covering<T = unknown> {
       tail.innerHTML = this.createConnectionLine({
         x1: canvasCoordinate.x,
         y1: canvasCoordinate.y,
-        x2: tailLast.x,
-        y2: tailLast.y,
+        x2: isNaN(tailLast.x) ? canvasCoordinate.x : tailLast.x,
+        y2: isNaN(tailLast.y) ? canvasCoordinate.y : tailLast.y,
         opacity: this.draggable ? (connectionLine ? 1 : 0) : 0,
         stroke: lineStroke,
       })

@@ -45,49 +45,39 @@ export class GlobalEvent {
     for (const type of GlobalEvent.types) {
       if (type === 15) {
         this.handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-          const pick = earth.scene.pick(endPosition)
-          if (!pick) return
-          else {
-            let id = ""
-            if (typeof pick.id === "string") {
-              id = pick.id
-            } else if (pick.id instanceof Entity) {
-              id = pick.id.id
-            }
-            if (id) {
-              const ent = Utils.DecodeId(id)
-              if (ent) {
-                this.bus.emit(`*_${type}`, { ...ent, target: pick })
-              }
-              if (ent && ent.module) {
-                this.bus.emit(`${ent.module}_${type}`, { ...ent, target: pick })
-              }
-            }
-          }
+          this.onEvent(earth, endPosition, type)
         }, type)
       } else {
         this.handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-          const pick = earth.scene.pick(position)
-          if (!pick) {
-            this.bus.emit(`undefined_${type}`, { position })
-          } else {
-            let id = ""
-            if (typeof pick.id === "string") {
-              id = pick.id
-            } else if (pick.id instanceof Entity) {
-              id = pick.id.id
-            }
-            if (id) {
-              const ent = Utils.DecodeId(id)
-              if (ent) {
-                this.bus.emit(`*_${type}`, { ...ent, target: pick })
-              }
-              if (ent && ent.module) {
-                this.bus.emit(`${ent.module}_${type}`, { ...ent, target: pick })
-              }
-            }
-          }
+          this.onEvent(earth, position, type)
         }, type)
+      }
+    }
+  }
+
+  private onEvent(earth: Earth, position: Cartesian2, type: number) {
+    const rect = earth.viewer.canvas.getBoundingClientRect()
+    const scaleX = rect.width / earth.viewer.canvas.width
+    const scaleY = rect.height / earth.viewer.canvas.height
+    const realPosition = new Cartesian2(position.x / scaleX, position.y / scaleY)
+    const pick = earth.scene.pick(realPosition, 5, 5)
+    if (!pick) {
+      this.bus.emit(`undefined_${type}`, { position })
+    } else {
+      let id = ""
+      if (typeof pick.id === "string") {
+        id = pick.id
+      } else if (pick.id instanceof Entity) {
+        id = pick.id.id
+      }
+      if (id) {
+        const ent = Utils.DecodeId(id)
+        if (ent) {
+          this.bus.emit(`*_${type}`, { ...ent, target: pick })
+        }
+        if (ent && ent.module) {
+          this.bus.emit(`${ent.module}_${type}`, { ...ent, target: pick })
+        }
       }
     }
   }

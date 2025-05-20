@@ -2,6 +2,13 @@
 
 ### 版本更新历史记录
 
+#### Version 2.3.2
+1. 修复 `GlobalEvent` 全局事件在Canvas有缩放的情况下与目标交互事件无法触发的问题
+2. 修复 `GlobalEvent` 全局事件模块目标有时点击后不触发事件的问题
+3. 修复 `Covering` 覆盖物连接线初始化时报错导致的视觉闪烁问题
+4. 类 `Queue` 和 `Stack` 新增方法 `clear` 用于清空当前队列或栈
+5. 类 `Queue` 和 `Stack` 新增方法 `contains` 用于查询是否包含具体元素
+
 #### Version 2.3.1
 1. `Covering.AddParam` 新增参数 `follow` 用于设置覆盖物是否跟随锚定点
 2. 若干工具类新增 `isDestroyed` 方法以获取销毁状态：  

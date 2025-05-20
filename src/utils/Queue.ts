@@ -39,11 +39,27 @@ export class Queue<T = unknown> {
   }
 
   /**
+   * @description 删除队列中所有元素
+   */
+  public clear() {
+    this.cache = []
+  }
+
+  /**
    * @description 克隆当前队列
    * @returns 新的队列
    */
   public clone() {
     return new Queue(this.cache)
+  }
+
+  /**
+   * @description 查询队列中是否包含某元素
+   * @param element 元素
+   * @returns 是否包含
+   */
+  public contains(element: T) {
+    return this.cache.some((value) => value === element)
   }
 
   /**
