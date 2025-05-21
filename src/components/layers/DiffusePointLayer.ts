@@ -96,12 +96,12 @@ export class DiffusePointLayer<T = unknown> {
   }: DiffusePointLayer.AddParam<T>) {
     className.push("diffuse-point")
     const pointSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg")
-    pointSVG.style.width = `100%`
-    pointSVG.style.height = `100%`
+    pointSVG.style.width = "100%"
+    pointSVG.style.height = "100%"
     pointSVG.style.position = "absolute"
     pointSVG.style.pointerEvents = "none"
-    pointSVG.style.left = `0px`
-    pointSVG.style.top = `0px`
+    pointSVG.style.left = "0px"
+    pointSVG.style.top = "0px"
     this.viewer.container.appendChild(pointSVG)
     const classG = className.join(" ")
     const stroke = strokeColor.toCssColorString()

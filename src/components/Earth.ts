@@ -34,6 +34,7 @@ import { ContextMenu } from "./menu"
 import { DefaultContextMenuItem as MapMode } from "enum"
 import { GlobalEvent } from "./bus"
 import { Weather } from "./weather"
+import { ImprovedScreenSpaceCameraController } from "improved"
 
 export namespace Earth {
   /**
@@ -41,12 +42,14 @@ export namespace Earth {
    * @property [showAnimation = false] 是否显示动画控件
    * @property [showTimeline = false] 是否显示时间轴控件
    * @property [lockCamera] {@link CameraLockOptions} 相机锁定选项
+   * @property [adaptiveCameraController = true] 是否使用适应性的相机控制器
    */
   export type ConstructorOptions = {
     defaultViewRectangle?: Rectangle
     showAnimation?: boolean
     showTimeline?: boolean
     lockCamera?: CameraLockOptions
+    adaptiveCameraController?: boolean
   }
 
   /**
@@ -211,6 +214,10 @@ export class Earth {
     this.contextMenu = new ContextMenu(this)
     this.weather = new Weather(this)
 
+    if (this.options.adaptiveCameraController) {
+      //@ts-ignore
+      this.scene._screenSpaceCameraController = new ImprovedScreenSpaceCameraController(this.scene)
+    }
     this.lockCamera()
     this.addSceneRenderListener()
   }
@@ -238,6 +245,7 @@ export class Earth {
     Object.assign(
       this.options,
       {
+        adaptiveCameraController: true,
         showAnimation: false,
         showTimeline: false,
       },

@@ -432,4 +432,170 @@ declare module "cesium" {
   export class PolylinePipeline {
     static generateArc(option: { positions: Cartesian3[]; granularity: number }): number[]
   }
+
+  export class TweenCollection {
+    length: number
+    constructor()
+    /**
+     * Creates a tween for animating between two sets of properties.  The tween starts animating at the next call to {@link TweenCollection#update}, which
+     * is implicit when {@link Viewer} or {@link CesiumWidget} render the scene.
+     *
+     * @param {object} [options] Object with the following properties:
+     * @param {object} options.startObject An object with properties for initial values of the tween.  The properties of this object are changed during the tween's animation.
+     * @param {object} options.stopObject An object with properties for the final values of the tween.
+     * @param {number} options.duration The duration, in seconds, for the tween.  The tween is automatically removed from the collection when it stops.
+     * @param {number} [options.delay=0.0] The delay, in seconds, before the tween starts animating.
+     * @param {EasingFunction} [options.easingFunction=EasingFunction.LINEAR_NONE] Determines the curve for animtion.
+     * @param {TweenCollection.TweenUpdateCallback} [options.update] The callback to call at each animation update (usually tied to the a rendered frame).
+     * @param {TweenCollection.TweenCompleteCallback} [options.complete] The callback to call when the tween finishes animating.
+     * @param {TweenCollection.TweenCancelledCallback} [options.cancel] The callback to call if the tween is canceled either because {@link Tween#cancelTween} was called or because the tween was removed from the collection.
+     * @returns {Tween} The tween.
+     *
+     * @exception {DeveloperError} options.duration must be positive.
+     */
+    add(tween: any): any
+    /**
+     * Determines whether this collection contains a given tween.
+     *
+     * @param {Tween} tween The tween to check for.
+     * @returns {boolean} <code>true</code> if this collection contains the tween, <code>false</code> otherwise.
+     */
+    contains(tween: any): boolean
+    /**
+     * Updates the tweens in the collection to be at the provide time.  When a tween finishes, it is removed
+     * from the collection.
+     *
+     * @param {number} [time=getTimestamp()] The time in seconds.  By default tweens are synced to the system clock.
+     */
+    update(time?: number): void
+    /**
+     * Removes a tween from the collection.
+     * <p>
+     * This calls the {@link Tween#cancel} callback if the tween has one.
+     * </p>
+     *
+     * @param {Tween} tween The tween to remove.
+     * @returns {boolean} <code>true</code> if the tween was removed; <code>false</code> if the tween was not found in the collection.
+     */
+    remove(tween: any)
+    /**
+     * Removes all tweens from the collection.
+     * <p>
+     * This calls the {@link Tween#cancel} callback for each tween that has one.
+     * </p>
+     */
+    removeAll(): void
+  }
+
+  export namespace VerticalExaggeration {
+    /**
+     * Scales a height relative to an offset.
+     *
+     * @param {number} height The height.
+     * @param {number} scale A scalar used to exaggerate the terrain. If the value is 1.0 there will be no effect.
+     * @param {number} relativeHeight The height relative to which terrain is exaggerated. If the value is 0.0 terrain will be exaggerated relative to the ellipsoid surface.
+     */
+    export const getHeight: (height: number, scale: number, relativeHeight: number) => number
+    /**
+     * Scales a position by exaggeration.
+     *
+     * @param {Cartesian3} position The position.
+     * @param {Ellipsoid} ellipsoid The ellipsoid.
+     * @param {number} verticalExaggeration A scalar used to exaggerate the terrain. If the value is 1.0 there will be no effect.
+     * @param {number} verticalExaggerationRelativeHeight The height relative to which terrain is exaggerated. If the value is 0.0 terrain will be exaggerated relative to the ellipsoid surface.
+     * @param {Cartesian3} [result] The object onto which to store the result.
+     */
+    export const getPosition: (
+      position,
+      ellipsoid,
+      verticalExaggeration,
+      verticalExaggerationRelativeHeight,
+      result
+    ) => Cartesian3
+  }
+}
+
+declare module "cesium/Source/Core/VerticalExaggeration" {
+  import { VerticalExaggeration } from "cesium"
+  export default VerticalExaggeration
+}
+
+declare module "cesium/Source/Core/PolylinePipeline" {
+  import { PolylinePipeline } from "cesium"
+  export default PolylinePipeline
+}
+
+declare module "cesium/Source/Renderer/DrawCommand" {
+  import { DrawCommand } from "cesium"
+  export default DrawCommand
+}
+
+declare module "cesium/Source/Renderer/VertexArray" {
+  import { VertexArray } from "cesium"
+  export default VertexArray
+}
+
+declare module "cesium/Source/Renderer/RenderState" {
+  import { RenderState } from "cesium"
+  export default RenderState
+}
+
+declare module "cesium/Source/Scene/FrameState" {
+  import { FrameState } from "cesium"
+  export default FrameState
+}
+
+declare module "cesium/Source/Renderer/Buffer" {
+  import { Buffer } from "cesium"
+  export default Buffer
+}
+
+declare module "cesium/Source/Renderer/BufferUsage" {
+  import { BufferUsage } from "cesium"
+  export default BufferUsage
+}
+
+declare module "cesuim/Source/Renderer/ShaderSource" {
+  import { ShaderSource } from "cesium"
+  export default ShaderSource
+}
+
+declare module "cesuim/Source/Renderer/ShaderProgram" {
+  import { ShaderProgram } from "cesium"
+  export default ShaderProgram
+}
+
+declare module "cesuim/Source/Renderer/Pass" {
+  import { Pass } from "cesium"
+  export default Pass
+}
+
+declare module "cesium/Source/Renderer/Framebuffer" {
+  import { Framebuffer } from "cesium"
+  export default Framebuffer
+}
+
+declare module "cesium/Source/Renderer/Texture" {
+  import { Texture } from "cesium"
+  export default Texture
+}
+
+declare module "cesium/Source/Renderer/Sampler" {
+  import { Sampler } from "cesium"
+  export default Sampler
+}
+
+declare module "cesium/Source/Renderer/Context" {
+  import { Context } from "cesium"
+  export default Context
+}
+
+declare module "cesium/Source/Scene/ModelInstanceCollection" {
+  import { ModelInstanceCollection } from "cesium"
+  export default ModelInstanceCollection
+}
+
+declare module "cesium/Source/Scene/TweenCollection" {
+  import { TweenCollection } from "cesium"
+  export default TweenCollection
 }

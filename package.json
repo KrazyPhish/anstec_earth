@@ -1,7 +1,7 @@
 {
   "name": "@anstec/earth",
   "author": "anstec",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
   "types": "dist/index.d.ts",
@@ -52,8 +52,8 @@
     "sass": "^1.77.1",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
-    "typedoc": "^0.26.3",
-    "typedoc-plugin-markdown": "^4.1.1",
+    "typedoc": "^0.28.4",
+    "typedoc-plugin-markdown": "^4.6.3",
     "typescript": "~5.4.0",
     "vue": "^3.4.31",
     "vuepress": "^2.0.0-rc.14"

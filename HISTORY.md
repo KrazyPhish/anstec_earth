@@ -2,6 +2,10 @@
 
 ### 版本更新历史记录
 
+#### Version 2.3.3
+1. `Earth.ConstructorOptions` 新增参数 `adaptiveCameraController` 用于配置是否使用适应性的相机控制器
+2. 新增适应性的相机控制器以解决在视窗画幅缩放、拉伸的情况下放大缩小地图时定位或移动错误的问题
+
 #### Version 2.3.2
 1. 修复 `GlobalEvent` 全局事件在Canvas有缩放的情况下与目标交互事件无法触发的问题
 2. 修复 `GlobalEvent` 全局事件模块目标有时点击后不触发事件的问题

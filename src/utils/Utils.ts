@@ -157,7 +157,7 @@ export namespace Utils {
     })
     return framebuffer
   }
-  
+
   export const createRawRenderState = (options: WindField.RenderState) => {
     const translucent = true
     const closed = false
@@ -213,6 +213,44 @@ export namespace Utils {
     const svgBlob = new Blob([svg], { type: "image/svg+xml;charset-utf-8" })
     const url = URL.createObjectURL(svgBlob)
     const image = await loadImage(url)
+    ctx.drawImage(image, 0, 0)
+    return canvas
+  }
+
+  /**
+   * @description 将图片格式转换为Canvas
+   * @param pic 图片
+   * @param [width = 48] 宽度
+   * @param [height = 48] 高度
+   * @returns Canvas结果
+   * @exception Invaid picture, only 'jpg', 'jpeg' or 'png' is accepted.
+   */
+  export const ConvertPic2Canvas = async (pic: string, width: number = 48, height: number = 48) => {
+    const check = (url: string): boolean => {
+      if (url.includes("base64")) return true
+      const names = url.split(".")
+      return names.some((name) => {
+        return name === "jpg" || name === "jpeg" || name === "png"
+      })
+    }
+    if (!check(pic)) {
+      throw new DeveloperError("Invaid picture, only 'jpg', 'jpeg' or 'png' is accepted.")
+    }
+    const loadImage = (url: string) => {
+      return new Promise<HTMLImageElement>((resolve) => {
+        const image = new Image()
+        image.onload = () => resolve(image)
+        image.src = url
+      })
+    }
+
+    const canvas = document.createElement("canvas")
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext("2d")!
+    ctx.fillStyle = "#ffffff01"
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    const image = await loadImage(pic)
     ctx.drawImage(image, 0, 0)
     return canvas
   }

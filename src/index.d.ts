@@ -268,12 +268,14 @@ declare module "@anstec/earth" {
      * @property [showAnimation = false] 是否显示动画控件
      * @property [showTimeline = false] 是否显示时间轴控件
      * @property [lockCamera] {@link CameraLockOptions} 相机锁定选项
+     * @property [adaptiveCameraController = true] 是否使用适应性的相机控制器
      */
     export type ConstructorOptions = {
       defaultViewRectangle?: Rectangle
       showAnimation?: boolean
       showTimeline?: boolean
       lockCamera?: CameraLockOptions
+      adaptiveCameraController?: boolean
     }
 
     /**
@@ -5859,6 +5861,15 @@ declare module "@anstec/earth" {
      * @returns Canvas结果
      */
     const ConvertSvg2Canvas: (svg: string, width?: number, height?: number) => HTMLCanvasElement
+    /**
+     * @description 将图片格式转换为Canvas
+     * @param pic 图片
+     * @param [width = 48] 宽度
+     * @param [height = 48] 高度
+     * @returns Canvas结果
+     * @exception Invaid picture, only 'jpg', 'jpeg' or 'png' is accepted.
+     */
+    const ConvertPic2Canvas: (pic: string, width?: number, height?: number) => HTMLCanvasElement
   }
 
   /**

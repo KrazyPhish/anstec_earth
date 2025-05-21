@@ -13,6 +13,11 @@ import {
   Viewer,
 } from "cesium"
 import { Earth } from "../Earth"
+import { BillboardCollection } from "cesium"
+import { CloudCollection } from "cesium"
+import { LabelCollection } from "cesium"
+import { PrimitiveCollection } from "cesium"
+import type { PointPrimitiveCollection } from "cesium"
 
 export namespace Layer {
   /**
@@ -61,26 +66,22 @@ export namespace Layer {
   }
 
   /**
-   * @description 从cesium `Collection` 中抽取的公共属性
-   * @property show 是否展示
-   * @property add 新增方法
-   * @property remove 按索引（通常是图元）删除集合
-   * @property removeAll 清空所有图元
+   * @description cesium中合法的集合对象
    */
-  export type Collection = {
-    show: boolean
-    add: (arg: any) => any
-    remove: (arg: any) => boolean
-    removeAll: () => void
-  }
+  export type Collections =
+    | BillboardCollection
+    | CloudCollection
+    | LabelCollection
+    | PointPrimitiveCollection
+    | PrimitiveCollection
 }
 
 /**
  * @description 图层基类
  * @param earth {@link Earth} 地球实例
- * @param collection {@link Layer.Collection} 集合
+ * @param collection {@link Layer.Collections} 集合
  */
-export abstract class Layer<C extends Layer.Collection, P extends Layer.Primitives, D> {
+export abstract class Layer<C extends Layer.Collections, P extends Layer.Primitives, D> {
   /**
    * @description 是否允许销毁
    */

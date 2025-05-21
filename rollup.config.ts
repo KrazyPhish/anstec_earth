@@ -31,7 +31,7 @@ export default defineConfig({
     commonjs(),
     typescript(),
     nodeResolve(),
-    terser(),
+    terser({ keep_classnames: true, keep_fnames: true }),
     json(),
     postcss({
       plugins: [autoprefixer(), cssnano()],
