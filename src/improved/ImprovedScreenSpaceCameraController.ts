@@ -42,7 +42,6 @@ type Movement = {
 
 /**
  * @description 相机控制器 {@link ScreenSpaceCameraController} 的改进版本
- * @alias ImprovedScreenSpaceCameraController
  * @beta 用于解决在视窗画幅缩放、拉伸的情况下放大缩小地图定位错误的问题
  * @param {Scene} scene The scene.
  */

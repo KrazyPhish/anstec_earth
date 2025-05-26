@@ -33,7 +33,7 @@ export namespace Covering {
   export type AddParam<T> = {
     id?: string
     customize?: boolean
-    reference?: HTMLDivElement
+    reference?: HTMLDivElement | string
     className?: string[]
     title?: string
     content?: string
@@ -262,14 +262,20 @@ export class Covering<T = unknown> {
     closeable = true,
     follow = true,
     lineStroke = "rgba(43, 44, 47, 0.8)",
-    reference,
+    reference: _reference,
     position,
     data,
   }: Covering.AddParam<T>) {
-    //TODO reference can also accept type of html string
+    let reference: HTMLDivElement
     if (customize) {
-      if (!reference) {
+      if (!_reference) {
         throw new DeveloperError("Reference element is required when customizing.")
+      } else if (typeof _reference === "string") {
+        const parser = new DOMParser()
+        const doc = parser.parseFromString(_reference, "text/html")
+        reference = doc.body.firstElementChild as HTMLDivElement
+      } else {
+        reference = _reference
       }
     } else {
       className.push("covering-container")

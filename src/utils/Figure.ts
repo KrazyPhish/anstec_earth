@@ -59,7 +59,7 @@ export namespace Figure {
   }
 
   /**
-   * @description 计算球体上两点的最近距离
+   * @description 计算球体上两点的测地线距离
    * @param from 坐标点
    * @param to 坐标点
    * @param [units = "meters"] 单位
@@ -74,7 +74,7 @@ export namespace Figure {
   }
 
   /**
-   * @description 计算球体上两点的大圆距离
+   * @description 计算球体上两点的恒向线距离
    * @param from 坐标点
    * @param to 坐标点
    * @param [units = "meters"] 单位
@@ -292,7 +292,7 @@ export namespace Figure {
   }
 
   /**
-   * @description 计算角度，以正北方向为基准
+   * @description 计算测地线角度，以正北方向为基准
    * @param from 基准原点
    * @param to 参考点
    * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
@@ -306,7 +306,7 @@ export namespace Figure {
   }
 
   /**
-   * @description 计算大圆角度，以正北方向为基准
+   * @description 计算恒向线角度，以正北方向为基准
    * @param from 基准原点
    * @param to 参考点
    * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
@@ -453,9 +453,9 @@ export namespace Figure {
   }
 
   /**
-   * @description 根据高度和大圆弧长计算圆锥的真实高度和半径
+   * @description 根据高度和测地线长度计算圆锥的真实高度和半径
    * @param height 对地高度
-   * @param arc 大圆弧长
+   * @param arc 测地线弧长
    * @returns 真实高度和半径
    */
   export const CalcConic = (height: number, arc: number) => {

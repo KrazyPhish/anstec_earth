@@ -22,6 +22,8 @@ export namespace GlobalEvent {
 
 /**
  * @description 全局事件
+ * @param earth {@link Earth} 地球实例
+ * @param [delay = 300] 事件触发节流的间隔时间`ms`
  * @example
  * ```
  * const earth = useEarth()
@@ -39,18 +41,24 @@ export class GlobalEvent {
   private handler: ScreenSpaceEventHandler
   private destroyed: boolean = false
 
-  constructor(earth: Earth) {
+  constructor(earth: Earth, delay: number = 300) {
     this.bus = new EventBus()
     this.handler = new ScreenSpaceEventHandler(earth.viewer.canvas)
     for (const type of GlobalEvent.types) {
       if (type === 15) {
-        this.handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-          this.onEvent(earth, endPosition, type)
-        }, type)
+        this.handler.setInputAction(
+          Utils.throttle(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
+            this.onEvent(earth, endPosition, type)
+          }, delay),
+          type
+        )
       } else {
-        this.handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-          this.onEvent(earth, position, type)
-        }, type)
+        this.handler.setInputAction(
+          Utils.throttle(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
+            this.onEvent(earth, position, type)
+          }, delay),
+          type
+        )
       }
     }
   }
@@ -64,7 +72,7 @@ export class GlobalEvent {
     if (!pick) {
       this.bus.emit(`undefined_${type}`, { position })
     } else {
-      let id = ""
+      let id: string | undefined
       if (typeof pick.id === "string") {
         id = pick.id
       } else if (pick.id instanceof Entity) {

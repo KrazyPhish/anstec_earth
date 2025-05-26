@@ -213,11 +213,11 @@ declare module "@anstec/earth" {
   /**
    * @description 圆锥计算模式
    * 1. `MATH` 将`radius`当作标准的数学值计算
-   * 2. `RHUMB` 将`radius`当作大圆圆弧的值计算
+   * 2. `GEODESIC` 将`radius`当作测地线圆弧的值计算
    */
   export enum ConicMode {
     MATH = 0,
-    RHUMB = 1,
+    GEODESIC = 1,
   }
 
   /**
@@ -371,29 +371,39 @@ declare module "@anstec/earth" {
      */
     readonly coordinate: Coordinate
     /**
-     * @description 全局事件
-     */
-    readonly global: GlobalEvent
-    /**
      * @description 默认图层实例
      */
     readonly layers: GraphicsLayer
     /**
-     * @description 测量组件
+     * @description 全局事件
+     * @deprecated 已废弃，按需手动初始化
+     * @deleted 已删除
      */
-    readonly measure: Measure
+    readonly global?: GlobalEvent
+    /**
+     * @description 测量组件
+     * @deprecated 已废弃，按需手动初始化
+     * @deleted 已删除
+     */
+    readonly measure?: Measure
     /**
      * @description 动态绘制
+     * @deprecated 已废弃，按需手动初始化
+     * @deleted 已删除
      */
-    readonly drawTool: Draw
+    readonly drawTool?: Draw
     /**
      * @description 菜单组件
+     * @deprecated 已废弃，按需手动初始化
+     * @deleted 已删除
      */
-    readonly contextMenu: ContextMenu
+    readonly contextMenu?: ContextMenu
     /**
      * @description 天气场景特效
+     * @deprecated 已废弃，按需手动初始化
+     * @deleted 已删除
      */
-    readonly weather: Weather
+    readonly weather?: Weather
     constructor(
       container: string | HTMLDivElement | Viewer,
       cesiumOptions?: Viewer.ConstructorOptions,
@@ -417,24 +427,28 @@ declare module "@anstec/earth" {
      * @description 使用默认图层类
      * @returns 默认暴露的图层类
      * @deprecated Now can directly read the public value `earth.layers`
+     * @deleted 已删除
      */
     useDefaultLayers(): GraphicsLayer
     /**
      * @description 使用默认测量类
      * @returns 测量工具
      * @deprecated Now can directly read the public value `earth.measure`
+     * @deleted 已删除
      */
     useMeasure(): Measure
     /**
      * @description 使用默认绘制类
      * @returns 绘制工具
      * @deprecated Now can directly read the public value `earth.drawTool`
+     * @deleted 已删除
      */
     useDraw(): Draw
     /**
      * @description 使用默认上下文菜单
      * @returns 上下文菜单实例
      * @deprecated Now can directly read the public value `earth.contextMenu`
+     * @deleted 已删除
      */
     useContextMenu(): ContextMenu
     /**
@@ -671,6 +685,8 @@ declare module "@anstec/earth" {
 
   /**
    * @description 全局事件
+   * @param earth {@link Earth} 地球实例
+   * @param [delay = 300] 事件触发节流的间隔时间`ms`
    * @example
    * ```
    * const earth = useEarth()
@@ -683,7 +699,7 @@ declare module "@anstec/earth" {
    * ```
    */
   export class GlobalEvent {
-    constructor(earth: Earth)
+    constructor(earth: Earth, delay?: number)
     /**
      * @description 订阅全局事件
      * @param callback {@link GlobalEvent.Callback} 回调
@@ -971,6 +987,9 @@ declare module "@anstec/earth" {
 
   /**
    * @description 地理坐标，经纬度 <角度制>
+   * @param longitude 经度 <角度制>
+   * @param latitude 纬度 <角度制>
+   * @param [height = 0] 海拔高度 `m`
    * @example
    * ```
    * const geo = new Geographic(104, 31, 500)
@@ -980,11 +999,6 @@ declare module "@anstec/earth" {
     longitude: number
     latitude: number
     height: number
-    /**
-     * @param longitude 经度 <角度制>
-     * @param latitude 纬度 <角度制>
-     * @param [height = 0] 海拔高度 `m`
-     */
     constructor(longitude: number, latitude: number, height?: number)
     /**
      * @description 转为笛卡尔坐标系
@@ -1066,8 +1080,9 @@ declare module "@anstec/earth" {
      * @description 比较两个地理坐标是否全等
      * @param left {@link Geographic} 左值
      * @param right {@link Geographic} 右值
+     * @param [diff = 0] 可接受的数学误差
      */
-    static equals(left: Geographic, right: Geographic): boolean
+    static equals(left: Geographic, right: Geographic, diff?: number): boolean
     /**
      * @description 从弧度制的数据转换
      * @param longitude 经度 <弧度制>
@@ -1173,7 +1188,7 @@ declare module "@anstec/earth" {
     export type AddParam<T> = {
       id?: string
       customize?: boolean
-      reference?: HTMLDivElement
+      reference?: HTMLDivElement | string
       className?: string[]
       title?: string
       content?: string
@@ -2227,6 +2242,18 @@ declare module "@anstec/earth" {
      */
     abstract edit(id: string): Promise<unknown>
     /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any) => void): void
+    /**
      * @description 根据ID获取动态绘制实体
      * @param id ID
      * @returns 实体
@@ -3120,26 +3147,22 @@ declare module "@anstec/earth" {
     }
 
     /**
-     * @description 从cesium `Collection` 中抽取的公共属性
-     * @property show 是否展示
-     * @property add 新增方法
-     * @property remove 按索引（通常是图元）删除集合
-     * @property removeAll 清空所有图元
+     * @description `cesium` 中合法的集合对象
      */
-    export type Collection = {
-      show: boolean
-      add: (arg: any) => any
-      remove: (arg: any) => boolean
-      removeAll: () => void
-    }
+    export type Collections =
+      | BillboardCollection
+      | CloudCollection
+      | LabelCollection
+      | PointPrimitiveCollection
+      | PrimitiveCollection
   }
 
   /**
    * @description 图层基类
    * @param earth {@link Earth} 地球实例
-   * @param collection {@link Layer.Collection} 集合
+   * @param collection {@link Layer.Collections} 集合
    */
-  export abstract class Layer<C extends Layer.Collection, P extends Layer.Primitives, D> {
+  export abstract class Layer<C extends Layer.Collections, P extends Layer.Primitives, D> {
     /**
      * @description 图元的集合
      */
@@ -4079,6 +4102,16 @@ declare module "@anstec/earth" {
      * @deleted 已删除
      */
     addFlowingWave(param: any): void
+    /**
+     * @description 检测给定地球是否支持贴地线绘制
+     * @param earth 指定地球
+     * @example
+     * ```
+     * const earth = useEarth()
+     * const isSupported = PolylineLayer.isGroundSupported(earth)
+     * ```
+     */
+    static isGroundSupported(earth: Earth): boolean
   }
 
   export namespace RectangleLayer {
@@ -4307,7 +4340,7 @@ declare module "@anstec/earth" {
      * @property startPosition {@link Cartesian3} 起始位置
      * @property endPosition {@link Cartesian3} 结束位置
      * @property spaceDistance 空间距离
-     * @property rhumbDistance 大圆距离
+     * @property rhumbDistance 恒向线距离
      * @property heightDifference 高度差
      */
     export type TriangleReturn = {
@@ -4776,10 +4809,6 @@ declare module "@anstec/earth" {
      * @property [option] {@link EChartsOption} Echarts设置
      */
     export type ConstructorOptions = {
-      /**
-       * @deprecated
-       */
-      earth?: Earth
       id?: string
       option?: EChartsOption
     }
@@ -4824,6 +4853,7 @@ declare module "@anstec/earth" {
     /**
      * @description 销毁
      * @deprecated Please use `destroy`
+     * @deleted 已删除
      */
     dispose(): void
     /**
@@ -5639,7 +5669,7 @@ declare module "@anstec/earth" {
      */
     const CalcDistance: <T extends Coordinate>(from: T, to: T, units?: Units) => number
     /**
-     * @description 计算球体上两点的大圆距离
+     * @description 计算球体上两点的恒向线距离
      * @param from 坐标点
      * @param to 坐标点
      * @param [units = "meters"] 单位
@@ -5712,14 +5742,14 @@ declare module "@anstec/earth" {
      */
     const PolylineIntersectRectangle: (polyline: Cartographic[], rectangle: Rectangle) => boolean
     /**
-     * @description 计算角度，以正北方向为基准
+     * @description 计算测地线角度，以正北方向为基准
      * @param from 基准原点
      * @param to 参考点
      * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
      */
     const CalcBearing: <T extends Coordinate>(from: T, to: T) => number
     /**
-     * @description 计算大圆角度，以正北方向为基准
+     * @description 计算恒向线角度，以正北方向为基准
      * @param from 基准原点
      * @param to 参考点
      * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
@@ -5772,9 +5802,9 @@ declare module "@anstec/earth" {
      */
     const CalcEnvelope: (x: number, y: number, radius1: number, radius2: number, rotate: number) => number[][]
     /**
-     * @description 根据高度和大圆弧长计算圆锥的真实高度和半径
+     * @description 根据高度和测地线长度计算圆锥的真实高度和半径
      * @param height 对地高度
-     * @param arc 大圆弧长
+     * @param arc 测地线弧长
      * @returns 真实高度和半径
      */
     const CalcConic: (height: number, arc: number) => { radius: number; heihgt: number }
@@ -5898,6 +5928,9 @@ declare module "@anstec/earth" {
      * @returns 笔触沿途点
      */
     draw(param: Draw.Stroke): Promise<Draw.StrokeReturn>
+    /**
+     * @description 笔触不支持编辑，编辑对象将恒返回 `reject` 状态
+     */
     edit(id: string): Promise<unknown>
   }
 
@@ -6215,6 +6248,7 @@ declare module "@anstec/earth" {
   export class GraphicsLayer {
     /**
      * @deprecated 现不再限制销毁
+     * @deprecated 已废弃
      */
     readonly allowDestroy: boolean
     billboard: BillboardLayer
@@ -6225,6 +6259,7 @@ declare module "@anstec/earth" {
     rectangle: RectangleLayer
     /**
      * @deprecated 已废弃，请使用 `WallLayer` 手动初始化
+     * @deleted 已删除
      */
     wall: WallLayer
     constructor(earth: Earth)
@@ -6241,6 +6276,7 @@ declare module "@anstec/earth" {
     /**
      * @description 强制销毁
      * @deprecated Please use `destroy`
+     * @deleted 已删除
      * @example
      * ```
      * const earth = useEarth()
@@ -6265,7 +6301,7 @@ declare module "@anstec/earth" {
 
   /**
    * @description 队列，先进先出
-   * @param array 数组
+   * @param [array] 数组
    * @example
    * ```
    * const queue = Stack.fromArray(taskArray)
@@ -6342,7 +6378,7 @@ declare module "@anstec/earth" {
 
   /**
    * @description 栈，先进后出
-   * @param array 数组
+   * @param [array] 数组
    * @example
    * ```
    * const stack = Stack.fromArray(taskArray)

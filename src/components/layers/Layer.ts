@@ -66,7 +66,7 @@ export namespace Layer {
   }
 
   /**
-   * @description cesium中合法的集合对象
+   * @description `cesium` 中合法的集合对象
    */
   export type Collections =
     | BillboardCollection

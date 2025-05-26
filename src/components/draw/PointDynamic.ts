@@ -23,24 +23,6 @@ export class PointDynamic extends Dynamic<PointLayer<Dynamic.Point>> {
   }
 
   /**
-   * @description 订阅绘制或编辑事件
-   * @param event 事件类型
-   * @param callback 回调
-   */
-  public subscribe(event: SubEventType, callback: (...args: any) => void): void {
-    this.eventBus.on(event, callback)
-  }
-
-  /**
-   * @description 取消订阅绘制或编辑事件
-   * @param event 事件类型
-   * @param callback 回调
-   */
-  public unsubscribe(event: SubEventType, callback: (...args: any) => void): void {
-    this.eventBus.off(event, callback)
-  }
-
-  /**
    * @description 添加可编辑对象
    * @param option 新增参数以及可编辑附加数据
    */

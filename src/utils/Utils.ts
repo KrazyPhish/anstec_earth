@@ -254,4 +254,51 @@ export namespace Utils {
     ctx.drawImage(image, 0, 0)
     return canvas
   }
+
+  /**
+   * @description 防抖
+   * @param func 需要防抖的函数
+   * @param [delay = 300] 延迟`ms`
+   * @returns 防抖的函数
+   * @exception Parameter of 'debounce' should be a function.
+   */
+  export const debounce = <T extends (...args: any) => any>(func: T, delay: number = 300) => {
+    if (typeof func !== "function") {
+      throw new DeveloperError("Parameter of 'debounce' should be a function.")
+    }
+    let timer: NodeJS.Timeout
+    return function (...args: Parameters<T>) {
+      if (timer) {
+        clearTimeout(timer)
+      }
+      timer = setTimeout(() => {
+        //@ts-ignore
+        func.apply(this, args)
+      }, delay)
+    }
+  }
+
+  /**
+   * @description 节流
+   * @param func 需要节流的函数
+   * @param [limit = 300] 区间`ms`
+   * @returns 节流的函数
+   * @exception Parameter of 'throttle' should be a function.
+   */
+  export const throttle = <T extends (...args: any) => any>(func: T, limit: number = 300) => {
+    if (typeof func !== "function") {
+      throw new DeveloperError("Parameter of 'throttle' should be a function.")
+    }
+    let inThrottle: boolean
+    return function (...args: Parameters<T>) {
+      if (!inThrottle) {
+        //@ts-ignore
+        func.apply(this, args)
+        inThrottle = true
+        setTimeout(() => {
+          inThrottle = false
+        }, limit)
+      }
+    }
+  }
 }

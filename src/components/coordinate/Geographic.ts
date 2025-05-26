@@ -2,19 +2,19 @@ import { Cartesian3, Cartographic, DeveloperError, Ellipsoid, Math } from "cesiu
 import { Utils } from "../../utils"
 import { CoorFormat } from "../../enum"
 
+const { abs } = window.Math
+
 /**
  * @description 地理坐标，经纬度 <角度制>
+ * @param longitude 经度 <角度制>
+ * @param latitude 纬度 <角度制>
+ * @param [height = 0] 海拔高度 `m`
  * @example
  * ```
  * const geo = new Geographic(104, 31, 500)
  * ```
  */
 export class Geographic {
-  /**
-   * @param longitude 经度 <角度制>
-   * @param latitude 纬度 <角度制>
-   * @param [height = 0] 海拔高度 `m`
-   */
   constructor(
     public longitude: number,
     public latitude: number,
@@ -130,11 +130,14 @@ export class Geographic {
    * @description 比较两个地理坐标是否全等
    * @param left {@link Geographic} 左值
    * @param right {@link Geographic} 右值
+   * @param [diff = 0] 可接受的数学误差
    */
-  public static equals(left: Geographic, right: Geographic) {
+  public static equals(left: Geographic, right: Geographic, diff: number = 0) {
     if (left === right) return true
-    else if (left.longitude === right.longitude && left.latitude === right.latitude && left.height === right.height)
-      return true
+    const diffLon = abs(left.longitude - right.longitude) <= diff
+    const diffLat = abs(left.latitude - right.latitude) <= diff
+    const diffLev = abs(left.height - right.height) <= diff
+    return diffLon && diffLat && diffLev
   }
 
   /**

@@ -119,13 +119,14 @@ export class PolylineLayer<T = unknown> extends Layer<
     for (const positions of lines) {
       const geometry = ground
         ? new GroundPolylineGeometry({
-            loop: true,
+            loop,
             positions,
             width,
           })
         : new PolylineGeometry({
             arcType,
             positions: loop ? [...positions, positions[0].clone()] : positions,
+            //TODO colors per-vertex
             width,
             vertexFormat: PolylineMaterialAppearance.VERTEX_FORMAT,
           })
@@ -153,5 +154,18 @@ export class PolylineLayer<T = unknown> extends Layer<
     const primitive = ground ? new GroundPolylinePrimitive(option) : new Primitive(option)
 
     super.save(id, { primitive, data: { data, module } })
+  }
+
+  /**
+   * @description 检测给定地球是否支持贴地线绘制
+   * @param earth 指定地球
+   * @example
+   * ```
+   * const earth = useEarth()
+   * const isSupported = PolylineLayer.isGroundSupported(earth)
+   * ```
+   */
+  public static isGroundSupported(earth: Earth) {
+    return GroundPolylinePrimitive.isSupported(earth.scene)
   }
 }

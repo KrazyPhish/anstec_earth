@@ -21,24 +21,6 @@ export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
   }
 
   /**
-   * @description 订阅绘制或编辑事件
-   * @param event 事件类型
-   * @param callback 回调
-   */
-  public subscribe(event: SubEventType, callback: (...args: any) => void): void {
-    this.eventBus.on(event, callback)
-  }
-
-  /**
-   * @description 取消订阅绘制或编辑事件
-   * @param event 事件类型
-   * @param callback 回调
-   */
-  public unsubscribe(event: SubEventType, callback: (...args: any) => void): void {
-    this.eventBus.off(event, callback)
-  }
-
-  /**
    * @description 笔触不支持编辑，添加对象仅增加图形
    * @param option 笔触参数
    */

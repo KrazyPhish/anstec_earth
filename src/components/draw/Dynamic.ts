@@ -158,18 +158,22 @@ export abstract class Dynamic<L extends Dynamic.Layer> {
   public abstract edit(id: string): Promise<unknown>
 
   /**
-   * @description 订阅绘制或编辑时事件
-   * @param event 事件
-   * @param callback 回调函数
+   * @description 订阅绘制或编辑事件
+   * @param event 事件类型
+   * @param callback 回调
    */
-  public abstract subscribe(event: SubEventType, callback: (...args: any) => void): void
+  public subscribe(event: SubEventType, callback: (...args: any) => void): void {
+    this.eventBus.on(event, callback)
+  }
 
   /**
-   * @description 取消订阅绘制或编辑时事件
-   * @param event 事件
-   * @param callback 回调函数
+   * @description 取消订阅绘制或编辑事件
+   * @param event 事件类型
+   * @param callback 回调
    */
-  public abstract unsubscribe(event: SubEventType, callback: (...args: any) => void): void
+  public unsubscribe(event: SubEventType, callback: (...args: any) => void): void {
+    this.eventBus.off(event, callback)
+  }
 
   /**
    * @description 根据ID获取动态绘制实体

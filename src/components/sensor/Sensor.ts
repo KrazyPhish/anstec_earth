@@ -245,7 +245,7 @@ export class Sensor<T> {
    *  thin: 0.25,
    *  hpr: new HeadingPitchRoll(0, 0, -Math.PI),
    *  color: Color.LAWNGREEN.withAlpha(0.3),
-   *  mode: ConicMode.RHUMB,
+   *  mode: ConicMode.GEODESIC,
    * })
    * ```
    */

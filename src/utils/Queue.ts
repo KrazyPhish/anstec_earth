@@ -6,7 +6,7 @@ export namespace Queue {
 
 /**
  * @description 队列，先进先出
- * @param array 数组
+ * @param [array] 数组
  * @example
  * ```
  * const queue = Stack.fromArray(taskArray)

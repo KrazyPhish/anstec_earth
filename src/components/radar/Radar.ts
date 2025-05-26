@@ -226,7 +226,7 @@ export class Radar<T = unknown> {
         Cartesian3.fromDegreesArrayHeights([
           longitude,
           latitude,
-          height!,
+          height ?? 0,
           vertex[0].longitude + X0,
           vertex[0].latitude + Y0,
           0,

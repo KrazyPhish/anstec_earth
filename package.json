@@ -1,7 +1,7 @@
 {
   "name": "@anstec/earth",
   "author": "anstec",
-  "version": "2.3.3",
+  "version": "2.4.0",
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
   "types": "dist/index.d.ts",
@@ -19,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/KrazyPhish/anstec_earth"
+    "url": "git+https://github.com/KrazyPhish/anstec_earth.git"
   },
   "keywords": ["cesium", "turf", "gis", "geo", "map"],
   "license": "MIT",

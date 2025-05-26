@@ -42,7 +42,7 @@ export namespace Measure {
    * @property startPosition {@link Cartesian3} 起始位置
    * @property endPosition {@link Cartesian3} 结束位置
    * @property spaceDistance 空间距离
-   * @property rhumbDistance 大圆距离
+   * @property rhumbDistance 恒向线距离
    * @property heightDifference 高度差
    */
   export type TriangleReturn = {

@@ -727,47 +727,51 @@ export class Draw {
         if (!ent.data.data) return
         switch ((ent.data.data as { type: DrawType }).type) {
           case DrawType.POINT: {
-            const res = await this.point.edit(_id)
+            this.point.edit(_id)
             break
           }
           case DrawType.BILLBOARD: {
-            const res = await this.billboard.edit(_id)
+            this.billboard.edit(_id)
+            break
+          }
+          case DrawType.CIRCLE: {
+            this.circle.edit(_id)
             break
           }
           case DrawType.MODEL: {
-            const res = await this.model.edit(_id)
+            this.model.edit(_id)
             break
           }
           case DrawType.POLYLINE: {
-            const res = await this.polyline.edit(_id)
+            this.polyline.edit(_id)
             break
           }
           case DrawType.POLYGON: {
-            const res = await this.polygon.edit(_id)
+            this.polygon.edit(_id)
             break
           }
           case DrawType.RECTANGLE: {
-            const res = await this.rectangle.edit(_id)
+            this.rectangle.edit(_id)
             break
           }
           case DrawType.ATTACK_ARROW: {
-            const res = await this.attackArrow.edit(_id)
+            this.attackArrow.edit(_id)
             break
           }
           case DrawType.PINCER_ARROW: {
-            const res = await this.pincerArrow.edit(_id)
+            this.pincerArrow.edit(_id)
             break
           }
           case DrawType.STRAIGHT_ARROW: {
-            const res = await this.straightArrow.edit(_id)
+            this.straightArrow.edit(_id)
             break
           }
           case DrawType.WALL: {
-            const res = await this.wall.edit(_id)
+            this.wall.edit(_id)
             break
           }
           case DrawType.LABEL: {
-            const res = await this.label.edit(_id)
+            this.label.edit(_id)
             break
           }
           default: {

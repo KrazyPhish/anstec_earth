@@ -101,14 +101,6 @@ export class EChartsOverlay {
   }
 
   /**
-   * @description 销毁
-   * @deprecated Please use `destroy`
-   */
-  public dispose() {
-    this.destroy()
-  }
-
-  /**
    * @description 获取销毁状态
    */
   public isDestroyed(): boolean {

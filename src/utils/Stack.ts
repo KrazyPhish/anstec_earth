@@ -6,7 +6,7 @@ export namespace Stack {
 
 /**
  * @description 栈，先进后出
- * @param array 数组
+ * @param [array] 数组
  * @example
  * ```
  * const stack = Stack.fromArray(taskArray)

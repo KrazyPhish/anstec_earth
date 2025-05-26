@@ -27,13 +27,8 @@ import {
 } from "echarts"
 import { CameraTool, Utils } from "utils"
 import { Coordinate } from "./coordinate"
-import { Draw } from "./draw"
 import { GraphicsLayer } from "./layers"
-import { Measure } from "./measure"
-import { ContextMenu } from "./menu"
 import { DefaultContextMenuItem as MapMode } from "enum"
-import { GlobalEvent } from "./bus"
-import { Weather } from "./weather"
 import { ImprovedScreenSpaceCameraController } from "improved"
 
 export namespace Earth {
@@ -146,29 +141,9 @@ export class Earth {
    */
   public readonly coordinate: Coordinate
   /**
-   * @description 全局事件
-   */
-  public readonly global: GlobalEvent
-  /**
    * @description 默认图层实例
    */
   public readonly layers: GraphicsLayer
-  /**
-   * @description 测量组件
-   */
-  public readonly measure: Measure
-  /**
-   * @description 动态绘制
-   */
-  public readonly drawTool: Draw
-  /**
-   * @description 菜单组件
-   */
-  public readonly contextMenu: ContextMenu
-  /**
-   * @description 天气场景特效
-   */
-  public readonly weather: Weather
   /**
    * @description cesium视图选项
    */
@@ -206,13 +181,8 @@ export class Earth {
 
     this.defaultSettings()
 
-    this.global = new GlobalEvent(this)
     this.coordinate = new Coordinate(this)
     this.layers = new GraphicsLayer(this)
-    this.measure = new Measure(this)
-    this.drawTool = new Draw(this)
-    this.contextMenu = new ContextMenu(this)
-    this.weather = new Weather(this)
 
     if (this.options.adaptiveCameraController) {
       //@ts-ignore
@@ -401,42 +371,6 @@ export class Earth {
       },
       () => {}
     )
-  }
-
-  /**
-   * @description 使用默认图层类
-   * @returns 默认暴露的图层类
-   * @deprecated Now can directly read the public value `earth.layers`
-   */
-  public useDefaultLayers() {
-    return this.layers
-  }
-
-  /**
-   * @description 使用默认测量类
-   * @returns 测量工具
-   * @deprecated Now can directly read the public value `earth.measure`
-   */
-  public useMeasure() {
-    return this.measure
-  }
-
-  /**
-   * @description 使用默认绘制类
-   * @returns 绘制工具
-   * @deprecated Now can directly read the public value `earth.drawTool`
-   */
-  public useDraw() {
-    return this.drawTool
-  }
-
-  /**
-   * @description 使用默认上下文菜单
-   * @returns 上下文菜单实例
-   * @deprecated Now can directly read the public value `earth.contextMenu`
-   */
-  public useContextMenu() {
-    return this.contextMenu
   }
 
   /**
@@ -650,9 +584,6 @@ export class Earth {
     if (this.destroyed) return
     this.destroyed = true
     this.layers.destroy()
-    this.drawTool.destroy()
-    this.contextMenu.destroy()
-    this.global.destroy()
     this.viewer.destroy()
   }
 }
