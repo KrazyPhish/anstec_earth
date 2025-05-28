@@ -116,8 +116,8 @@ export class ContextMenu {
    * @param position 位置
    * @param items 菜单项
    */
-  private renderContextMenu(module: string, position: Cartesian2, items: ContextMenu.Item[]) {
-    const renderItems = (ctx: ContextMenu.Item[], className: "left" | "right") => {
+  private renderContextMenu(module: string, position: Cartesian2, realPosition: Cartesian2, items: ContextMenu.Item[]) {
+    const renderItems = (ctx: ContextMenu.Item[], classNames: string[]) => {
       const appendClasses = (el: HTMLElement, classes: string | string[] = []) => {
         if (typeof classes === "string") {
           el.classList.add(classes)
@@ -130,7 +130,7 @@ export class ContextMenu {
 
       const ul = document.createElement("ul")
       ul.classList.add("context-menu-ul")
-      ul.classList.add(className)
+      ul.classList.add(...classNames)
       for (const item of ctx) {
         if (item.key) {
           if (this.hideKeys.has(item.key)) continue
@@ -164,7 +164,7 @@ export class ContextMenu {
         label.dataset.key = item.key
         li.append(label)
         if (item.children && item.children.length) {
-          li.append(renderItems(item.children, className))
+          li.append(renderItems(item.children, classNames))
         }
 
         ul.append(li)
@@ -189,21 +189,24 @@ export class ContextMenu {
     }
 
     const calcRelativePosition = (counts: number, depth: number) => {
-      const baseHeight = counts * 35.56
-      const baseWidth = depth * 112
-      const { left, top, width, height } = this.container.getBoundingClientRect()
+      const scaleX = position.x / realPosition.x
+      const scaleY = position.y / realPosition.y
+      const baseHeight = counts * 35.56 * scaleY
+      const baseWidth = depth * 112 * scaleX
+      const { width, height } = this.container.getBoundingClientRect()
       let resOriginX = "left",
         resOriginY = "top",
         resTransX = 0,
         resTransY = 0,
-        className: "left" | "right" = "right"
+        classNameX: "left" | "right" = "right",
+        classNameY: "top" | "bottom" = "top"
       if (position.x <= baseWidth) {
         resOriginX = "left"
         resTransX = 0
       } else if (width - position.x <= baseWidth) {
         resOriginX = "right"
         resTransX = -100
-        className = "left"
+        classNameX = "left"
       }
       if (position.y <= baseHeight) {
         resOriginY = "top"
@@ -211,21 +214,27 @@ export class ContextMenu {
       } else if (height - position.y <= baseHeight) {
         resOriginY = "bottom"
         resTransY = -100
+        classNameY = "bottom"
       }
 
       return {
-        left: position.x - -left,
-        top: position.y - -top,
         translate: `${resTransX}% ${resTransY}%`,
         transOrigin: `${resOriginY} ${resOriginX}`,
-        className,
+        classNameX,
+        classNameY,
       }
     }
 
     const getDepth = (node?: ContextMenu.Item[]) => {
-      if (!node || node.length === 0) return 1
-      const depth = Math.max(...node.map((child) => getDepth(child.children)))
+      if (!node || node.length === 0) return 0
+      const depth = Math.max(...node.map((child) => getDepth(child.children) + 1))
       return depth
+    }
+
+    const getCounts = (node?: ContextMenu.Item[]) => {
+      if (!node || node.length === 0) return 0
+      const counts = Math.max(...node.map((child) => getCounts(child.children)), node.length)
+      return counts
     }
 
     for (const child of Array.from(this.container.children)) {
@@ -239,13 +248,14 @@ export class ContextMenu {
       div.classList.add(className)
     })
     const depth = getDepth(items)
-    const { className, left, top, transOrigin, translate } = calcRelativePosition(items.length, depth)
-    div.style.top = `${top}px`
-    div.style.left = `${left}px`
-    div.style.position = "fixed"
+    const counts = getCounts(items)
+    const { classNameX, classNameY, transOrigin, translate } = calcRelativePosition(counts, depth)
+    div.style.top = `${realPosition.y}px`
+    div.style.left = `${realPosition.x}px`
+    div.style.position = "absolute"
     div.style.transformOrigin = transOrigin
     div.style.translate = translate
-    div.append(renderItems(items, className))
+    div.append(renderItems(items, [classNameX, classNameY]))
     div.addEventListener("click", (event: MouseEvent) => {
       const target = event.target as HTMLElement
       const dataKey = target.getAttribute("data-key")
@@ -281,13 +291,17 @@ export class ContextMenu {
       if (menuDiv) {
         this.container.removeChild(menuDiv)
       }
-    }, ScreenSpaceEventType.LEFT_CLICK)
+    }, ScreenSpaceEventType.LEFT_DOWN)
     this.handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
       if (State.isOperate()) return
 
       let module = ""
       let menus: ContextMenu.Item[] = []
-      const pick = this.earth.viewer.scene.pick(position)
+      const rect = this.container.getBoundingClientRect()
+      const scaleX = rect.width / this.container.clientWidth
+      const scaleY = rect.height / this.container.clientHeight
+      const realPosition = new Cartesian2(position.x / scaleX, position.y / scaleY)
+      const pick = this.earth.viewer.scene.pick(realPosition)
       this.currentEnt = undefined
 
       if (pick) {
@@ -313,7 +327,7 @@ export class ContextMenu {
       } else if (this.currentEnt && this.currentEnt.module) {
         module = this.currentEnt.module
       }
-      if (menus.length > 0) this.renderContextMenu(module, position, menus)
+      if (menus.length > 0) this.renderContextMenu(module, position, realPosition, menus)
       if (this.cache.has(module)) {
         this.cache.get(module)!.callback?.({
           id: this.currentEnt?.id,

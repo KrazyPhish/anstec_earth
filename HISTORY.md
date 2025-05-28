@@ -2,6 +2,10 @@
 
 ### 版本更新历史记录
 
+#### Version 2.4.1
+1. 修复 `ContextMenu` 上下文菜单在视图拉伸、缩放的情况下定位错误的问题
+2. 优化上下文菜单触发时的显示外观，以更符合使用直觉
+
 #### Version 2.4.0
 1. `Utils` 工具新增方法 `ConvertPic2Canvas` 用于将图片转成Canvas，支持`base64`、`jpg`、`jpeg`和`png`格式
 2. `Utils` 工具新增方法 `debounce` 和 `throttle` 用于函数防抖和节流

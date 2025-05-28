@@ -1,17 +1,20 @@
 .context-menu {
-  z-index: 9999;
+  position: absolute;
+  z-index: 99;
   background-color: transparent;
   opacity: 1;
   transform: scale(0);
   transition: all 0.25s ease-out;
+
   .context-menu-ul {
     text-align: center;
-    background-color: rgba(43,44,47,.8);
+    background-color: rgba(43, 44, 47, .8);
     min-width: 110px;
     list-style: none;
     font-size: 14px;
     padding: 0;
     margin: 1px;
+
     a {
       padding: 6px 16px 6px 10px;
       transition: background-color 0.25s;
@@ -24,21 +27,27 @@
       text-decoration: none;
       font-size: 14px;
     }
+
     a:hover {
       text-decoration: none;
     }
+
     li.li-item {
       cursor: pointer;
       position: relative;
+
       &:hover {
         background: #444d59;
-        > a{
+
+        >a {
           color: #fff;
         }
-        > ul {
+
+        >ul {
           display: block;
         }
       }
+
       &:has(ul)::after {
         content: '';
         position: absolute;
@@ -50,6 +59,7 @@
         border-left-color: #7da1b3;
         border-right-width: 0;
       }
+
       &:has(ul)::before {
         content: '';
         position: absolute;
@@ -59,11 +69,13 @@
         width: 5px;
         height: 35px;
       }
+
       img {
         margin-left: 5px;
         margin-right: -8px;
         display: inline-block;
       }
+
       span {
         display: flex;
         width: 16px;
@@ -72,26 +84,39 @@
         right: 0;
         top: 0;
         align-items: center;
+
         .icon {
           position: absolute;
           right: 5px;
         }
       }
-      > ul {
+
+      >ul {
         display: none;
         position: absolute;
-        top: 0;
       }
-      > ul.left {
+
+      >ul.left {
         left: calc(-100% - 3px);
       }
-      > ul.right {
+
+      >ul.right {
         left: calc(100% + 1px);
       }
+
+      >ul.top {
+        top: 0;
+      }
+
+      >ul.bottom {
+        bottom: -1px
+      }
     }
+
     li.li-item.separator {
       border-bottom: 1px solid rgba(128, 128, 128, 0.5);
     }
+
     li.li-item.separator:last-child {
       border-bottom: none;
     }
