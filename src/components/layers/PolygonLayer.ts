@@ -82,14 +82,14 @@ export class PolygonLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
         ground: param.ground ?? false,
         show: param.show ?? true,
         arcType: param.arcType ?? ArcType.GEODESIC,
-        outline: param.outline
-          ? {
-              width: param.outline?.width ?? 2,
-              materialType: param.outline?.materialType ?? "Color",
-              materialUniforms: param.outline?.materialUniforms ?? { color: Color.PURPLE },
-            }
-          : undefined,
       },
+      outline: param.outline
+        ? {
+            width: param.outline?.width ?? 2,
+            materialType: param.outline?.materialType ?? "Color",
+            materialUniforms: param.outline?.materialUniforms ?? { color: Color.PURPLE },
+          }
+        : undefined,
       label: param.label
         ? {
             font: "16px Helvetica",
@@ -126,7 +126,7 @@ export class PolygonLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
    * ```
    */
   public add(param: PolygonLayer.AddParam<T>) {
-    const { polygon, label } = this.getDefaultOption(param)
+    const { polygon, outline, label } = this.getDefaultOption(param)
 
     const geometry = polygon.ground
       ? PolygonGeometry.fromPositions({
@@ -161,8 +161,8 @@ export class PolygonLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
           appearance: new PerInstanceColorAppearance(),
         })
 
-    if (polygon.outline) {
-      const { materialType, materialUniforms, width } = polygon.outline
+    if (outline) {
+      const { materialType, materialUniforms, width } = outline
       if (polygon.usePointHeight) {
         this.outlineLayer.add({
           id: polygon.id,
@@ -177,10 +177,7 @@ export class PolygonLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
           width,
         })
       } else {
-        const positions = polygon.positions.map((p) => {
-          const coord = Geographic.fromCartesian(p)
-          return Cartesian3.fromDegrees(coord.longitude, coord.latitude, polygon.height)
-        })
+        const positions = polygon.positions.map((p) => p.clone())
         this.outlineLayer.add({
           id: polygon.id,
           module: param.module,
@@ -236,6 +233,7 @@ export class PolygonLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
       this.labelLayer.hide(id)
     } else {
       super.hide()
+      this.outlineLayer.hide()
       this.labelLayer.hide()
     }
   }
@@ -256,6 +254,7 @@ export class PolygonLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
       this.labelLayer.show(id)
     } else {
       super.show()
+      this.outlineLayer.show()
       this.labelLayer.show()
     }
   }

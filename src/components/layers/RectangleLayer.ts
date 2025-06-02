@@ -18,9 +18,14 @@ import { Earth } from "components/Earth"
 import { Utils } from "utils"
 import { LabelLayer } from "./LabelLayer"
 import { Layer } from "./Layer"
+import { PolylineLayer } from "./PolylineLayer"
+import { polygon } from "@turf/turf"
+import { ArcType } from "cesium"
 
 export namespace RectangleLayer {
   export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
+
+  export type OutlineAddParam<T> = Pick<PolylineLayer.AddParam<T>, "materialType" | "materialUniforms" | "width">
 
   /**
    * @extends Layer.AddParam {@link Layer.AddParam}
@@ -28,6 +33,7 @@ export namespace RectangleLayer {
    * @property [height] 高度
    * @property [color = {@link Color.BLUE}] 填充色
    * @property [ground = false] 是否贴地
+   * @property [outline] {@link OutlineAddParam} 轮廓线
    * @property [label] {@link LabelAddParam} 对应标签
    */
   export type AddParam<T> = Layer.AddParam<T> & {
@@ -35,6 +41,7 @@ export namespace RectangleLayer {
     height?: number
     color?: Color
     ground?: boolean
+    outline?: OutlineAddParam<T>
     label?: LabelAddParam<T>
   }
 }
@@ -57,10 +64,12 @@ export class RectangleLayer<T = unknown> extends Layer<
   Layer.Data<T>
 > {
   public labelLayer: LabelLayer<T>
+  private outlineLayer: PolylineLayer<T>
 
   constructor(earth: Earth) {
     super(earth, new PrimitiveCollection())
     this.labelLayer = new LabelLayer(earth)
+    this.outlineLayer = new PolylineLayer(earth)
   }
 
   private getDefaultOption(param: RectangleLayer.AddParam<T>) {
@@ -69,10 +78,17 @@ export class RectangleLayer<T = unknown> extends Layer<
         id: param.id ?? Utils.RandomUUID(),
         rectangle: param.rectangle,
         color: param.color ?? Color.BLUE.withAlpha(0.4),
-        height: param.height,
+        height: param.height ?? 0,
         show: param.show ?? true,
         ground: param.ground ?? false,
       },
+      outline: param.outline
+        ? {
+            width: param.outline?.width ?? 2,
+            materialType: param.outline?.materialType ?? "Color",
+            materialUniforms: param.outline?.materialUniforms ?? { color: Color.BLUE },
+          }
+        : undefined,
       label: param.label
         ? {
             font: "16px Helvetica",
@@ -104,7 +120,7 @@ export class RectangleLayer<T = unknown> extends Layer<
    * ```
    */
   public add(param: RectangleLayer.AddParam<T>) {
-    const { rectangle, label } = this.getDefaultOption(param)
+    const { rectangle, outline, label } = this.getDefaultOption(param)
 
     const geometry = rectangle.ground
       ? new RectangleGeometry({
@@ -125,7 +141,6 @@ export class RectangleLayer<T = unknown> extends Layer<
       },
     })
 
-    //TODO outline primitive, use PolylineLayer
     const primitive = rectangle.ground
       ? new GroundPrimitive({
           show: rectangle.show,
@@ -138,6 +153,37 @@ export class RectangleLayer<T = unknown> extends Layer<
           geometryInstances: instance,
           appearance: new PerInstanceColorAppearance(),
         })
+
+    if (outline) {
+      const { materialType, materialUniforms, width } = outline
+      const { east, west, north, south } = rectangle.rectangle
+      const positions = Cartesian3.fromRadiansArrayHeights([
+        west,
+        north,
+        rectangle.height,
+        east,
+        north,
+        rectangle.height,
+        east,
+        south,
+        rectangle.height,
+        west,
+        south,
+        rectangle.height,
+      ])
+      this.outlineLayer.add({
+        id: rectangle.id,
+        module: param.module,
+        data: param.data,
+        arcType: ArcType.GEODESIC,
+        lines: [positions],
+        loop: true,
+        ground: rectangle.ground,
+        materialType,
+        materialUniforms,
+        width,
+      })
+    }
 
     if (label) {
       const { west, east, north, south } = rectangle.rectangle
@@ -154,6 +200,15 @@ export class RectangleLayer<T = unknown> extends Layer<
   }
 
   /**
+   * @description 根据ID获取矩形外边框实体
+   * @param id ID
+   * @returns 外边框实体
+   */
+  public getOutlineEntity(id: string) {
+    return this.outlineLayer.getEntity(id)
+  }
+
+  /**
    * @description 隐藏所有矩形
    */
   public hide(): void
@@ -165,9 +220,11 @@ export class RectangleLayer<T = unknown> extends Layer<
   public hide(id?: string) {
     if (id) {
       super.hide(id)
+      this.outlineLayer.hide(id)
       this.labelLayer.hide(id)
     } else {
       super.hide()
+      this.outlineLayer.hide()
       this.labelLayer.hide()
     }
   }
@@ -184,9 +241,11 @@ export class RectangleLayer<T = unknown> extends Layer<
   public show(id?: string) {
     if (id) {
       super.show(id)
+      this.outlineLayer.show(id)
       this.labelLayer.show(id)
     } else {
       super.show()
+      this.outlineLayer.show()
       this.labelLayer.show()
     }
   }
@@ -203,9 +262,11 @@ export class RectangleLayer<T = unknown> extends Layer<
   public remove(id?: string) {
     if (id) {
       super.remove(id)
+      this.outlineLayer.remove(id)
       this.labelLayer.remove(id)
     } else {
       super.remove()
+      this.outlineLayer.remove()
       this.labelLayer.remove()
     }
   }
@@ -217,6 +278,7 @@ export class RectangleLayer<T = unknown> extends Layer<
   public destroy(): boolean {
     if (super.destroy()) {
       this.labelLayer.destroy()
+      this.outlineLayer.destroy()
       return true
     } else return false
   }

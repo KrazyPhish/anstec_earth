@@ -1,4 +1,15 @@
-import { Camera, Cartesian3, DeveloperError, Ellipsoid, EllipsoidalOccluder, Scene, SceneMode, Viewer } from "cesium"
+import {
+  Camera,
+  Cartesian2,
+  Cartesian3,
+  Color,
+  DeveloperError,
+  Ellipsoid,
+  EllipsoidalOccluder,
+  Scene,
+  SceneMode,
+  Viewer,
+} from "cesium"
 import { Earth } from "components/Earth"
 import { Utils } from "utils"
 
@@ -16,6 +27,21 @@ export namespace Covering {
   }
 
   /**
+   * @property [color = new Color(43, 44, 47, 0.8)] {@link Color} 连接线颜色
+   * @property [dashed] 连接线虚线样式参数数组，不传入则为实现样式
+   * @property [enabled = true] 是否启用连接线
+   * @property [pinned] 连接线与覆盖物的固定位置，传入则将始终锚定在具体点
+   * @property [width = 1] 连接线宽度
+   */
+  export type LineOptions = {
+    color?: Color
+    dashed?: number[]
+    enabled?: boolean
+    pinned?: AnchorPosition
+    width?: number
+  }
+
+  /**
    * @property [id] 覆盖物ID
    * @property [customize = false] 是否自定义实现
    * @property [reference] 引用实例，自定义实现时必填
@@ -24,10 +50,10 @@ export namespace Covering {
    * @property [content] 内容，自定义实现时失效
    * @property [data] 附加数据
    * @property [anchorPosition = "TOP_LEFT"] 覆盖物锚点方位
-   * @property [connectionLine = true] 连接线，拖拽禁用时连接线将始终隐藏
+   * @property [offset = {@link Cartesian2.ZERO}] 初始化时出现位置与锚点的偏移
+   * @property [connectionLine] 连接线选项，拖拽禁用时连接线将始终隐藏
    * @property [closeable = true] 覆盖物是否可关闭
    * @property [follow = true] 覆盖物是否跟随锚定位置移动，拖拽禁用时将总是跟随
-   * @property [lineStroke = "rgba(43, 44, 47, 0.8)"] 连接线颜色
    * @property position {@link Cartesian3} 位置
    */
   export type AddParam<T> = {
@@ -39,10 +65,10 @@ export namespace Covering {
     content?: string
     data?: T
     anchorPosition?: AnchorPosition
-    connectionLine?: boolean
+    offset?: Cartesian2
+    connectionLine?: LineOptions
     closeable?: boolean
     follow?: boolean
-    lineStroke?: string
     position: Cartesian3
   }
 
@@ -77,10 +103,10 @@ export class Covering<T = unknown> {
     x2: number
     y1: number
     y2: number
-    opacity: number
-    stroke?: string
+    connectionLine: Covering.LineOptions
   }) {
-    const stroke = param.stroke ?? "rgba(43, 44, 47, 0.8)"
+    const { color, dashed, enabled, width } = param.connectionLine
+    const stroke = color ? color.toCssColorString() : new Color(43, 44, 47, 0.8).toCssColorString()
     return `
       <line 
         id="line"
@@ -88,33 +114,61 @@ export class Covering<T = unknown> {
         y1="${param.y1}"
         x2="${param.x2}"
         y2="${param.y2}"
-        opacity="${param.opacity}"
+        opacity="${this.draggable ? (enabled ? 1 : 0) : 0}"
         stroke="${stroke}"
-        stroke-width="1"
+        stroke-width="${width}"
+        ${dashed ? 'stroke-dasharray="' + dashed.join(",") + '"' : ""}
       />`
   }
 
   private createCallback({
     id,
     reference,
-    lineStroke,
     tail,
     tailLast,
     position,
     anchorPosition,
     connectionLine,
+    offset,
     follow,
   }: {
     id: string
     reference: HTMLDivElement
     tail: SVGSVGElement
     tailLast: { x: number; y: number }
-    lineStroke: string
     position: Cartesian3
     anchorPosition: Covering.AnchorPosition
-    connectionLine: boolean
+    connectionLine: Covering.LineOptions
+    offset: Cartesian2
     follow: boolean
   }) {
+    const computeTail = (refTop: number, refLeft: number, coord: Cartesian2) => {
+      if (connectionLine.pinned === "TOP_LEFT") {
+        tailLast.x = refLeft
+        tailLast.y = refTop
+      } else if (connectionLine.pinned === "TOP_RIGHT") {
+        tailLast.x = refLeft + reference.clientWidth
+        tailLast.y = refTop
+      } else if (connectionLine.pinned === "BOTTOM_LEFT") {
+        tailLast.x = refLeft
+        tailLast.y = refTop + reference.clientHeight
+      } else if (connectionLine.pinned === "BOTTOM_RIGHT") {
+        tailLast.x = refLeft + reference.clientWidth
+        tailLast.y = refTop + reference.clientHeight
+      } else {
+        if (coord.x >= refLeft + reference.clientWidth / 2) {
+          tailLast.x = refLeft + reference.clientWidth
+        } else {
+          tailLast.x = refLeft
+        }
+        if (coord.y >= refTop + reference.clientHeight / 2) {
+          tailLast.y = refTop + reference.clientHeight
+        } else {
+          tailLast.y = refTop
+        }
+      }
+    }
+
     let left: number = 0
     let top: number = 0
     if (anchorPosition === "BOTTOM_LEFT") {
@@ -131,23 +185,21 @@ export class Covering<T = unknown> {
       top = 0
     }
     const canvasCoordinate = this.scene.cartesianToCanvasCoordinates(position)
-    const refLeft = canvasCoordinate.x + left
-    const refTop = canvasCoordinate.y + top
+    const refLeft = canvasCoordinate.x + left + offset.x
+    const refTop = canvasCoordinate.y + top + offset.y
     tail.style.width = `${this.scene.canvas.width}px`
     tail.style.height = `${this.scene.canvas.height}px`
     tail.style.position = "absolute"
     tail.style.pointerEvents = "none"
     tail.style.left = `0px`
     tail.style.top = `0px`
-    tailLast.x = refLeft + reference.clientWidth / 2
-    tailLast.y = refTop + reference.clientHeight / 2
+    computeTail(refTop, refLeft, canvasCoordinate)
     tail.innerHTML = this.createConnectionLine({
       x1: canvasCoordinate.x,
       y1: canvasCoordinate.y,
       x2: isNaN(tailLast.x) ? canvasCoordinate.x : tailLast.x,
       y2: isNaN(tailLast.y) ? canvasCoordinate.y : tailLast.y,
-      opacity: this.draggable ? (connectionLine ? 1 : 0) : 0,
-      stroke: lineStroke,
+      connectionLine,
     })
     let initialize = true
     const lastPosition = { x: canvasCoordinate.x, y: canvasCoordinate.y }
@@ -165,10 +217,9 @@ export class Covering<T = unknown> {
       lastPosition.x = canvasCoordinate.x
       lastPosition.y = canvasCoordinate.y
       if (!this.draggable) {
-        const refLeft = canvasCoordinate.x + left
-        const refTop = canvasCoordinate.y + top
-        tailLast.x = refLeft + reference.clientWidth / 2
-        tailLast.y = refTop + reference.clientHeight / 2
+        const refLeft = canvasCoordinate.x + left + offset.x
+        const refTop = canvasCoordinate.y + top + offset.y
+        computeTail(refTop, refLeft, canvasCoordinate)
         reference.style.left = `${refLeft}px`
         reference.style.top = `${refTop}px`
       } else if (follow) {
@@ -184,8 +235,7 @@ export class Covering<T = unknown> {
         } else if (refTop > this.scene.canvas.height - reference.clientHeight) {
           refTop = this.scene.canvas.height - reference.clientHeight
         }
-        tailLast.x = refLeft + reference.clientWidth / 2
-        tailLast.y = refTop + reference.clientHeight / 2
+        computeTail(refTop, refLeft, canvasCoordinate)
         reference.style.left = `${refLeft}px`
         reference.style.top = `${refTop}px`
       }
@@ -199,8 +249,7 @@ export class Covering<T = unknown> {
         y1: canvasCoordinate.y,
         x2: isNaN(tailLast.x) ? canvasCoordinate.x : tailLast.x,
         y2: isNaN(tailLast.y) ? canvasCoordinate.y : tailLast.y,
-        opacity: this.draggable ? (connectionLine ? 1 : 0) : 0,
-        stroke: lineStroke,
+        connectionLine,
       })
       const cameraOccluder = new EllipsoidalOccluder(Ellipsoid.WGS84, this.camera.position)
       if (
@@ -258,11 +307,11 @@ export class Covering<T = unknown> {
     title = "",
     content = "",
     anchorPosition = "TOP_LEFT",
-    connectionLine = true,
     closeable = true,
     follow = true,
-    lineStroke = "rgba(43, 44, 47, 0.8)",
     reference: _reference,
+    offset = Cartesian2.ZERO,
+    connectionLine,
     position,
     data,
   }: Covering.AddParam<T>) {
@@ -336,15 +385,21 @@ export class Covering<T = unknown> {
         document.removeEventListener("mousemove", onReferenceMove)
       })
     })
+    connectionLine = {
+      enabled: true,
+      color: new Color(43, 44, 47, 0.8),
+      width: 1,
+      ...connectionLine,
+    }
     const callback = this.createCallback({
       id,
       reference,
-      lineStroke,
       tail,
       tailLast,
       position,
       anchorPosition,
       connectionLine,
+      offset,
       follow,
     })
     this.scene.preRender.addEventListener(callback)

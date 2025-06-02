@@ -2,6 +2,15 @@
 
 ### 版本更新历史记录
 
+#### Version 2.4.2
+1. `RectangleLayer.AddParam` 新增属性 `outline` 用于绘制矩形轮廓线
+2. `RectangleLayer` 新增方法 `getOutlineEntity` 用于获取矩形轮廓线实体
+3. 修复 `PolygonLayer` 中多边形使用轮廓线时，轮廓线无法正常显隐的问题
+4. 覆盖物新增参数中新增类型 `Covering.LineOptions` 用于控制连接线启用、样式、颜色、锚点位置等
+5. `Covering.AddParam` 类型中的 `connectionLine` 属性从 `boolean` 类型升级至 `LineOptions` 类型
+6. 废弃并删除 `Covering.AddParam` 中的 `lineStroke` 属性
+7. `Covering.AddParam` 类型中的新增 `offset` 属性用于控制初始时覆盖物出现位置的偏移
+
 #### Version 2.4.1
 1. 修复 `ContextMenu` 上下文菜单在视图拉伸、缩放的情况下定位错误的问题
 2. 优化上下文菜单触发时的显示外观，以更符合使用直觉

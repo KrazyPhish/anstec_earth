@@ -14,7 +14,7 @@ import { H337 } from "./H337"
 import { Earth } from "../Earth"
 import { Utils } from "../../utils"
 
-type IRectangle = {
+type RectangleLike = {
   north: number
   east: number
   south: number
@@ -116,8 +116,8 @@ export class Heatmap {
   private _xoffset = 0
   private _yoffset = 0
   private _container?: HTMLDivElement
-  private bounds: IRectangle = { north: 0, east: 0, south: 0, west: 0 }
-  private _mbounds: IRectangle = { north: 0, east: 0, south: 0, west: 0 }
+  private bounds: RectangleLike = { north: 0, east: 0, south: 0, west: 0 }
+  private _mbounds: RectangleLike = { north: 0, east: 0, south: 0, west: 0 }
   private _thresholdCameraHeight = 50
   private _minBB = 20
 
@@ -150,7 +150,7 @@ export class Heatmap {
    * @param bb WGS84边界框bounding box，例如{北，东，南，西}
    * @return 矩形边界
    */
-  private wgs84ToMercatorBB(bb: Rectangle): IRectangle {
+  private wgs84ToMercatorBB(bb: Rectangle): RectangleLike {
     const sw = this.WMP.project(Cartographic.fromDegrees(bb.west, bb.south))
     const ne = this.WMP.project(Cartographic.fromDegrees(bb.east, bb.north))
     return {
@@ -171,7 +171,7 @@ export class Heatmap {
    * @param mbb 墨卡托边界框
    * @return 矩形边界
    */
-  private mercatorToWgs84BB(mbb: IRectangle) {
+  private mercatorToWgs84BB(mbb: RectangleLike) {
     const sw = this.WMP.unproject(new Cartesian3(mbb.west, mbb.south))
     const ne = this.WMP.unproject(new Cartesian3(mbb.east, mbb.north))
     return {
@@ -186,7 +186,7 @@ export class Heatmap {
    * @description 计算宽高
    * @param mbb 墨卡托边界框
    */
-  private setWidthAndHeight(mbb: IRectangle) {
+  private setWidthAndHeight(mbb: RectangleLike) {
     this.width = mbb.east > 0 && mbb.west < 0 ? mbb.east + abs(mbb.west) : abs(mbb.east - mbb.west)
     this.height = mbb.north > 0 && mbb.south < 0 ? mbb.north + abs(mbb.south) : abs(mbb.north - mbb.south)
     this._factor = 1

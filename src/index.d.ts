@@ -1171,6 +1171,21 @@ declare module "@anstec/earth" {
     export type AnchorPosition = "TOP_LEFT" | "TOP_RIGHT" | "BOTTOM_LEFT" | "BOTTOM_RIGHT"
 
     /**
+     * @property [color = new Color(43, 44, 47, 0.8)] {@link Color} 连接线颜色
+     * @property [dashed] 连接线虚线样式参数数组，不传入则为实现样式
+     * @property [enabled = true] 是否启用连接线
+     * @property [pinned] 连接线与覆盖物的固定位置，传入则将始终锚定在具体点
+     * @property [width = 1] 连接线宽度
+     */
+    export type LineOptions = {
+      color?: Color
+      dashed?: number[]
+      enabled?: boolean
+      pinned?: AnchorPosition
+      width?: number
+    }
+
+    /**
      * @property [id] 覆盖物ID
      * @property [customize = false] 是否自定义实现
      * @property [reference] 引用实例，自定义实现时必填
@@ -1179,7 +1194,8 @@ declare module "@anstec/earth" {
      * @property [content] 内容，自定义实现时失效
      * @property [data] 附加数据
      * @property [anchorPosition = "TOP_LEFT"] 覆盖物锚点方位
-     * @property [connectionLine = true] 连接线，拖拽禁用时连接线将始终隐藏
+     * @property [offset = {@link Cartesian2.ZERO}] 初始化时出现位置与锚点的偏移
+     * @property [connectionLine] 连接线选项，拖拽禁用时连接线将始终隐藏
      * @property [closeable = true] 覆盖物是否可关闭
      * @property [follow = true] 覆盖物是否跟随锚定位置移动，拖拽禁用时将总是跟随
      * @property [lineStroke = "rgba(43, 44, 47, 0.8)"] 连接线颜色
@@ -1194,9 +1210,14 @@ declare module "@anstec/earth" {
       content?: string
       data?: T
       anchorPosition?: AnchorPosition
-      connectionLine?: boolean
+      offset?: Cartesian2
+      connectionLine?: LineOptions
       closeable?: boolean
       follow?: boolean
+      /**
+       * @deprecated use `connectionLine.color`
+       * @deleted 已删除
+       */
       lineStroke?: string
       position: Cartesian3
     }
@@ -4117,12 +4138,15 @@ declare module "@anstec/earth" {
   export namespace RectangleLayer {
     export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
 
+    export type OutlineAddParam<T> = Pick<PolylineLayer.AddParam<T>, "materialType" | "materialUniforms" | "width">
+
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property rectangle {@link Rectangle} 矩形
      * @property [height] 高度
      * @property [color = {@link Color.BLUE}] 填充色
      * @property [ground = false] 是否贴地
+     * @property [outline] {@link OutlineAddParam} 轮廓线
      * @property [label] {@link LabelAddParam} 对应标签
      */
     export type AddParam<T> = Layer.AddParam<T> & {
@@ -4130,6 +4154,7 @@ declare module "@anstec/earth" {
       height?: number
       color?: Color
       ground?: boolean
+      outline?: OutlineAddParam<T>
       label?: LabelAddParam<T>
     }
   }
@@ -4166,6 +4191,12 @@ declare module "@anstec/earth" {
      * ```
      */
     add(param: RectangleLayer.AddParam<T>): void
+    /**
+     * @description 根据ID获取矩形外边框实体
+     * @param id ID
+     * @returns 外边框实体
+     */
+    getOutlineEntity(id: string): GroundPolylinePrimitive | Primitive | undefined
     /**
      * @description 隐藏所有矩形
      */

@@ -474,11 +474,11 @@ export class ContextMenu {
     if (module === "" || module === "default") {
       throw new DeveloperError("Argument param 'module' cannot be '' or 'default'.")
     }
-    if (!this.cache.get(module)) {
-      this.cache.set(module, { menus, callback })
-      this.setToggle(module, menus)
-    } else {
-      console.warn(`Menus of module: '${module}' already exist.`, menus)
+    let exist = this.cache.has(module)
+    this.cache.set(module, { menus, callback })
+    this.setToggle(module, menus)
+    if (exist) {
+      console.warn(`Menus of '${module}' are existent, <add> option would replace the previous.`, menus)
     }
   }
 
