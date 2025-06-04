@@ -844,7 +844,12 @@ const handleZoom = (
 
   if ((!sameStartPosition && zoomOnVector) || zoomingOnVector) {
     let ray
-    const zoomMouseStart = SceneTransforms.wgs84ToWindowCoordinates(scene, object._zoomWorldPosition, scratchZoomOffset)
+    /**
+     * @description cesium 版本不同导致的函数名更改
+     */
+    //@ts-ignore
+    const handler = SceneTransforms.wgs84ToWindowCoordinates ?? SceneTransforms.worldToWindowCoordinates
+    const zoomMouseStart = handler(scene, object._zoomWorldPosition, scratchZoomOffset)
     if (
       mode !== SceneMode.COLUMBUS_VIEW &&
       Cartesian2.equals(startPosition, object._zoomMouseStart) &&
