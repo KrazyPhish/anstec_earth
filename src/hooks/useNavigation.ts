@@ -3,6 +3,12 @@ import { Earth } from "../components"
 import { Rectangle } from "cesium"
 
 /**
+ * fix bug of Rectangle.validate being private
+ */
+//@ts-ignore
+Rectangle.validate = Rectangle._validate
+
+/**
  * @description 使用CesiumNavigation初始化控制摇杆
  * @param earth 地球
  * @param option 控制摇杆参数
