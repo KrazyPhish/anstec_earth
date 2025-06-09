@@ -6500,7 +6500,7 @@ declare module "@anstec/earth" {
    * @param [id = "GisContainer"] 指定ID的地球
    * @returns 成功返回 `true`，未找到指定地球返回 `false`
    */
-  export const useEarthRecycle: (id?: string) => void
+  export const useEarthRecycle: (id?: string) => boolean
 
   /**
    * @description 使用CesiumNavigation初始化控制摇杆
