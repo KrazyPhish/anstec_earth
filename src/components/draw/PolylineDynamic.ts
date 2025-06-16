@@ -1,25 +1,25 @@
 import {
-  Color,
-  Cartesian3,
-  Entity,
-  ScreenSpaceEventHandler,
-  ScreenSpaceEventType,
-  CallbackProperty,
   ArcType,
+  CallbackProperty,
+  Color,
+  DeveloperError,
   HeightReference,
-  ConstantPositionProperty,
   PolylineArrowMaterialProperty,
   PolylineDashMaterialProperty,
   PolylineGlowMaterialProperty,
   PolylineOutlineMaterialProperty,
-  DeveloperError,
+  ScreenSpaceEventHandler,
+  ScreenSpaceEventType,
+  type Cartesian3,
+  type ConstantPositionProperty,
+  type Entity,
 } from "cesium"
-import { Earth } from "components/Earth"
 import { PolylineLayer } from "components/layers"
 import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Utils, State } from "utils"
-import { Draw } from "./Draw"
 import { Dynamic } from "./Dynamic"
+import { Utils, State } from "utils"
+import type { Draw } from "./Draw"
+import type { Earth } from "components/Earth"
 
 /**
  * @description 动态绘制折线段

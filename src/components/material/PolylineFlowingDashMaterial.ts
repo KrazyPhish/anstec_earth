@@ -1,6 +1,6 @@
 import { Color, Material } from "cesium"
-import { flowingDash } from "../../shaders"
-import { CustomMaterial } from "."
+import { flowingDash } from "shaders"
+import { CustomMaterial } from "./CustomMaterial"
 
 /**
  * @description 流动线条材质

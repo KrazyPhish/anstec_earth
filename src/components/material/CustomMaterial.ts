@@ -1,7 +1,7 @@
-import { Material, TextureMagnificationFilter, TextureMinificationFilter } from "cesium"
 import { PolylineFlowingDashMaterial } from "./PolylineFlowingDashMaterial"
 import { PolylineFlowingWaveMaterial } from "./PolylineFlowingWaveMaterial"
 import { PolylineTrailingMaterial } from "./PolylineTrailingMaterial"
+import type { Material, TextureMagnificationFilter, TextureMinificationFilter } from "cesium"
 
 /**
  * @description 自定义材质

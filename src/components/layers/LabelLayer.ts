@@ -1,19 +1,19 @@
 import {
-  Cartesian2,
-  Cartesian3,
   Color,
-  DistanceDisplayCondition,
-  HeightReference,
   HorizontalOrigin,
   Label,
   LabelCollection,
   LabelStyle,
-  NearFarScalar,
   VerticalOrigin,
+  type Cartesian2,
+  type Cartesian3,
+  type DistanceDisplayCondition,
+  type HeightReference,
+  type NearFarScalar,
 } from "cesium"
-import { Earth } from "components/Earth"
-import { Utils } from "utils"
 import { Layer } from "./Layer"
+import { Utils } from "utils"
+import type { Earth } from "components/Earth"
 
 export namespace LabelLayer {
   export type Attributes = "id" | "module" | "position"

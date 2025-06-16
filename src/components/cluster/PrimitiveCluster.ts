@@ -4,19 +4,19 @@ import {
   BoundingRectangle,
   Cartesian2,
   Cartesian3,
-  defaultValue,
   defined,
   EllipsoidalOccluder,
-  Entity,
   Event,
-  FrameState,
+  Frozen,
   Label,
   LabelCollection,
   Matrix4,
   PointPrimitive,
   PointPrimitiveCollection,
-  Scene,
   SceneMode,
+  type Entity,
+  type FrameState,
+  type Scene,
 } from "cesium"
 import KDBush from "kdbush"
 
@@ -176,15 +176,15 @@ export class PrimitiveCluster {
   }
 
   constructor(option?: PrimitiveCluster.ConstructorOptions) {
-    option = defaultValue(option, defaultValue.EMPTY_OBJECT)
+    option = option ?? Frozen.EMPTY_OBJECT
 
-    this._enabled = defaultValue(option?.enabled, false)
-    this._pixelRange = defaultValue(option?.pixelRange, 80)
-    this._minimumClusterSize = defaultValue(option?.minimumClusterSize, 2)
-    this._clusterBillboards = defaultValue(option?.clusterBillboards, true)
-    this._clusterLabels = defaultValue(option?.clusterLabels, true)
-    this._clusterPoints = defaultValue(option?.clusterPoints, true)
-    this.show = defaultValue(option?.show, true)
+    this._enabled = option?.enabled ?? false
+    this._pixelRange = option?.pixelRange ?? 80
+    this._minimumClusterSize = option?.minimumClusterSize ?? 2
+    this._clusterBillboards = option?.clusterBillboards ?? true
+    this._clusterLabels = option?.clusterLabels ?? true
+    this._clusterPoints = option?.clusterPoints ?? true
+    this.show = option?.show ?? true
   }
 
   private getX(point: any) {

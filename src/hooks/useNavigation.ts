@@ -1,12 +1,15 @@
 import CesiumNavigation from "cesium-navigation-es6"
-import { Earth } from "../components"
+import { Earth } from "components/Earth"
 import { Rectangle } from "cesium"
 
 /**
  * fix bug of Rectangle.validate being private
  */
 //@ts-ignore
-Rectangle.validate = Rectangle._validate
+if (!Rectangle.validate && Rectangle._validate) {
+  //@ts-ignore
+  Rectangle.validate = Rectangle._validate
+}
 
 /**
  * @description 使用CesiumNavigation初始化控制摇杆

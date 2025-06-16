@@ -1,4 +1,4 @@
-import mitt, { Emitter, Handler } from "mitt"
+import mitt, { type Emitter, type Handler } from "mitt"
 
 /**
  * @description 事件调度总线

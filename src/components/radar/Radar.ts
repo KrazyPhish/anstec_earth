@@ -4,21 +4,21 @@ import {
   Cartesian4,
   Color,
   CustomDataSource,
-  Entity,
-  EntityCollection,
   Math,
   Matrix3,
   Matrix4,
   PolygonHierarchy,
   PostProcessStage,
   Quaternion,
-  Scene,
   Transforms,
+  type Entity,
+  type EntityCollection,
+  type Scene,
 } from "cesium"
 import { Geographic } from "components/coordinate"
-import { Earth } from "components/Earth"
 import { scan, diffuse } from "shaders"
 import { Utils } from "utils"
+import type { Earth } from "components/Earth"
 
 export namespace Radar {
   /**

@@ -7,7 +7,7 @@ import {
   Viewer,
   WebMercatorProjection,
 } from "cesium"
-import { Earth } from ".."
+import { Earth } from "components/Earth"
 
 const earthCache = new Map<string, Earth>()
 

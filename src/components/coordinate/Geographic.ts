@@ -1,6 +1,6 @@
 import { Cartesian3, Cartographic, DeveloperError, Ellipsoid, Math } from "cesium"
-import { Utils } from "../../utils"
-import { CoorFormat } from "../../enum"
+import { Utils } from "utils"
+import { CoorFormat } from "enum"
 
 const { abs } = window.Math
 

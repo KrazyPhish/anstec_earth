@@ -1,12 +1,12 @@
 import {
   BillboardLayer,
   EllipseLayer,
-  Earth,
   PointLayer,
   PolygonLayer,
   PolylineLayer,
   RectangleLayer,
-} from ".."
+} from "components/layers"
+import type { Earth } from "components/Earth"
 
 /**
  * @description 默认提供图形类

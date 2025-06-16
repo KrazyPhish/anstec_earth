@@ -1,7 +1,7 @@
 import { Color, Material } from "cesium"
-import { trail } from "../../images"
-import { trailing } from "../../shaders"
-import { CustomMaterial } from "."
+import { trail } from "images"
+import { trailing } from "shaders"
+import { CustomMaterial } from "./CustomMaterial"
 
 /**
  * @description 拖尾线条材质

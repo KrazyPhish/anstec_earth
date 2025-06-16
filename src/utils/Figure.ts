@@ -10,8 +10,8 @@ import {
   DeveloperError,
 } from "cesium"
 import * as turf from "@turf/turf"
-import { Geographic } from "../components/coordinate"
-import { EarthRadius } from "../enum"
+import { Geographic } from "components/coordinate"
+import { EarthRadius } from "enum"
 
 const { abs, asin, pow, sqrt, sin, cos, PI } = window.Math
 

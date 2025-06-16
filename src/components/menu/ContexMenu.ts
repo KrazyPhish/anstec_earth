@@ -1,7 +1,7 @@
 import { ScreenSpaceEventHandler, Cartesian2, ScreenSpaceEventType, Entity, DeveloperError } from "cesium"
-import { Earth } from "components/Earth"
 import { MenuEventType, DefaultContextMenuItem } from "enum"
 import { State, Utils } from "utils"
+import type { Earth } from "components/Earth"
 
 export namespace ContextMenu {
   /**

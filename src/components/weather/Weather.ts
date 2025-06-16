@@ -1,9 +1,9 @@
 import { Cartesian2, Cartesian3, Color, Math, Matrix4, PostProcessStage, Scene, SphereEmitter } from "cesium"
-import { Earth } from ".."
-import { dark } from "../../shaders"
-import { ParticleLayer } from "../layers"
-import { Utils } from "../../utils"
-import { rain, snow } from "../../images"
+import { dark } from "shaders"
+import { ParticleLayer } from "components/layers"
+import { Utils } from "utils"
+import { rain, snow } from "images"
+import type { Earth } from "components/Earth"
 
 export namespace Weather {
   export type WeatherType = "rain" | "snow" | "fog"

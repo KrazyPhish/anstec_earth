@@ -1,23 +1,23 @@
-import {
+import type {
   Billboard,
+  BillboardCollection,
   Camera,
+  CloudCollection,
   CumulusCloud,
   GroundPolylinePrimitive,
   GroundPrimitive,
   Label,
+  LabelCollection,
   Model,
   ParticleSystem,
-  PointPrimitive,
   Primitive,
+  PrimitiveCollection,
+  PointPrimitive,
+  PointPrimitiveCollection,
   Scene,
   Viewer,
 } from "cesium"
-import { Earth } from "../Earth"
-import { BillboardCollection } from "cesium"
-import { CloudCollection } from "cesium"
-import { LabelCollection } from "cesium"
-import { PrimitiveCollection } from "cesium"
-import type { PointPrimitiveCollection } from "cesium"
+import type { Earth } from "components/Earth"
 
 export namespace Layer {
   /**

@@ -1,15 +1,15 @@
 import {
-  Cartesian3,
   Color,
-  DistanceDisplayCondition,
-  NearFarScalar,
-  PointPrimitive,
   PointPrimitiveCollection,
+  type Cartesian3,
+  type DistanceDisplayCondition,
+  type NearFarScalar,
+  type PointPrimitive,
 } from "cesium"
-import { Earth } from "components/Earth"
 import { Utils } from "utils"
-import { Layer } from "./Layer"
 import { LabelLayer } from "./LabelLayer"
+import { Layer } from "./Layer"
+import type { Earth } from "components/Earth"
 
 export namespace PointLayer {
   export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>

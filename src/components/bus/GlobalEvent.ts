@@ -1,7 +1,7 @@
+import type { Earth } from "components/Earth"
+import type { GlobalEventType } from "enum"
 import { Cartesian2, Entity, ScreenSpaceEventHandler } from "cesium"
-import { Earth } from "components/Earth"
 import { EventBus } from "./EventBus"
-import { GlobalEventType } from "enum"
 import { Utils } from "utils"
 
 export namespace GlobalEvent {

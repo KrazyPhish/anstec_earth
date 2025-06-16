@@ -1,8 +1,8 @@
 import {
   Cartesian3,
-  ClassificationType,
   Color,
   ColorGeometryInstanceAttribute,
+  ClassificationType,
   EllipseGeometry,
   GeometryInstance,
   GroundPrimitive,
@@ -14,7 +14,7 @@ import {
   VerticalOrigin,
 } from "cesium"
 import { Geographic } from "components/coordinate"
-import { Earth } from "components/Earth"
+import type { Earth } from "components/Earth"
 import { Utils } from "utils"
 import { LabelLayer } from "./LabelLayer"
 import { Layer } from "./Layer"

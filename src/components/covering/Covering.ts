@@ -1,16 +1,16 @@
 import {
-  Camera,
   Cartesian2,
-  Cartesian3,
   Color,
   DeveloperError,
   Ellipsoid,
   EllipsoidalOccluder,
-  Scene,
   SceneMode,
-  Viewer,
+  type Camera,
+  type Cartesian3,
+  type Scene,
+  type Viewer,
 } from "cesium"
-import { Earth } from "components/Earth"
+import type { Earth } from "components/Earth"
 import { Utils } from "utils"
 
 export namespace Covering {

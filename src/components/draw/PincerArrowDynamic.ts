@@ -1,21 +1,21 @@
 import {
-  Color,
-  Entity,
   Cartesian3,
-  ScreenSpaceEventHandler,
+  Color,
   CallbackProperty,
-  PolygonHierarchy,
   HeightReference,
+  PolygonHierarchy,
+  ScreenSpaceEventHandler,
   ScreenSpaceEventType,
-  ConstantPositionProperty,
+  type ConstantPositionProperty,
+  type Entity,
 } from "cesium"
 import { Geographic } from "components/coordinate"
-import { Earth } from "components/Earth"
-import { PolygonLayer } from "components/layers"
-import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Figure, Utils, State } from "utils"
-import { Draw } from "./Draw"
+import { DefaultModuleName, SubEventType, DrawType } from "enum"
 import { Dynamic } from "./Dynamic"
+import { Figure, Utils, State } from "utils"
+import { PolygonLayer } from "components/layers"
+import type { Earth } from "components/Earth"
+import type { Draw } from "./Draw"
 
 type OptionParam = {
   neckWidthFactor: number

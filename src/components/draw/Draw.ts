@@ -1,17 +1,17 @@
 import {
-  Cartesian2,
-  Cartesian3,
-  Color,
-  HorizontalOrigin,
-  LabelStyle,
-  Rectangle as Rect,
-  Scene,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
-  VerticalOrigin,
+  type Cartesian2,
+  type Cartesian3,
+  type Color,
+  type HorizontalOrigin,
+  type LabelStyle,
+  type Rectangle as Rect,
+  type Scene,
+  type VerticalOrigin,
 } from "cesium"
-import { Earth } from "components/Earth"
-import {
+import type { Earth } from "components/Earth"
+import type {
   BillboardLayer,
   EllipseLayer,
   LabelLayer,

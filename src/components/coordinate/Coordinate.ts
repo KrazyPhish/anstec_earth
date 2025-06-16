@@ -1,19 +1,19 @@
 import {
-  Camera,
-  Cartesian2,
-  Cartesian3,
   Cartographic,
   DeveloperError,
-  Ellipsoid,
   Math,
-  Scene,
   SceneTransforms,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
+  type Camera,
+  type Cartesian2,
+  type Cartesian3,
+  type Ellipsoid,
+  type Scene,
 } from "cesium"
-import { Earth } from "../Earth"
-import { Geographic } from "."
-import { ScreenCapture } from "../../enum"
+import type { Earth } from "components/Earth"
+import { Geographic } from "./Geographic"
+import { ScreenCapture } from "enum"
 
 /**
  * @description 坐标系统
@@ -133,8 +133,8 @@ export class Coordinate {
    * const cartesian2 = coordinate.cartesianToScreen(position)
    * ```
    */
-  public cartesianToScreen(position: Cartesian3): Cartesian2 {
-    return SceneTransforms.wgs84ToWindowCoordinates(this.scene, position)
+  public cartesianToScreen(position: Cartesian3): Cartesian2 | undefined {
+    return SceneTransforms.worldToWindowCoordinates(this.scene, position)
   }
 
   /**

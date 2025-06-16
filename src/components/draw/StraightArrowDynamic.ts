@@ -1,21 +1,21 @@
 import {
+  CallbackProperty,
   Color,
   Cartesian3,
-  Entity,
+  HeightReference,
   PolygonHierarchy,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
-  CallbackProperty,
-  HeightReference,
-  ConstantPositionProperty,
+  type ConstantPositionProperty,
+  type Entity,
 } from "cesium"
-import { Geographic } from "components/coordinate"
-import { Earth } from "components/Earth"
-import { PolygonLayer } from "components/layers"
 import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Figure, Utils, State } from "utils"
-import { Draw } from "./Draw"
 import { Dynamic } from "./Dynamic"
+import { Figure, Utils, State } from "utils"
+import { Geographic } from "components/coordinate"
+import { PolygonLayer } from "components/layers"
+import type { Draw } from "./Draw"
+import type { Earth } from "components/Earth"
 
 const { pow, PI } = window.Math
 

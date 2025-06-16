@@ -70,23 +70,23 @@ class Coordinator {
  * @description 渲染器
  */
 class Canvas2dRenderer {
-  private _min: any
-  private _max: any
-  private _renderBoundaries: number[]
-  private _width: number
-  private _height: number
-  private _palette: any
-  private _templates: any
-  private _blur: number = 0
-  private _opacity: number = 0
-  private _maxOpacity: number = 0
-  private _minOpacity: number = 0
-  private _useGradientOpacity: boolean = false
+  _min: any
+  _max: any
+  _renderBoundaries: number[]
+  _width: number
+  _height: number
+  _palette: any
+  _templates: any
+  _blur: number = 0
+  _opacity: number = 0
+  _maxOpacity: number = 0
+  _minOpacity: number = 0
+  _useGradientOpacity: boolean = false
 
-  public shadowCanvas: HTMLCanvasElement
-  public canvas: HTMLCanvasElement
-  public shadowCtx: CanvasRenderingContext2D
-  public ctx: CanvasRenderingContext2D
+  shadowCanvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement
+  shadowCtx: CanvasRenderingContext2D
+  ctx: CanvasRenderingContext2D
 
   constructor(config: any) {
     let container = config.container

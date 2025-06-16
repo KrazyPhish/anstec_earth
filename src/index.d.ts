@@ -3536,7 +3536,7 @@ declare module "@anstec/earth" {
 
   export namespace ParticleLayer {
     /**
-     * @description 用于在每个时间点强制修改、颜色、尺寸等粒子属性的函数
+     * @description 用于在每个时间点强制修改颜色、尺寸等粒子属性的函数
      * @param particle 当前粒子
      * @param currentTime 当前时间
      */

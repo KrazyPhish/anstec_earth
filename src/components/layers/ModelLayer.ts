@@ -1,30 +1,30 @@
 import {
-  PrimitiveCollection,
-  Model,
+  Cartesian2,
+  Cartesian3,
   Color,
   ColorBlendMode,
-  ModelAnimationLoop,
-  HorizontalOrigin,
-  VerticalOrigin,
-  LabelStyle,
   HeadingPitchRoll,
-  Transforms,
-  Cartesian2,
-  ScreenSpaceEventType,
-  Cartesian3,
+  HorizontalOrigin,
+  LabelStyle,
+  Math,
   Matrix3,
   Matrix4,
-  Math,
+  Model,
+  ModelAnimationLoop,
+  PrimitiveCollection,
   ScreenSpaceEventHandler,
-  DistanceDisplayCondition,
-  HeightReference,
+  ScreenSpaceEventType,
+  Transforms,
+  VerticalOrigin,
+  type DistanceDisplayCondition,
+  type HeightReference,
 } from "cesium"
-import { Earth } from "components/Earth"
-import { ViewAngle } from "enum"
-import { Utils } from "utils"
 import { EllipsoidLayer } from "./EllipsoidLayer"
 import { LabelLayer } from "./LabelLayer"
 import { Layer } from "./Layer"
+import { Utils } from "utils"
+import { ViewAngle } from "enum"
+import type { Earth } from "components/Earth"
 
 const { sqrt, floor } = window.Math
 
@@ -271,7 +271,7 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
 
     super.save(Utils.DecodeId(mo.id).id, {
       primitive: mo,
-      data: { position, hpr, data, module: param.module, },
+      data: { position, hpr, data, module: param.module },
     })
 
     if (label) {

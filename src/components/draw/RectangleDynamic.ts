@@ -1,21 +1,21 @@
 import {
-  Entity,
-  Cartesian3,
-  Color,
-  ScreenSpaceEventHandler,
-  ConstantPositionProperty,
-  ScreenSpaceEventType,
   CallbackProperty,
+  Cartesian3,
   Cartographic,
+  Color,
   HeightReference,
   Rectangle,
+  ScreenSpaceEventHandler,
+  ScreenSpaceEventType,
+  type ConstantPositionProperty,
+  type Entity,
 } from "cesium"
-import { Earth } from "components/Earth"
 import { RectangleLayer } from "components/layers"
 import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Utils, State } from "utils"
-import { Draw } from "./Draw"
 import { Dynamic } from "./Dynamic"
+import { Utils, State } from "utils"
+import type { Draw } from "./Draw"
+import type { Earth } from "components/Earth"
 
 const { min, max } = window.Math
 

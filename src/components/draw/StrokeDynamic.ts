@@ -1,18 +1,18 @@
 import {
   ArcType,
   CallbackProperty,
-  Cartesian3,
   Color,
-  Entity,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
+  type Cartesian3,
+  type Entity,
 } from "cesium"
-import { Earth } from "components/Earth"
-import { PolylineLayer } from "components/layers"
 import { DefaultModuleName, SubEventType } from "enum"
-import { Utils, State } from "utils"
-import { Draw } from "./Draw"
 import { Dynamic } from "./Dynamic"
+import { PolylineLayer } from "components/layers"
+import { Utils, State } from "utils"
+import type { Draw } from "./Draw"
+import type { Earth } from "components/Earth"
 
 export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
   public type: string = "Stroke"

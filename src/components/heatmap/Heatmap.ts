@@ -1,18 +1,18 @@
 import {
-  Math,
-  WebMercatorProjection,
-  Entity,
-  ImageryLayer,
-  Rectangle,
+  Cartesian2,
   Cartesian3,
   Cartographic,
+  Entity,
+  ImageryLayer,
+  Math,
+  Rectangle,
   SingleTileImageryProvider,
+  WebMercatorProjection,
   WebMercatorTilingScheme,
-  Cartesian2,
 } from "cesium"
 import { H337 } from "./H337"
-import { Earth } from "../Earth"
-import { Utils } from "../../utils"
+import { Utils } from "utils"
+import type { Earth } from "components/Earth"
 
 type RectangleLike = {
   north: number

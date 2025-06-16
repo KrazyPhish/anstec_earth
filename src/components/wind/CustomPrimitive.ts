@@ -16,7 +16,6 @@ import {
   ShaderSource,
   Texture,
   VertexArray,
-  defaultValue,
   defined,
   destroyObject,
 } from "cesium"
@@ -122,7 +121,7 @@ export class CustomPrimitive {
     }
     this.rawRenderState = options.rawRenderState
     this.outputTexture = options.outputTexture
-    this.autoClear = defaultValue(options.autoClear, false)
+    this.autoClear = options.autoClear ?? false
 
     this.show = true
     this.commandToExecute = undefined

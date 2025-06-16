@@ -7,13 +7,14 @@ import json from "@rollup/plugin-json"
 import autoprefixer from "autoprefixer"
 import cssnano from "cssnano"
 import postcss from "rollup-plugin-postcss"
+import peerDepsExternal from "rollup-plugin-peer-deps-external"
 import { defineConfig } from "rollup"
 
 const sourcemap = false
 
 export default defineConfig({
   input: "src/index.ts",
-  external: ["cesium", "@turf/turf", "echarts"],
+  treeshake: true,
   output: [
     {
       file: packageJson.main,
@@ -28,6 +29,7 @@ export default defineConfig({
     },
   ],
   plugins: [
+    peerDepsExternal(),
     commonjs(),
     typescript(),
     nodeResolve(),
@@ -38,4 +40,9 @@ export default defineConfig({
       extract: "style/index.css",
     }),
   ],
+  onwarn(warning, next) {
+    if (warning.code !== "UNUSED_EXTERNAL_IMPORT") {
+      next(warning)
+    }
+  },
 })

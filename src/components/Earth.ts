@@ -18,12 +18,12 @@ import {
 import {
   extendComponentModel,
   extendComponentView,
-  CustomSeriesRenderItemAPI,
   ComponentModel,
   graphic,
   matrix,
   registerAction,
   registerCoordinateSystem,
+  type CustomSeriesRenderItemAPI,
 } from "echarts"
 import { CameraTool, Utils } from "utils"
 import { Coordinate } from "./coordinate"

@@ -1,18 +1,18 @@
 import {
-  Cartesian3,
   Color,
-  ConstantPositionProperty,
-  Entity,
   HeightReference,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
+  type Cartesian3,
+  type ConstantPositionProperty,
+  type Entity,
 } from "cesium"
-import { Earth } from "components/Earth"
-import { ModelLayer } from "components/layers"
-import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Utils, State } from "utils"
-import { Draw } from "./Draw"
+import { DefaultModuleName, SubEventType, DrawType } from "enum"
 import { Dynamic } from "./Dynamic"
+import { ModelLayer } from "components/layers"
+import { Utils, State } from "utils"
+import type { Earth } from "components/Earth"
+import type { Draw } from "./Draw"
 
 export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
   public type: string = "Model"

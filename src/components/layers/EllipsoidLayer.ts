@@ -19,12 +19,12 @@ import {
   Transforms,
   VerticalOrigin,
 } from "cesium"
-import * as turf from "@turf/turf"
 import { Geographic } from "components/coordinate"
-import { Earth } from "components/Earth"
-import { Utils, Figure } from "utils"
 import { LabelLayer } from "./LabelLayer"
 import { Layer } from "./Layer"
+import { polygon, union, type Feature, type MultiPolygon, type Polygon } from "@turf/turf"
+import { Utils, Figure } from "utils"
+import type { Earth } from "components/Earth"
 
 export namespace EllipsoidLayer {
   export type Attributes =
@@ -36,7 +36,7 @@ export namespace EllipsoidLayer {
     | "slicePartitions"
 
   export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-  
+
   export type LabelSetParam<T> = Omit<LabelLayer.SetParam<T>, "position">
 
   /**
@@ -168,7 +168,7 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
       radii: Cartesian3
       hpr: HeadingPitchRoll
     }[] = []
-    const buffers: turf.Feature<turf.Polygon>[] = []
+    const buffers: Feature<Polygon>[] = []
     this.cache.forEach((v) => {
       const { center, hpr, radii } = v.data
       points.push({ center, hpr, radii })
@@ -177,10 +177,10 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
     points.forEach((p) => {
       const { longitude, latitude } = Geographic.fromCartesian(p.center)
       const s = Figure.CalcEnvelope(longitude, latitude, p.radii.x, p.radii.y, p.hpr.heading)
-      buffers.push(turf.polygon([s]))
+      buffers.push(polygon([s]))
     })
 
-    let geo: turf.Feature<turf.Polygon | turf.MultiPolygon> | null = null
+    let geo: Feature<Polygon | MultiPolygon> | null = null
     if (buffers.length < 1) {
       return
     } else if (buffers.length == 1) {
@@ -189,7 +189,7 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
       geo = buffers[buffers.length - 1]
       for (let i = 0; i < buffers.length - 1; i++) {
         const p1 = buffers[i]
-        geo = turf.union(geo!, p1)
+        geo = union(geo!, p1)
       }
     }
 

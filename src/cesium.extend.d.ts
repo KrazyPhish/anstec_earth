@@ -23,10 +23,6 @@ declare module "cesium" {
     isScaledSpacePointVisible(occludeeScaledSpacePosition: Cartesian3): boolean
   }
 
-  export namespace defaultValue {
-    export const EMPTY_OBJECT: Object
-  }
-
   export namespace DrawCommand {
     type ConstructorOptions = {
       boundingVolume?: Property | Object

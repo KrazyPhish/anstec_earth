@@ -5,7 +5,12 @@
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "HISTORY.md", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "HISTORY.md",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "npm run clean && rollup -c rollup.config.ts --bundleConfigAsCjs",
     "clean": "rimraf -rf dist/",
@@ -21,16 +26,23 @@
     "type": "git",
     "url": "git+https://github.com/KrazyPhish/anstec_earth.git"
   },
-  "keywords": ["cesium", "turf", "gis", "geo", "map"],
+  "keywords": [
+    "cesium",
+    "turf",
+    "gis",
+    "geo",
+    "map"
+  ],
   "license": "MIT",
+  "peerDependencies": {
+    "cesium": "^1.130.0",
+    "echarts": "^5.5.0"
+  },
   "dependencies": {
     "@turf/turf": "^6.5.0",
-    "cesium": "^1.130.0",
     "cesium-navigation-es6": "^3.0.9",
-    "echarts": "^5.5.0",
     "kdbush": "^4.0.2",
-    "mitt": "^3.0.1",
-    "scss": "^0.2.4"
+    "mitt": "^3.0.1"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.2",
@@ -43,11 +55,14 @@
     "@vuepress/bundler-vite": "^2.0.0-rc.14",
     "@vuepress/theme-default": "^2.0.0-rc.37",
     "autoprefixer": "^10.4.19",
+    "cesium": "^1.130.0",
     "cssnano": "^7.0.3",
+    "echarts": "^5.6.0",
     "npm-run-all2": "^6.1.2",
     "prettier": "3.3.2",
     "rimraf": "^5.0.7",
     "rollup": "^4.18.0",
+    "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-postcss": "^4.0.2",
     "sass": "^1.77.1",
     "ts-loader": "^9.5.1",

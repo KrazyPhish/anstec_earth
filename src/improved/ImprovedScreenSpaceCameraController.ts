@@ -3,7 +3,6 @@ import {
   Cartesian3,
   Cartesian4,
   Cartographic,
-  defaultValue,
   defined,
   destroyObject,
   DeveloperError,
@@ -623,10 +622,7 @@ const handleZoom = (
     return
   }
 
-  const sameStartPosition = defaultValue(
-    movement.inertiaEnabled,
-    Cartesian2.equals(startPosition, object._zoomMouseStart)
-  )
+  const sameStartPosition = movement.inertiaEnabled ?? Cartesian2.equals(startPosition, object._zoomMouseStart)
   let zoomingOnVector = object._zoomingOnVector
   let rotatingZoom = object._rotatingZoom
   let pickedPosition
@@ -844,12 +840,7 @@ const handleZoom = (
 
   if ((!sameStartPosition && zoomOnVector) || zoomingOnVector) {
     let ray
-    /**
-     * @description cesium 版本不同导致的函数名更改
-     */
-    //@ts-ignore
-    const handler = SceneTransforms.wgs84ToWindowCoordinates ?? SceneTransforms.worldToWindowCoordinates
-    const zoomMouseStart = handler(scene, object._zoomWorldPosition, scratchZoomOffset)
+    const zoomMouseStart = SceneTransforms.worldToWindowCoordinates(scene, object._zoomWorldPosition, scratchZoomOffset)
     if (
       mode !== SceneMode.COLUMBUS_VIEW &&
       Cartesian2.equals(startPosition, object._zoomMouseStart) &&
@@ -1090,7 +1081,7 @@ const getDistanceFromSurface = (controller: ImprovedScreenSpaceCameraController)
     height = camera.position.z
   }
   //@ts-ignore
-  const globeHeight = defaultValue(controller._scene.globeHeight, 0.0)
+  const globeHeight = controller._scene.globeHeight ?? 0.0
   const distanceFromSurface = Math.abs(globeHeight - height)
   return distanceFromSurface
 }
@@ -1820,8 +1811,8 @@ const rotate3D = (
   rotateOnlyVertical?: boolean,
   rotateOnlyHorizontal?: boolean
 ) => {
-  rotateOnlyVertical = defaultValue(rotateOnlyVertical, false)
-  rotateOnlyHorizontal = defaultValue(rotateOnlyHorizontal, false)
+  rotateOnlyVertical = rotateOnlyVertical ?? false
+  rotateOnlyHorizontal = rotateOnlyHorizontal ?? false
 
   const scene = controller._scene
   const camera = scene.camera
@@ -2485,7 +2476,7 @@ const look3D = (
   }
   angle = movement.startPosition.y > movement.endPosition.y ? -angle : angle
 
-  rotationAxis = defaultValue(rotationAxis, horizontalRotationAxis)
+  rotationAxis = rotationAxis ?? horizontalRotationAxis
   if (defined(rotationAxis)) {
     const direction = camera.direction
     const negativeRotationAxis = Cartesian3.negate(rotationAxis, look3DNegativeRot)
@@ -2558,7 +2549,7 @@ const adjustHeightForTerrain = (controller: ImprovedScreenSpaceCameraController,
   }
 
   const camera = scene.camera
-  const ellipsoid = defaultValue(globe?.ellipsoid, Ellipsoid.WGS84)
+  const ellipsoid = globe?.ellipsoid ?? Ellipsoid.WGS84
   const projection = scene.mapProjection
 
   let transform

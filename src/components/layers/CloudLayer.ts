@@ -1,7 +1,7 @@
-import { Cartesian2, Cartesian3, CloudCollection, Color, CumulusCloud } from "cesium"
+import { Cartesian3, CloudCollection, type Cartesian2, type Color, type CumulusCloud } from "cesium"
 import { Layer } from "./Layer"
-import { Earth } from "components/Earth"
 import { Utils } from "utils"
+import type { Earth } from "components/Earth"
 
 export namespace CloudLayer {
   /**

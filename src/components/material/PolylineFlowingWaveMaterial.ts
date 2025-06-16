@@ -1,6 +1,6 @@
 import { Color, Material } from "cesium"
-import { flowingWave } from "../../shaders"
-import { CustomMaterial } from "."
+import { flowingWave } from "shaders"
+import { CustomMaterial } from "./CustomMaterial"
 
 /**
  * @description 波动线条材质

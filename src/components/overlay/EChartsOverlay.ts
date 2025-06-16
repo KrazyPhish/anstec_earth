@@ -1,7 +1,7 @@
-import { Scene, Viewer } from "cesium"
-import { Earth } from ".."
-import { ECharts, EChartsOption, init } from "echarts"
-import { Utils } from "../../utils"
+import { init, type EChartsOption, type ECharts } from "echarts"
+import { Utils } from "utils"
+import type { Scene, Viewer } from "cesium"
+import type { Earth } from "components/Earth"
 
 export namespace EChartsOverlay {
   /**

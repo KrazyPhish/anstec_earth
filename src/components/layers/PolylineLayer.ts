@@ -1,6 +1,5 @@
 import {
   ArcType,
-  Cartesian3,
   Color,
   GeometryInstance,
   GroundPolylineGeometry,
@@ -10,11 +9,12 @@ import {
   PolylineMaterialAppearance,
   Primitive,
   PrimitiveCollection,
+  type Cartesian3,
 } from "cesium"
-import { Earth } from "components/Earth"
 import { CustomMaterial } from "components/material"
-import { Utils } from "utils"
 import { Layer } from "./Layer"
+import { Utils } from "utils"
+import type { Earth } from "components/Earth"
 
 export namespace PolylineLayer {
   /**

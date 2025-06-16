@@ -1,5 +1,4 @@
 import {
-  Cartesian3,
   Color,
   ColorGeometryInstanceAttribute,
   GeometryInstance,
@@ -8,10 +7,11 @@ import {
   PrimitiveCollection,
   WallGeometry,
   WallOutlineGeometry,
+  type Cartesian3,
 } from "cesium"
-import { Earth } from "components/Earth"
-import { Utils } from "utils"
 import { Layer } from "./Layer"
+import { Utils } from "utils"
+import type { Earth } from "components/Earth"
 
 export namespace WallLayer {
   /**

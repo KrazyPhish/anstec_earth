@@ -1,5 +1,14 @@
-import { PinBuilder, Event, Color, VerticalOrigin, PrimitiveCollection, Billboard, Label, PointPrimitive } from "cesium"
-import { Earth } from "../Earth"
+import {
+  Color,
+  PinBuilder,
+  PrimitiveCollection,
+  VerticalOrigin,
+  type Event,
+  type Billboard,
+  type Label,
+  type PointPrimitive,
+} from "cesium"
+import type { Earth } from "components/Earth"
 import { PrimitiveCluster } from "./PrimitiveCluster"
 
 export namespace Cluster {

@@ -1,6 +1,6 @@
 import { Viewer, Scene, Camera, Cartesian3, Color, Ellipsoid, EllipsoidalOccluder } from "cesium"
-import { Earth } from "../Earth"
-import { Utils } from "../../utils"
+import { Earth } from "components/Earth"
+import { Utils } from "utils"
 
 export namespace DiffusePointLayer {
   /**

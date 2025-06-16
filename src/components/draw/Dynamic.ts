@@ -1,20 +1,28 @@
-import { Viewer, Scene, Camera, ScreenSpaceEventHandler, Entity, Cartesian2, Cartesian3 } from "cesium"
 import {
-  BillboardLayer,
-  Draw,
-  Earth,
-  EllipseLayer,
-  EventBus,
-  LabelLayer,
-  ModelLayer,
+  ScreenSpaceEventHandler,
+  type Camera,
+  type Cartesian2,
+  type Cartesian3,
+  type Entity,
+  type Scene,
+  type Viewer,
+} from "cesium"
+import { EventBus } from "components/bus"
+import { State, CameraTool } from "utils"
+import type { Earth } from "components/Earth"
+import type {
   PointLayer,
+  BillboardLayer,
+  EllipseLayer,
+  ModelLayer,
+  RectangleLayer,
   PolygonLayer,
   PolylineLayer,
-  RectangleLayer,
   WallLayer,
-} from ".."
-import { State, CameraTool } from "utils"
-import { DrawType, SubEventType } from "enum"
+  LabelLayer,
+} from "components/layers"
+import type { DrawType, SubEventType } from "enum"
+import type { Draw } from "./Draw"
 
 export namespace Dynamic {
   export type Layer =

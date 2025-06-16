@@ -1,12 +1,9 @@
 import {
   CallbackProperty,
-  Camera,
-  Cartesian2,
   Cartesian3,
   Cartographic,
   Color,
   DeveloperError,
-  Entity,
   LabelStyle,
   Math,
   PolylineArrowMaterialProperty,
@@ -14,18 +11,21 @@ import {
   PolylineGlowMaterialProperty,
   PolylineOutlineMaterialProperty,
   sampleTerrainMostDetailed,
-  Scene,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   VerticalOrigin,
-  Viewer,
+  type Camera,
+  type Cartesian2,
+  type Entity,
+  type Scene,
+  type Viewer,
 } from "cesium"
-import { Geographic } from "components/coordinate"
-import { Draw } from "components/draw"
-import { Earth } from "components/Earth"
-import { PolylineLayer, LabelLayer, PolygonLayer } from "components/layers"
-import { DrawType } from "enum"
 import { CameraTool, Utils, State, Figure } from "utils"
+import { Draw } from "components/draw"
+import { DrawType } from "enum"
+import { Geographic } from "components/coordinate"
+import { PolylineLayer, LabelLayer, PolygonLayer } from "components/layers"
+import type { Earth } from "components/Earth"
 
 export namespace Measure {
   /**

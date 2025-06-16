@@ -1,4 +1,5 @@
 import {
+  ArcType,
   Cartesian3,
   ClassificationType,
   Color,
@@ -10,17 +11,15 @@ import {
   PerInstanceColorAppearance,
   Primitive,
   PrimitiveCollection,
-  Rectangle,
   RectangleGeometry,
   VerticalOrigin,
+  type Rectangle,
 } from "cesium"
-import { Earth } from "components/Earth"
-import { Utils } from "utils"
 import { LabelLayer } from "./LabelLayer"
 import { Layer } from "./Layer"
 import { PolylineLayer } from "./PolylineLayer"
-import { polygon } from "@turf/turf"
-import { ArcType } from "cesium"
+import { Utils } from "utils"
+import type { Earth } from "components/Earth"
 
 export namespace RectangleLayer {
   export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>

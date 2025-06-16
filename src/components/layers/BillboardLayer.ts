@@ -1,19 +1,19 @@
 import {
-  BillboardCollection,
   Billboard,
+  BillboardCollection,
   HorizontalOrigin,
   VerticalOrigin,
-  Cartesian2,
-  Cartesian3,
-  Color,
-  DistanceDisplayCondition,
-  HeightReference,
-  NearFarScalar,
+  type Cartesian2,
+  type Cartesian3,
+  type Color,
+  type DistanceDisplayCondition,
+  type HeightReference,
+  type NearFarScalar,
 } from "cesium"
-import { Earth } from "components/Earth"
-import { Utils } from "utils"
 import { LabelLayer } from "./LabelLayer"
 import { Layer } from "./Layer"
+import { Utils } from "utils"
+import type { Earth } from "components/Earth"
 
 export namespace BillboardLayer {
   type Attributes = "color" | "position" | "image" | "rotation" | "scale"

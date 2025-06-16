@@ -1,20 +1,20 @@
 import {
-  Entity,
-  Cartesian3,
+  CallbackProperty,
   Color,
+  HeightReference,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
-  CallbackProperty,
-  ConstantPositionProperty,
-  HeightReference,
+  type Cartesian3,
+  type ConstantPositionProperty,
+  type Entity,
 } from "cesium"
-import { Geographic } from "components/coordinate"
-import { Earth } from "components/Earth"
-import { EllipseLayer } from "components/layers"
-import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Utils, State, Figure } from "utils"
-import { Draw } from "./Draw"
+import { DefaultModuleName, SubEventType, DrawType } from "enum"
 import { Dynamic } from "./Dynamic"
+import { EllipseLayer } from "components/layers"
+import { Geographic } from "components/coordinate"
+import { Utils, State, Figure } from "utils"
+import type { Draw } from "./Draw"
+import type { Earth } from "components/Earth"
 
 /**
  * @description 动态绘制圆

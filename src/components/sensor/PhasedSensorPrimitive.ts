@@ -4,7 +4,6 @@ import {
   Buffer,
   BufferUsage,
   Cartesian3,
-  Math,
   Color,
   ComponentDatatype,
   CullFace,
@@ -13,9 +12,10 @@ import {
   DrawCommand,
   EllipsoidGeometry,
   EllipsoidOutlineGeometry,
-  FrameState,
+  Frozen,
   JulianDate,
   Material,
+  Math,
   Matrix3,
   Matrix4,
   Pass,
@@ -27,8 +27,8 @@ import {
   VertexArray,
   VertexFormat,
   combine,
-  defaultValue,
   destroyObject,
+  type FrameState,
 } from "cesium"
 import { phasedSensorVS, phasedSensor, phasedSensorFS, phasedSensorScanFS } from "shaders"
 import { ScanMode } from "enum"
@@ -198,45 +198,45 @@ export class PhasedSensorPrimitive {
   public readonly gradientStepsScan: number[]
 
   constructor(options?: PhasedSensorPrimitive.ConstructorOptions) {
-    if (options === null || options === undefined) options = defaultValue.EMPTY_OBJECT
+    if (options === null || options === undefined) options = Frozen.EMPTY_OBJECT
 
     if (this.id !== undefined && this.id !== null) this.id = options?.id
-    this.show = defaultValue(options?.show, true)
-    this.slice = defaultValue(options?.slice, 32)
-    this.modelMatrix = Matrix4.clone(defaultValue(options?.modelMatrix, Matrix4.IDENTITY), new Matrix4())
+    this.show = options?.show ?? true
+    this.slice = options?.slice ?? 32
+    this.modelMatrix = Matrix4.clone(options?.modelMatrix ?? Matrix4.IDENTITY, new Matrix4())
     this._modelMatrix = new Matrix4()
     this._computedModelMatrix = new Matrix4()
     this._computedScanPlaneModelMatrix = new Matrix4()
-    this.radius = defaultValue(options?.radius, Number.POSITIVE_INFINITY)
+    this.radius = options?.radius ?? Number.POSITIVE_INFINITY
     this._radius = 0
-    this.xHalfAngle = defaultValue(options?.xHalfAngle, 0)
+    this.xHalfAngle = options?.xHalfAngle ?? 0
     this._xHalfAngle = 0
-    this.yHalfAngle = defaultValue(options?.yHalfAngle, 0)
+    this.yHalfAngle = options?.yHalfAngle ?? 0
     this._yHalfAngle = 0
-    this.lineColor = defaultValue(options?.lineColor, Color.WHITE)
-    this.showSectorLines = defaultValue(options?.showSectorLines, true)
-    this.showSectorSegmentLines = defaultValue(options?.showSectorSegmentLines, true)
-    this.showLateralSurfaces = defaultValue(options?.showLateralSurfaces, true)
-    this.material = defaultValue(options?.material, Material.fromType(Material.ColorType))
+    this.lineColor = options?.lineColor ?? Color.WHITE
+    this.showSectorLines = options?.showSectorLines ?? true
+    this.showSectorSegmentLines = options?.showSectorSegmentLines ?? true
+    this.showLateralSurfaces = options?.showLateralSurfaces ?? true
+    this.material = options?.material ?? Material.fromType(Material.ColorType)
     this._material = undefined
     this._translucent = undefined
-    this.lateralSurfaceMaterial = defaultValue(options?.lateralSurfaceMaterial, Material.fromType(Material.ColorType))
+    this.lateralSurfaceMaterial = options?.lateralSurfaceMaterial ?? Material.fromType(Material.ColorType)
     this._lateralSurfaceMaterial = undefined
     this._lateralSurfaceTranslucent = undefined
-    this.showDomeSurfaces = defaultValue(options?.showDomeSurfaces, true)
-    this.domeSurfaceMaterial = defaultValue(options?.domeSurfaceMaterial, Material.fromType(Material.ColorType))
+    this.showDomeSurfaces = options?.showDomeSurfaces ?? true
+    this.domeSurfaceMaterial = options?.domeSurfaceMaterial ?? Material.fromType(Material.ColorType)
     this._domeSurfaceMaterial = undefined
-    this.showDomeLines = defaultValue(options?.showDomeLines, true)
-    this.showIntersection = defaultValue(options?.showIntersection, true)
-    this.intersectionColor = defaultValue(options?.intersectionColor, Color.WHITE)
-    this.intersectionWidth = defaultValue(options?.intersectionWidth, 5.0)
-    this.showThroughEllipsoid = defaultValue(options?.showThroughEllipsoid, false)
+    this.showDomeLines = options?.showDomeLines ?? true
+    this.showIntersection = options?.showIntersection ?? true
+    this.intersectionColor = options?.intersectionColor ?? Color.WHITE
+    this.intersectionWidth = options?.intersectionWidth ?? 5.0
+    this.showThroughEllipsoid = options?.showThroughEllipsoid ?? false
     this._showThroughEllipsoid = undefined
-    this.showWaves = defaultValue(options?.showWaves, false)
-    this.showScanPlane = defaultValue(options?.showScanPlane, true)
-    this.scanPlaneColor = defaultValue(options?.scanPlaneColor, Color.WHITE)
-    this.scanPlaneMode = defaultValue(options?.scanPlaneMode, ScanMode.HORIZONTAL)
-    this.scanPlaneRate = defaultValue(options?.scanPlaneRate, 10)
+    this.showWaves = options?.showWaves ?? false
+    this.showScanPlane = options?.showScanPlane ?? true
+    this.scanPlaneColor = options?.scanPlaneColor ?? Color.WHITE
+    this.scanPlaneMode = options?.scanPlaneMode ?? ScanMode.HORIZONTAL
+    this.scanPlaneRate = options?.scanPlaneRate ?? 10
 
     let distanceDisplayCondition = options?.distanceDisplayCondition
     if (distanceDisplayCondition) {
@@ -246,24 +246,24 @@ export class PhasedSensorPrimitive {
       distanceDisplayCondition = DistanceDisplayCondition.clone(distanceDisplayCondition)
     }
     this._distanceDisplayCondition = distanceDisplayCondition
-    this.showGradient = defaultValue(options?.showGradient, false)
-    this.gradientColors = defaultValue(options?.gradientColors, [
+    this.showGradient = options?.showGradient ?? false
+    this.gradientColors = options?.gradientColors ?? [
       Color.fromRandom(),
       Color.fromRandom(),
       Color.fromRandom(),
       Color.fromRandom(),
       Color.fromRandom(),
-    ])
-    this.gradientSteps = defaultValue(options?.gradientSteps, [random(), random(), random()])
-    this.showGradientScan = defaultValue(options?.showGradientScan, false)
-    this.gradientColorsScan = defaultValue(options?.gradientColorsScan, [
+    ]
+    this.gradientSteps = options?.gradientSteps ?? [random(), random(), random()]
+    this.showGradientScan = options?.showGradientScan ?? false
+    this.gradientColorsScan = options?.gradientColorsScan ?? [
       Color.fromRandom(),
       Color.fromRandom(),
       Color.fromRandom(),
       Color.fromRandom(),
       Color.fromRandom(),
-    ])
-    this.gradientStepsScan = defaultValue(options?.gradientStepsScan, [random(), random(), random()])
+    ]
+    this.gradientStepsScan = options?.gradientStepsScan ?? [random(), random(), random()]
 
     this._scanePlaneXHalfAngle = 0
     this._scanePlaneYHalfAngle = 0

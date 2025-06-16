@@ -1,18 +1,18 @@
 import {
-  BillboardGraphics,
   Cartesian3,
   DeveloperError,
-  Entity,
   JulianDate,
-  ModelGraphics,
-  PathGraphics,
   SampledPositionProperty,
-  TimeIntervalCollection,
   VelocityOrientationProperty,
-  Viewer,
+  type BillboardGraphics,
+  type Entity,
+  type ModelGraphics,
+  type PathGraphics,
+  type TimeIntervalCollection,
+  type Viewer,
 } from "cesium"
-import { Earth } from "components"
 import { Utils } from "utils"
+import type { Earth } from "components/Earth"
 
 export namespace AnimationManager {
   /**

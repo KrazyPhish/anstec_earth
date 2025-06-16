@@ -1,20 +1,20 @@
 import {
-  Entity,
-  Cartesian3,
-  Color,
-  ScreenSpaceEventHandler,
-  ConstantPositionProperty,
-  ScreenSpaceEventType,
   Cartesian2,
+  Color,
   HorizontalOrigin,
+  ScreenSpaceEventHandler,
+  ScreenSpaceEventType,
   VerticalOrigin,
+  type Cartesian3,
+  type ConstantPositionProperty,
+  type Entity,
 } from "cesium"
-import { Earth } from "components/Earth"
 import { BillboardLayer } from "components/layers"
-import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Utils, State } from "utils"
-import { Draw } from "./Draw"
 import { Dynamic } from "./Dynamic"
+import { DefaultModuleName, SubEventType, DrawType } from "enum"
+import { Utils, State } from "utils"
+import type { Earth } from "components/Earth"
+import type { Draw } from "./Draw"
 
 /**
  * @description 动态绘制广告牌

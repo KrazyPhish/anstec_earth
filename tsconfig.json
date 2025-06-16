@@ -15,7 +15,10 @@
     "sourceMap": false,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noUnusedLocals": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
   },
   "exclude": [
     "createRelease.ts",

@@ -1,21 +1,21 @@
 import {
+  CallbackProperty,
+  Cartesian2,
   Color,
-  Cartesian3,
-  Entity,
+  HeightReference,
   PolygonHierarchy,
   ScreenSpaceEventHandler,
-  Cartesian2,
   ScreenSpaceEventType,
-  CallbackProperty,
-  HeightReference,
-  ConstantPositionProperty,
+  type Cartesian3,
+  type ConstantPositionProperty,
+  type Entity,
 } from "cesium"
-import { Earth } from "components/Earth"
 import { PolygonLayer } from "components/layers"
 import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Utils, State } from "utils"
-import { Draw } from "./Draw"
 import { Dynamic } from "./Dynamic"
+import { Utils, State } from "utils"
+import type { Draw } from "./Draw"
+import type { Earth } from "components/Earth"
 
 /**
  * @description 动态绘制多边形

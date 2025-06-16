@@ -10,15 +10,15 @@ import {
   Matrix4,
   Primitive,
   PrimitiveCollection,
-  Scene,
   Transforms,
+  type Scene,
 } from "cesium"
-import { Earth } from "components/Earth"
-import { Layer } from "components/layers"
 import { conicSensorWave } from "shaders"
-import { ScanMode, ConicMode } from "enum"
-import { Utils, Figure } from "utils"
+import { Figure, Utils } from "utils"
 import { PhasedSensorPrimitive } from "./PhasedSensorPrimitive"
+import { ScanMode, ConicMode } from "enum"
+import type { Earth } from "components/Earth"
+import type { Layer } from "components/layers"
 
 export namespace Sensor {
   /**

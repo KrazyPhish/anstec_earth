@@ -1,21 +1,21 @@
 import {
-  Color,
-  Entity,
+  CallbackProperty,
   Cartesian3,
+  Color,
+  HeightReference,
+  PolygonHierarchy,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
-  CallbackProperty,
-  PolygonHierarchy,
-  HeightReference,
-  ConstantPositionProperty,
+  type Entity,
+  type ConstantPositionProperty,
 } from "cesium"
 import { Geographic } from "components/coordinate"
-import { Earth } from "components/Earth"
 import { PolygonLayer } from "components/layers"
-import { DrawType, DefaultModuleName, SubEventType } from "enum"
+import { DefaultModuleName, SubEventType, DrawType } from "enum"
 import { Figure, Utils, State } from "utils"
-import { Draw } from "./Draw"
 import { Dynamic } from "./Dynamic"
+import type { Earth } from "components/Earth"
+import type { Draw } from "./Draw"
 
 type OptionParam = {
   headHeightFactor: number
@@ -203,7 +203,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
       this.eventBus.emit(SubEventType.DRAW_CERTAIN, {
         type: this.type,
         event: SubEventType.DRAW_CERTAIN,
-        data: { id, index: points.length - 1, position: point }
+        data: { id, index: points.length - 1, position: point },
       })
     }, ScreenSpaceEventType.LEFT_CLICK)
 
@@ -230,7 +230,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
       this.eventBus.emit(SubEventType.DRAW_MOVE, {
         type: this.type,
         event: SubEventType.DRAW_MOVE,
-        data: { id, position: point }
+        data: { id, position: point },
       })
     }, ScreenSpaceEventType.MOUSE_MOVE)
 
@@ -279,7 +279,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
         this.eventBus.emit(SubEventType.DRAW_FINISH, {
           type: this.type,
           event: SubEventType.DRAW_FINISH,
-          data: { id, positions: points }
+          data: { id, positions: points },
         })
         resolve({ id, positions: points })
       }, ScreenSpaceEventType.RIGHT_CLICK)
@@ -357,7 +357,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
       this.eventBus.emit(SubEventType.EDIT_CERTAIN, {
         type: this.type,
         event: SubEventType.EDIT_CERTAIN,
-        data: { id, index: currentIndex, position: _position }
+        data: { id, index: currentIndex, position: _position },
       })
     }, ScreenSpaceEventType.LEFT_UP)
 
@@ -370,7 +370,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
       this.eventBus.emit(SubEventType.EDIT_MOVE, {
         type: this.type,
         event: SubEventType.EDIT_MOVE,
-        data: { id, index: currentIndex, position }
+        data: { id, index: currentIndex, position },
       })
     }, ScreenSpaceEventType.MOUSE_MOVE)
 
@@ -401,7 +401,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
           this.eventBus.emit(SubEventType.EDIT_FINISH, {
             type: this.type,
             event: SubEventType.EDIT_FINISH,
-            data: { id, positions }
+            data: { id, positions },
           })
           resolve({ id, positions })
         } else {

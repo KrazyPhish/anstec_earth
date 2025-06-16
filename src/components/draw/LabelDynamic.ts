@@ -1,21 +1,21 @@
 import {
-  Entity,
-  Cartesian3,
-  Color,
-  ScreenSpaceEventHandler,
-  ConstantPositionProperty,
-  ScreenSpaceEventType,
   Cartesian2,
-  LabelStyle,
+  Color,
   HorizontalOrigin,
+  LabelStyle,
+  ScreenSpaceEventHandler,
+  ScreenSpaceEventType,
   VerticalOrigin,
+  type Cartesian3,
+  type ConstantPositionProperty,
+  type Entity,
 } from "cesium"
-import { Earth } from "components/Earth"
-import { LabelLayer } from "components/layers"
-import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Utils, State } from "utils"
-import { Draw } from "./Draw"
+import { DefaultModuleName, SubEventType, DrawType } from "enum"
 import { Dynamic } from "./Dynamic"
+import { LabelLayer } from "components/layers"
+import { Utils, State } from "utils"
+import type { Earth } from "components/Earth"
+import type { Draw } from "./Draw"
 
 export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
   public type: string = "Label"

@@ -15,11 +15,11 @@ import {
   VerticalOrigin,
 } from "cesium"
 import { Geographic } from "components/coordinate"
-import { Earth } from "components/Earth"
 import { Utils, Figure } from "utils"
 import { LabelLayer } from "./LabelLayer"
 import { Layer } from "./Layer"
 import { PolylineLayer } from "./PolylineLayer"
+import type { Earth } from "components/Earth"
 
 export namespace PolygonLayer {
   export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
