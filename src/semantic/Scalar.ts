@@ -1,5 +1,5 @@
 import { NearFarScalar } from "cesium"
-import { validate, is, lessThan, positive } from "decorators"
+import { validate, is, positive } from "decorators"
 
 const { abs } = window.Math
 

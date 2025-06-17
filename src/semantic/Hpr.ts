@@ -1,5 +1,5 @@
 import { HeadingPitchRoll } from "cesium"
-import { validate, is, moreThan, positive } from "decorators"
+import { validate, is, positive } from "decorators"
 
 const { abs, PI } = window.Math
 

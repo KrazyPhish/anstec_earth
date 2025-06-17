@@ -1,5 +1,5 @@
 import { Color as Czm_Color, Math } from "cesium"
-import { constant, validate, is, lessThan, moreThan, positive } from "decorators"
+import { constant, validate, is, lessThan, positive } from "decorators"
 
 const { abs, round } = window.Math
 

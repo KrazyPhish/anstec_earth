@@ -1,5 +1,5 @@
 import { DistanceDisplayCondition } from "cesium"
-import { is, moreThan, positive, validate } from "decorators"
+import { is, positive, validate } from "decorators"
 
 const { abs } = window.Math
 
