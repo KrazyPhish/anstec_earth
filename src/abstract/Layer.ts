@@ -108,11 +108,11 @@ export abstract class Layer<C extends Layer.Collections, P extends Layer.Primiti
    */
   @generate() cache!: Map<string, Layer.Cache<P, D>>
 
-  _scene: Scene
+  #scene: Scene
   constructor(earth: Earth, collection: C) {
     this._cache = new Map()
     this._collection = earth.scene.primitives.add(collection)
-    this._scene = earth.scene
+    this.#scene = earth.scene
   }
 
   /**
@@ -130,7 +130,7 @@ export abstract class Layer<C extends Layer.Collections, P extends Layer.Primiti
    * @param param {@link Layer.Cache} 缓存的数据
    * @returns `primitive`图元实例
    */
-  protected save(id: string, param: Layer.Cache<P, D>): P {
+  _save(id: string, param: Layer.Cache<P, D>): P {
     const primitive = this._collection.add(param.primitive)
     this._cache.set(id, { primitive, data: param.data })
     return primitive
@@ -283,7 +283,7 @@ export abstract class Layer<C extends Layer.Collections, P extends Layer.Primiti
       return true
     }
     if (this._allowDestroy) {
-      this._scene.primitives.remove(this._collection)
+      this.#scene.primitives.remove(this._collection)
       this._cache.clear()
       this._collection = undefined as any
       this._cache = undefined as any

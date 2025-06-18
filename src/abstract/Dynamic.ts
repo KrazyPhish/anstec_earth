@@ -7,24 +7,24 @@ import {
   type Scene,
   type Viewer,
 } from "cesium"
-import {
-  EventBus,
-  type BillboardLayer,
-  type Draw,
-  type Earth,
-  type EllipseLayer,
-  type LabelLayer,
-  type ModelLayer,
-  type PointLayer,
-  type PolygonLayer,
-  type PolylineLayer,
-  type RectangleLayer,
-  type WallLayer,
-} from "components"
-import { State, CameraTool } from "utils"
+import { EventBus } from "components/bus"
 import { DrawType, SubEventType } from "enum"
-import { generate } from "decorators"
+import { State, CameraTool } from "utils"
+import { enumerable, generate } from "decorators"
+import type {
+  BillboardLayer,
+  EllipseLayer,
+  LabelLayer,
+  ModelLayer,
+  PointLayer,
+  PolygonLayer,
+  PolylineLayer,
+  RectangleLayer,
+  WallLayer,
+} from "components/layers"
 import type { Destroyable } from "abstract"
+import type { Draw } from "components/draw"
+import type { Earth } from "components/Earth"
 
 export namespace Dynamic {
   export type Layer =
@@ -76,26 +76,27 @@ export interface Dynamic<L extends Dynamic.Layer> {
  * @description 动态绘制基类
  */
 export abstract class Dynamic<L extends Dynamic.Layer> implements Destroyable {
-  @generate(false) isDestroyed!: boolean
   @generate() layer!: L
+  @generate(false) isDestroyed!: boolean
+  @enumerable(false) _viewer: Viewer
+  @enumerable(false) _scene: Scene
+  @enumerable(false) _eventBus: EventBus
+  @enumerable(false) _cacheHandler?: ScreenSpaceEventHandler
+  @enumerable(false) _cacheEntity?: Entity
+
   abstract type: string
 
-  _earth: Earth
-  _camera: Camera
-  _editHandler: ScreenSpaceEventHandler
-  _viewer: Viewer
-  _scene: Scene
-  _eventBus: EventBus
-  _cacheHandler?: ScreenSpaceEventHandler
-  _cacheEntity?: Entity
+  #earth: Earth
+  #camera: Camera
+  #editHandler: ScreenSpaceEventHandler
 
   constructor(earth: Earth, layer: L) {
-    this._earth = earth
+    this.#earth = earth
     this._viewer = earth.viewer
     this._scene = earth.viewer.scene
-    this._camera = earth.camera
+    this.#camera = earth.camera
     this._layer = layer
-    this._editHandler = new ScreenSpaceEventHandler(earth.viewer.canvas)
+    this.#editHandler = new ScreenSpaceEventHandler(earth.viewer.canvas)
     this._eventBus = new EventBus()
   }
 
@@ -105,7 +106,7 @@ export abstract class Dynamic<L extends Dynamic.Layer> implements Destroyable {
    */
   _startEvent() {
     State.start()
-    this._earth.container.style.cursor = "crosshair"
+    this.#earth.container.style.cursor = "crosshair"
     return new ScreenSpaceEventHandler(this._viewer.canvas)
   }
 
@@ -114,7 +115,7 @@ export abstract class Dynamic<L extends Dynamic.Layer> implements Destroyable {
    * @param handler 要结束的事件管理器
    */
   _endEvent(handler: ScreenSpaceEventHandler) {
-    this._earth.container.style.cursor = "default"
+    this.#earth.container.style.cursor = "default"
     State.end()
     handler.destroy()
     this._setViewControl(true)
@@ -126,7 +127,7 @@ export abstract class Dynamic<L extends Dynamic.Layer> implements Destroyable {
    * @returns
    */
   _getPointOnEllipsoid(point: Cartesian2) {
-    return CameraTool.PickPointOnEllipsoid(point, this._scene, this._camera)
+    return CameraTool.PickPointOnEllipsoid(point, this._scene, this.#camera)
   }
 
   /**
@@ -223,6 +224,6 @@ export abstract class Dynamic<L extends Dynamic.Layer> implements Destroyable {
     this.interrupt()
     this.remove()
     this._layer.destroy()
-    this._editHandler.destroy()
+    this.#editHandler.destroy()
   }
 }
