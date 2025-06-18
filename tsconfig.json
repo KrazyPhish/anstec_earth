@@ -1,7 +1,7 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "target": "ES5",
+    "target": "ES2015",
     "module": "ESNext",
     "declaration": false,
     "downlevelIteration": true,
@@ -19,6 +19,7 @@
     "noUnusedLocals": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
+    "experimentalDecorators": true,
   },
   "exclude": [
     "createRelease.ts",
