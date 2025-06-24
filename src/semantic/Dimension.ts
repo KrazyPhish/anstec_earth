@@ -11,9 +11,9 @@ const { abs } = window.Math
  * @param [w = 0] w方向上的值
  */
 @validate
-export class Demension {
-  @constant(new Demension(0, 0, 0, 0)) static ZERO: Demension
-  @constant(new Demension(1, 1, 1, 1)) static ONE: Demension
+export class Dimension {
+  @constant(new Dimension(0, 0, 0, 0)) static ZERO: Dimension
+  @constant(new Dimension(1, 1, 1, 1)) static ONE: Dimension
   x: number
   y: number
   z: number
@@ -39,7 +39,7 @@ export class Demension {
    * ```
    */
   @validate
-  clone(@is(Demension) result?: Demension) {
+  clone(@is(Dimension) result?: Dimension) {
     if (result) {
       result.x = this.x
       result.y = this.y
@@ -47,7 +47,7 @@ export class Demension {
       result.w = this.w
       return result
     }
-    return new Demension(this.x, this.y, this.z, this.w)
+    return new Dimension(this.x, this.y, this.z, this.w)
   }
 
   /**
@@ -112,14 +112,14 @@ export class Demension {
 
   /**
    * @description 比较两个维度量是否相等
-   * @param left {@link Demension} 左值
-   * @param right {@link Demension} 右值
+   * @param left {@link Dimension} 左值
+   * @param right {@link Dimension} 右值
    * @param [diff = 0] 可接受的数学误差
    */
   @validate
   static equals(
-    @is(Demension) left: Demension,
-    @is(Demension) right: Demension,
+    @is(Dimension) left: Dimension,
+    @is(Dimension) right: Dimension,
     @positive() @is(Number) diff: number = 0
   ) {
     if (left === right) return true
@@ -136,7 +136,7 @@ export class Demension {
    */
   @validate
   static fromArray(@moreThan(2, true, "length") @is(Array) arr: number[]) {
-    return new Demension(arr[0], arr[1], arr[2] ?? 0, arr[3] ?? 0)
+    return new Dimension(arr[0], arr[1], arr[2] ?? 0, arr[3] ?? 0)
   }
 
   /**
@@ -145,7 +145,7 @@ export class Demension {
    * @param [result] 存储的对象
    */
   @validate
-  static fromCartesian2(@is(Cartesian2) cartesian: Cartesian2, @is(Demension) result?: Demension) {
+  static fromCartesian2(@is(Cartesian2) cartesian: Cartesian2, @is(Dimension) result?: Dimension) {
     if (result) {
       result.x = cartesian.x
       result.y = cartesian.y
@@ -160,7 +160,7 @@ export class Demension {
    * @param [result] 存储的对象
    */
   @validate
-  static fromCartesian3(@is(Cartesian3) cartesian: Cartesian3, @is(Demension) result?: Demension) {
+  static fromCartesian3(@is(Cartesian3) cartesian: Cartesian3, @is(Dimension) result?: Dimension) {
     if (result) {
       result.x = cartesian.x
       result.y = cartesian.y
@@ -176,7 +176,7 @@ export class Demension {
    * @param [result] 存储的对象
    */
   @validate
-  static fromCartesian4(@is(Cartesian4) cartesian: Cartesian4, @is(Demension) result?: Demension) {
+  static fromCartesian4(@is(Cartesian4) cartesian: Cartesian4, @is(Dimension) result?: Dimension) {
     if (result) {
       result.x = cartesian.x
       result.y = cartesian.y
