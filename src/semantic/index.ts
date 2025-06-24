@@ -1,5 +1,3 @@
 export * from "./Color"
 export * from "./Dimension"
-export * from "./Display"
 export * from "./Hpr"
-export * from "./Scalar"
