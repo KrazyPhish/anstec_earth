@@ -118,7 +118,6 @@ export abstract class Layer<C extends Layer.Collections, P extends Layer.Primiti
   /**
    * @description 设置是否可被销毁
    * @param status
-   * @deprecated
    */
   setAllowDestroy(status: boolean) {
     this._allowDestroy = status

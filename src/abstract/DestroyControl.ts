@@ -1,5 +1,5 @@
 /**
- * @description 允许销毁
+ * @description 销毁控制
  */
 export abstract class DestroyControl {
   abstract _allowDestroy: boolean
