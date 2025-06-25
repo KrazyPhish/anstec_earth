@@ -6,7 +6,8 @@ export const debounce = (delay: number = 300): MethodDecorator => {
   return (_, __, descriptor) => {
     let timer: NodeJS.Timeout
     const origin = descriptor.value
-    ;(descriptor.value as Function) = function (...args: any[]) {
+    //@ts-ignore
+    descriptor.value = function (...args: any[]) {
       if (timer) {
         clearTimeout(timer)
       }

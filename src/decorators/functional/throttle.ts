@@ -6,7 +6,8 @@ export const throttle = (limit: number = 300): MethodDecorator => {
   return (_, __, descriptor) => {
     let inThrottle: boolean
     const origin = descriptor.value
-    ;(descriptor.value as Function) = function (...args: any[]) {
+    //@ts-ignore
+    descriptor.value = function (...args: any[]) {
       if (!inThrottle) {
         //@ts-ignore
         origin.apply(this, args)
