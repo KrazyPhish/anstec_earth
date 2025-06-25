@@ -16,7 +16,8 @@ export const deprecated = (
     const exactVersion = version ?? "next minor version"
     const [target, prop, descriptor] = args
     if (prop && descriptor) {
-      const owner = target.constructor.name
+      //@ts-ignore
+      const owner = target.name ?? target.constructor.name
       const key = typeof prop === "string" ? prop : prop.toString()
       const origin = descriptor.value as Function
       descriptor.value = function (...args: any[]) {
@@ -24,7 +25,8 @@ export const deprecated = (
         return origin.apply(this, args)
       }
     } else if (prop) {
-      const owner = target.constructor.name
+      //@ts-ignore
+      const owner = target.name ?? target.constructor.name
       const key = typeof prop === "string" ? prop : prop.toString()
       const reader = replace ?? prop
       Object.defineProperty(target, prop, {
