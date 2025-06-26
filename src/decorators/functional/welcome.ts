@@ -21,16 +21,16 @@ export const welcome: ClassDecorator = (target) => {
   `
   )
   const tooltip = `
-    Name: ${pkg.name}
+    Package: ${pkg.name}
     Author: ${pkg.author}
     Version: ${pkg.version}
+    Time: ${new Date().toLocaleString()}
   `
   console.log(tooltip)
   console.groupEnd()
   const map: string[][] = [
     ["author", pkg.author],
     ["version", pkg.version],
-    ["createdTime", new Date().toLocaleString()],
   ]
   const properties = map.reduce((prev, curr) => {
     const [key, value] = curr
