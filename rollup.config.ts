@@ -9,8 +9,18 @@ import cssnano from "cssnano"
 import postcss from "rollup-plugin-postcss"
 import peerDepsExternal from "rollup-plugin-peer-deps-external"
 import { defineConfig } from "rollup"
+import { writeFileSync } from "fs"
 
 const sourcemap = false
+
+const configInfo = `//auto generated, no need to change
+export const pkg = {
+  name: "${packageJson.name}",
+  author: "${packageJson.author}",
+  version: "${packageJson.version}",
+} as const
+`
+writeFileSync("./src/config.ts", configInfo)
 
 export default defineConfig({
   input: "src/index.ts",
