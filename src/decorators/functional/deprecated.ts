@@ -42,11 +42,10 @@ export const deprecated = (
         },
       })
     } else {
-      const name = (target as Function).name
-      console.warn(`class '${name}' is deprecated and will be removed at ${exactVersion}${replacement}.`)
       return new Proxy(target, {
-        construct(target, args) {
-          return Reflect.construct(target as Function, args)
+        construct(target: Function, args) {
+          console.warn(`class '${target.name}' is deprecated and will be removed at ${exactVersion}${replacement}.`)
+          return Reflect.construct(target, args)
         },
       })
     }
