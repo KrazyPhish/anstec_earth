@@ -51,12 +51,11 @@ export const deprecated = (
           log(`${target.name}`, exactVersion, replacement)
           return Reflect.construct(target, args)
         },
-        get(target, prop) {
-          //@ts-ignore
-          const owner = target.name ?? target.constructor.name
-          log(`${owner}`, exactVersion, replacement)
-          //@ts-ignore
-          return target[prop]
+        get(target: Function, prop, receiver) {
+          if (target === receiver) {
+            log(`${target.name}`, exactVersion, replacement)
+          }
+          return Reflect.get(target, prop, receiver)
         },
       })
     }

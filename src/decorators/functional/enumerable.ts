@@ -6,7 +6,7 @@ export const enumerable: (value: boolean) => {
   (target: object, prop: string | symbol): void
   <T>(target: object, prop: string | symbol, descriptor: TypedPropertyDescriptor<T>): TypedPropertyDescriptor<T> | void
 } = (value) => {
-  return <T>(...args: [object, string | symbol] | [object, string | symbol, TypedPropertyDescriptor<T>]) => {
+  return (...args: Parameters<MethodDecorator> | Parameters<PropertyDecorator>) => {
     const [target, prop, descriptor] = args
     if (descriptor) {
       descriptor.enumerable = true

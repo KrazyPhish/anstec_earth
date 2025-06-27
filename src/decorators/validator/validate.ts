@@ -31,7 +31,7 @@ export const useValidatorMaker = (
 export const validate: {
   <T extends Function>(target: T): T
   <T>(target: object, prop: string | symbol, descriptor: TypedPropertyDescriptor<T>): void
-} = <T>(...args: [object, string | symbol, TypedPropertyDescriptor<T>] | [Function]) => {
+} = (...args: Parameters<ClassDecorator> | Parameters<MethodDecorator>) => {
   const [target, prop, descriptor] = args
   if (prop && descriptor) {
     const rules = validatorCache.get(target)?.get(prop)
