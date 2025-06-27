@@ -1,44 +1,49 @@
-import {
-  Appearance,
-  ComponentDatatype,
-  defined,
-  DeveloperError,
-  Framebuffer,
-  Geometry,
-  GeometryAttribute,
-  GeometryAttributes,
-  Math,
-  Texture,
-} from "cesium"
+import { except, moreThan, is, isPic, lessThan, validate, freeze, deprecated } from "decorators"
 import { CoorFormat } from "enum"
-import { WindField } from "components"
 
+const separator = "Ω"
 const { abs, floor, random } = window.Math
 
-export namespace Utils {
-  const separator = "Ω"
+@freeze
+export class Utils {
+  //TODO delete deprecations at v2.6.x
+  /**
+   * @deprecated
+   */
+  @deprecated("uuid")
+  static RandomUUID(symbol: string = "-") {
+    return this.uuid(symbol)
+  }
+
+  /**
+   * @deprecated
+   */
+  @deprecated("encode")
+  static EncodeId(id: string, module?: string) {
+    return this.encode(id, module)
+  }
+
+  /**
+   * @deprecated
+   */
+  @deprecated("decode")
+  static DecodeId(id: string, module?: string) {
+    return this.encode(id, module)
+  }
 
   /**
    * @description 获取随机ID
    * @param [symbol = "-"] 连接符
    * @returns 随机ID
    */
-  export const RandomUUID = (symbol: string = "-") => {
-    if (symbol === separator) {
-      console.warn(`Avoid using symbol '${separator}' when creating a uuid.`)
-    } else if (symbol.length > 1) {
-      console.warn(`Avoid using mutiple strings as symbol.`)
-    }
-    const encode = (count: number) => {
-      let output = ""
-      for (let i = 0; i < count; i++) {
-        output += (((1 + random()) * 0x10000) | 0).toString(16).substring(1)
-      }
-      return output
-    }
-    const seed = [encode(4), encode(2), encode(1), encode(3), encode(5)]
-    const uuid = seed.join(symbol === separator || symbol.length > 1 ? "-" : symbol)
-    return uuid
+  @validate
+  static uuid(@except([separator, "x"]) @is(String) symbol: string = "-") {
+    const uid = `xxxxxxxx${symbol}xxxx${symbol}4xxx${symbol}yxxx${symbol}xxxxxxxxxxxx`
+    return uid.replace(/[xy]/g, (c) => {
+      const r = (random() * 16) | 0
+      const v = c === "x" ? r : (r & 0x3) | 0x8
+      return v.toString(16)
+    })
   }
 
   /**
@@ -46,16 +51,9 @@ export namespace Utils {
    * @param id ID
    * @param [module] 模块
    * @returns 编码结果
-   * @exception Invaid type of id, id must be string.
-   * @exception Invaid id string 'Ω'.
    */
-  export const EncodeId = (id: string, module?: string) => {
-    if (typeof id !== "string") {
-      throw new DeveloperError("Invaid type of id, id must be string.")
-    }
-    if (id.includes(separator)) {
-      throw new DeveloperError(`Invaid id string '${separator}'.`)
-    }
+  @validate
+  static encode(@except(separator) @is(String) id: string, module?: string) {
     return module ? `${encodeURIComponent(id)}${separator}${encodeURIComponent(module)}` : id
   }
 
@@ -64,7 +62,8 @@ export namespace Utils {
    * @param id 已编码ID
    * @returns ID 模块
    */
-  export const DecodeId = (id: string) => {
+  @validate
+  static decode(@is(String) id: string) {
     const res: { id: string; module?: string } = { id: "" }
     const parts = id.split(separator)
     if (parts.length > 1) {
@@ -80,7 +79,11 @@ export namespace Utils {
    * @param format [format = CoorFormat.DMS] {@link CoorFormat} 格式
    * @return 格式化结果
    */
-  export const formatGeoLongitude = (longitude: number, format: CoorFormat = CoorFormat.DMS) => {
+  @validate
+  static formatGeoLongitude(
+    @moreThan(-180) @lessThan(180) @is(Number) longitude: number,
+    format: CoorFormat = CoorFormat.DMS
+  ) {
     if (!/^-?\d{1,3}(.\d+)?$/g.test(longitude.toString())) return longitude.toString()
     const absLongitude = abs(longitude)
     const d = floor(absLongitude)
@@ -101,7 +104,11 @@ export namespace Utils {
    * @param [format = CoorFormat.DMS] {@link CoorFormat} 格式
    * @return 格式化结果
    */
-  export const formatGeoLatitude = (latitude: number, format: CoorFormat = CoorFormat.DMS) => {
+  @validate
+  static formatGeoLatitude(
+    @moreThan(-90) @lessThan(90) @is(Number) latitude: number,
+    format: CoorFormat = CoorFormat.DMS
+  ) {
     if (!/^-?\d{1,2}(.\d+)?$/g.test(latitude.toString())) return latitude.toString()
     const absLatitude = abs(latitude)
     const d = floor(absLatitude)
@@ -117,87 +124,17 @@ export namespace Utils {
   }
 
   /**
-   * @description 创建材质
-   * @param options
-   * @param typedArray
-   */
-  export const createTexture = (options: WindField.TextureOptions, typedArray?: Float32Array) => {
-    if (defined(typedArray)) {
-      const source: { arrayBufferView: Float32Array | undefined } = {
-        arrayBufferView: undefined,
-      }
-      source.arrayBufferView = typedArray
-      options.source = source
-    }
-    const texture = new Texture(options)
-    return texture
-  }
-
-  export const randomizeParticles = (
-    maxParticles: number,
-    viewerParameters: WindField.ViewerParam,
-    min: number,
-    max: number
-  ) => {
-    const array = new Float32Array(4 * maxParticles)
-    for (let i = 0; i < maxParticles; i++) {
-      array[4 * i] = Math.randomBetween(viewerParameters.lonRange.x, viewerParameters.lonRange.y)
-      array[4 * i + 1] = Math.randomBetween(viewerParameters.latRange.x, viewerParameters.latRange.y)
-      array[4 * i + 2] = Math.randomBetween(min, max)
-      array[4 * i + 3] = 0.0
-    }
-    return array
-  }
-
-  export const createFramebuffer = (context: any, colorTexture?: Texture, depthTexture?: Texture) => {
-    const framebuffer = new Framebuffer({
-      context: context,
-      colorTextures: [colorTexture],
-      depthTexture: depthTexture,
-    })
-    return framebuffer
-  }
-
-  export const createRawRenderState = (options: WindField.RenderState) => {
-    const translucent = true
-    const closed = false
-    const existing = {
-      viewport: options.viewport,
-      depthTest: options.depthTest,
-      depthMask: options.depthMask,
-      blending: options.blending,
-    }
-    const rawRenderState = (Appearance as any).getDefaultRenderState(translucent, closed, existing)
-    return rawRenderState
-  }
-
-  export const getFullscreenQuad = () => {
-    const attributes = new GeometryAttributes()
-    attributes.position = new GeometryAttribute({
-      componentDatatype: ComponentDatatype.FLOAT,
-      componentsPerAttribute: 3,
-      values: new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0]),
-    })
-    attributes.st = new GeometryAttribute({
-      componentDatatype: ComponentDatatype.FLOAT,
-      componentsPerAttribute: 2,
-      values: new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]),
-    })
-    const fullscreenQuad = new Geometry({
-      attributes: attributes,
-      indices: new Uint32Array([3, 2, 0, 0, 2, 1]),
-    })
-    return fullscreenQuad
-  }
-
-  /**
    * @description 将SVG图片格式转换为Canvas
    * @param svg SVG图片
    * @param [width = 48] 宽度
    * @param [height = 48] 高度
    * @returns Canvas结果
    */
-  export const ConvertSvg2Canvas = async (svg: string, width: number = 48, height: number = 48) => {
+  static async ConvertSvg2Canvas(
+    @is(String) svg: string,
+    @is(Number) width: number = 48,
+    @is(Number) height: number = 48
+  ) {
     const loadImage = (url: string) => {
       return new Promise<HTMLImageElement>((resolve) => {
         const image = new Image()
@@ -205,7 +142,6 @@ export namespace Utils {
         image.src = url
       })
     }
-
     const canvas = document.createElement("canvas")
     canvas.width = width
     canvas.height = height
@@ -223,19 +159,13 @@ export namespace Utils {
    * @param [width = 48] 宽度
    * @param [height = 48] 高度
    * @returns Canvas结果
-   * @exception Invaid picture, only 'jpg', 'jpeg' or 'png' is accepted.
    */
-  export const ConvertPic2Canvas = async (pic: string, width: number = 48, height: number = 48) => {
-    const check = (url: string): boolean => {
-      if (url.includes("base64")) return true
-      const names = url.split(".")
-      return names.some((name) => {
-        return name === "jpg" || name === "jpeg" || name === "png"
-      })
-    }
-    if (!check(pic)) {
-      throw new DeveloperError("Invaid picture, only 'jpg', 'jpeg' or 'png' is accepted.")
-    }
+  @validate
+  static async ConvertPic2Canvas(
+    @isPic() pic: string,
+    @is(Number) width: number = 48,
+    @is(Number) height: number = 48
+  ) {
     const loadImage = (url: string) => {
       return new Promise<HTMLImageElement>((resolve) => {
         const image = new Image()
@@ -243,7 +173,6 @@ export namespace Utils {
         image.src = url
       })
     }
-
     const canvas = document.createElement("canvas")
     canvas.width = width
     canvas.height = height
@@ -260,12 +189,9 @@ export namespace Utils {
    * @param func 需要防抖的函数
    * @param [delay = 300] 延迟`ms`
    * @returns 防抖的函数
-   * @exception Parameter of 'debounce' should be a function.
    */
-  export const debounce = <T extends (...args: any) => any>(func: T, delay: number = 300) => {
-    if (typeof func !== "function") {
-      throw new DeveloperError("Parameter of 'debounce' should be a function.")
-    }
+  @validate
+  static debounce<T extends (...args: any) => any>(@is(Function) func: T, @is(Number) delay: number = 300) {
     let timer: NodeJS.Timeout
     return function (...args: Parameters<T>) {
       if (timer) {
@@ -283,12 +209,9 @@ export namespace Utils {
    * @param func 需要节流的函数
    * @param [limit = 300] 区间`ms`
    * @returns 节流的函数
-   * @exception Parameter of 'throttle' should be a function.
    */
-  export const throttle = <T extends (...args: any) => any>(func: T, limit: number = 300) => {
-    if (typeof func !== "function") {
-      throw new DeveloperError("Parameter of 'throttle' should be a function.")
-    }
+  @validate
+  static throttle<T extends (...args: any[]) => any>(@is(Function) func: T, @is(Number) limit: number = 300) {
     let inThrottle: boolean
     return function (...args: Parameters<T>) {
       if (!inThrottle) {
@@ -300,5 +223,24 @@ export namespace Utils {
         }, limit)
       }
     }
+  }
+
+  /**
+   * @description 单例注册器
+   * @param target 目标构造器
+   * @returns 目标类单例构造器
+   */
+  static singleton<T extends object, P extends any[]>(target: new (...args: P) => T): new (...args: P) => T {
+    let instance: T
+    return new Proxy(target, {
+      construct: (target, args) => {
+        if (instance) {
+          return instance
+        } else {
+          instance = Reflect.construct(target, args)
+          return instance
+        }
+      },
+    })
   }
 }

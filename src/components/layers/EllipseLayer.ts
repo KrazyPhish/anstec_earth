@@ -1,8 +1,8 @@
 import {
   Cartesian3,
+  ClassificationType,
   Color,
   ColorGeometryInstanceAttribute,
-  ClassificationType,
   EllipseGeometry,
   GeometryInstance,
   GroundPrimitive,
@@ -14,10 +14,11 @@ import {
   VerticalOrigin,
 } from "cesium"
 import { Geographic } from "components/coordinate"
-import type { Earth } from "components/Earth"
 import { Utils } from "utils"
 import { LabelLayer } from "./LabelLayer"
-import { Layer } from "./Layer"
+import { Labeled, Layer } from "abstract"
+import { generate, is, validate } from "decorators"
+import type { Earth } from "components/Earth"
 
 export namespace EllipseLayer {
   export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
@@ -45,30 +46,37 @@ export namespace EllipseLayer {
   }
 }
 
+export interface EllipseLayer<T = unknown> {
+  _labelLayer: LabelLayer<T>
+}
+
 /**
  * @description 椭圆图层
  * @extends Layer {@link Layer} 图层基类
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const ellipseLayer = new EllipseLayer(earth)
  * //or
- * const ellipseLayer = earth.useDefaultLayers().ellipse
+ * const ellipseLayer = earth.layers.ellipse
  * ```
  */
-export class EllipseLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive | GroundPrimitive, Layer.Data<T>> {
-  public labelLayer: LabelLayer<T>
+export class EllipseLayer<T = unknown>
+  extends Layer<PrimitiveCollection, Primitive | GroundPrimitive, Layer.Data<T>>
+  implements Labeled<T>
+{
+  @generate() labelLayer!: LabelLayer<T>
 
   constructor(earth: Earth) {
     super(earth, new PrimitiveCollection())
-    this.labelLayer = new LabelLayer(earth)
+    this._labelLayer = new LabelLayer(earth)
   }
 
-  private getDefaultOption(param: EllipseLayer.AddParam<T>) {
+  #getDefaultOption(param: EllipseLayer.AddParam<T>) {
     const option = {
       ellipse: {
-        id: param.id ?? Utils.RandomUUID(),
+        id: param.id ?? Utils.uuid(),
         show: param.show,
         center: param.center,
         majorAxis: param.majorAxis,
@@ -76,7 +84,7 @@ export class EllipseLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
         rotation: param.rotation ?? 0,
         color: param.color ?? Color.RED.withAlpha(0.4),
         ground: param.ground ?? false,
-        height: param.height ?? Geographic.fromCartesian(param.center).height ?? 0,
+        height: param.height ?? Geographic.fromCartesian(param.center).height,
       },
       label: param.label
         ? {
@@ -99,7 +107,7 @@ export class EllipseLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
    * @param param {@link EllipseLayer.AddParam} 椭圆参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const ellipseLayer = new EllipseLayer(earth)
    * ellipseLayer.add({
    *  center: Cartesian3.fromDegrees(104, 31),
@@ -110,11 +118,15 @@ export class EllipseLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
    * })
    * ```
    */
-  public add(param: EllipseLayer.AddParam<T>) {
-    const { ellipse, label } = this.getDefaultOption(param)
+  @validate
+  add(
+    @is(Cartesian3, "center")
+    param: EllipseLayer.AddParam<T>
+  ) {
+    const { ellipse, label } = this.#getDefaultOption(param)
 
     const instance = new GeometryInstance({
-      id: Utils.EncodeId(ellipse.id, param.module),
+      id: Utils.encode(ellipse.id, param.module),
       geometry: new EllipseGeometry({
         center: ellipse.center,
         semiMajorAxis: ellipse.majorAxis,
@@ -141,7 +153,7 @@ export class EllipseLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
 
     if (label) {
       const { longitude, latitude } = Geographic.fromCartesian(ellipse.center)
-      this.labelLayer.add({
+      this._labelLayer.add({
         id: ellipse.id,
         module: param.module,
         position: Cartesian3.fromDegrees(longitude, latitude, ellipse.height),
@@ -149,63 +161,63 @@ export class EllipseLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
       })
     }
 
-    super.save(ellipse.id, { primitive, data: { module: param.module, data: param.data } })
+    super._save(ellipse.id, { primitive, data: { module: param.module, data: param.data } })
   }
 
   /**
    * @description 隐藏所有椭圆
    */
-  public hide(): void
+  hide(): void
   /**
    * @description 隐藏所有椭圆
    * @param id 根据ID隐藏椭圆
    */
-  public hide(id: string): void
-  public hide(id?: string) {
+  hide(id: string): void
+  hide(id?: string) {
     if (id) {
       super.hide(id)
-      this.labelLayer.hide(id)
+      this._labelLayer.hide(id)
     } else {
       super.hide()
-      this.labelLayer.hide()
+      this._labelLayer.hide()
     }
   }
 
   /**
    * @description 显示所有椭圆
    */
-  public show(): void
+  show(): void
   /**
    * @description 根据ID显示椭圆
    * @param id ID
    */
-  public show(id: string): void
-  public show(id?: string) {
+  show(id: string): void
+  show(id?: string) {
     if (id) {
       super.show(id)
-      this.labelLayer.show(id)
+      this._labelLayer.show(id)
     } else {
       super.show()
-      this.labelLayer.show()
+      this._labelLayer.show()
     }
   }
 
   /**
    * @description 移除所有椭圆
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 根据ID移除椭圆
    * @param id ID
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
       super.remove(id)
-      this.labelLayer.remove(id)
+      this._labelLayer.remove(id)
     } else {
       super.remove()
-      this.labelLayer.remove()
+      this._labelLayer.remove()
     }
   }
 
@@ -213,9 +225,9 @@ export class EllipseLayer<T = unknown> extends Layer<PrimitiveCollection, Primit
    * @description 销毁图层
    * @returns 返回`boolean`值
    */
-  public destroy(): boolean {
+  destroy(): boolean {
     if (super.destroy()) {
-      this.labelLayer.destroy()
+      this._labelLayer.destroy()
       return true
     } else return false
   }

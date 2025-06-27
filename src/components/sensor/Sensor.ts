@@ -14,11 +14,12 @@ import {
   type Scene,
 } from "cesium"
 import { conicSensorWave } from "shaders"
+import { is, generate, validate, enumerable } from "decorators"
 import { Figure, Utils } from "utils"
 import { PhasedSensorPrimitive } from "./PhasedSensorPrimitive"
 import { ScanMode, ConicMode } from "enum"
 import type { Earth } from "components/Earth"
-import type { Layer } from "components/layers"
+import type { Destroyable, Layer } from "abstract"
 
 export namespace Sensor {
   /**
@@ -48,7 +49,7 @@ export namespace Sensor {
    * @property [scanPlaneRate = 1] 扫描速率
    * @property [scanMode = {@link ScanMode.HORIZONTAL}] 扫描模式
    * @property [gradientScan = true] 扫描面是否启用渐变色
-   * @property [gradientScanColors = [{@link Color.WHITESMOKE}, {@link Color.LIGHTYELLOW}, {@link Color.YELLOW}, {@link Color.ORANGE}, {@link Color.RED}]] 扫描有序渐变色组
+   * @property [gradientScanColors] 扫描有序渐变色组
    * @property [gradientScanSteps = [0.2, 0.45, 0.65]] 扫描渐变占比
    * @property [intersection = true] 是否显示与地球的相交线
    * @property [intersectionColor = {@link Color.LAWNGREEN}.withAlpha(0.5)] 相交线颜色
@@ -101,43 +102,45 @@ export namespace Sensor {
   }
 }
 
+export interface Sensor {
+  _isDestroyed: boolean
+}
+
 /**
  * @description 传感器效果
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const sensor = new Sensor(earth)
  * ```
  */
-export class Sensor<T> {
-  private destroyed: boolean = false
-  private cache: Map<
+export class Sensor<T = unknown> implements Destroyable {
+  @generate(false) isDestroyed!: boolean
+  @enumerable(false) _collection: PrimitiveCollection
+  #cache: Map<
     string,
     {
       primitive: Primitive | PhasedSensorPrimitive
       data: Sensor.Data<T>
     }
   > = new Map()
-
-  private collection: PrimitiveCollection
-
-  private scene: Scene
+  #scene: Scene
 
   constructor(earth: Earth) {
-    this.scene = earth.scene
-    this.collection = this.scene.primitives.add(new PrimitiveCollection())
+    this.#scene = earth.scene
+    this._collection = this.#scene.primitives.add(new PrimitiveCollection())
   }
 
-  private save(
+  _save(
     id: string,
     param: {
       primitive: Primitive | PhasedSensorPrimitive
       data: Sensor.Data<T>
     }
   ) {
-    this.collection.add(param.primitive)
-    this.cache.set(id, param)
+    this._collection.add(param.primitive)
+    this.#cache.set(id, param)
   }
 
   /**
@@ -145,7 +148,7 @@ export class Sensor<T> {
    * @param param {@link Sensor.Phased} 相控阵参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const sensor = new Sensor(earth)
    * sensor.addPhased({
    *  position: Cartesian3.fromDegrees(104, 31, 45000),
@@ -161,11 +164,11 @@ export class Sensor<T> {
    *  scanMode: ScanMode.HORIZONTAL,
    *  gradientScan: true,
    *  gradientScanColors: [
-   *    Color.fromAlpha(Color.WHITESMOKE, 0.3),
-   *    Color.fromAlpha(Color.LIGHTYELLOW, 0.3),
-   *    Color.fromAlpha(Color.YELLOW, 0.3),
-   *    Color.fromAlpha(Color.ORANGE, 0.3),
-   *    Color.fromAlpha(Color.RED, 0.0),
+   *    Color.WHITESMOKE.withAlpha(0.3),
+   *    Color.LIGHTYELLOW.withAlpha(0.3),
+   *    Color.YELLOW.withAlpha(0.3),
+   *    Color.ORANGE.withAlpha(0.3),
+   *    Color.RED.withAlpha(0.0),
    *  ],
    *  gradientScanSteps: [0.2, 0.45, 0.65],
    *  intersection: true,
@@ -175,38 +178,42 @@ export class Sensor<T> {
    * })
    * ```
    */
-  public addPhased({
-    id = Utils.RandomUUID(),
-    data,
-    module,
-    position,
-    radius,
-    hpr = new HeadingPitchRoll(0, 0, 0),
-    xHalfAngle = Math.toRadians(30),
-    yHalfAngle = Math.toRadians(30),
-    color = Color.LAWNGREEN.withAlpha(0.05),
-    lineColor = Color.LAWNGREEN.withAlpha(0.1),
-    scanPlane = true,
-    scanPlaneColor = Color.LAWNGREEN.withAlpha(0.3),
-    scanPlaneRate = 1,
-    scanMode = ScanMode.HORIZONTAL,
-    gradientScan = true,
-    gradientScanColors = [
-      Color.WHITESMOKE.withAlpha(0.3),
-      Color.LIGHTYELLOW.withAlpha(0.3),
-      Color.YELLOW.withAlpha(0.3),
-      Color.ORANGE.withAlpha(0.3),
-      Color.RED.withAlpha(0.0),
-    ],
-    gradientScanSteps = [0.2, 0.45, 0.65],
-    intersection = true,
-    intersectionColor = Color.LAWNGREEN.withAlpha(0.5),
-    intersectionWidth = 1,
-    radarWave = true,
-  }: Sensor.Phased<T>) {
+  @validate
+  addPhased(
+    @is(Cartesian3, "position")
+    {
+      id = Utils.uuid(),
+      data,
+      module,
+      position,
+      radius,
+      hpr = new HeadingPitchRoll(0, 0, 0),
+      xHalfAngle = Math.toRadians(30),
+      yHalfAngle = Math.toRadians(30),
+      color = Color.LAWNGREEN.withAlpha(0.05),
+      lineColor = Color.LAWNGREEN.withAlpha(0.1),
+      scanPlane = true,
+      scanPlaneColor = Color.LAWNGREEN.withAlpha(0.3),
+      scanPlaneRate = 1,
+      scanMode = ScanMode.HORIZONTAL,
+      gradientScan = true,
+      gradientScanColors = [
+        Color.WHITESMOKE.withAlpha(0.3),
+        Color.LIGHTYELLOW.withAlpha(0.3),
+        Color.YELLOW.withAlpha(0.3),
+        Color.ORANGE.withAlpha(0.3),
+        Color.RED.withAlpha(0.0),
+      ],
+      gradientScanSteps = [0.2, 0.45, 0.65],
+      intersection = true,
+      intersectionColor = Color.LAWNGREEN.withAlpha(0.5),
+      intersectionWidth = 1,
+      radarWave = true,
+    }: Sensor.Phased<T>
+  ) {
     const modelMatrix = Transforms.headingPitchRollToFixedFrame(position, hpr)
     const primitive = new PhasedSensorPrimitive({
-      id: Utils.EncodeId(id, module),
+      id: Utils.encode(id, module) as any,
       modelMatrix,
       radius,
       xHalfAngle,
@@ -226,7 +233,7 @@ export class Sensor<T> {
       material: Material.fromType("Color", { color }),
     })
 
-    this.save(id, { primitive, data: { position, hpr, data } })
+    this._save(id, { primitive, data: { position, hpr, data } })
   }
 
   /**
@@ -234,7 +241,7 @@ export class Sensor<T> {
    * @param param {@link Sensor.Radar} 雷达波参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const sensor = new Sensor(earth)
    * sensor.addRadar({
    *  position: Cartesian3.fromDegrees(104, 31, 500000),
@@ -249,20 +256,24 @@ export class Sensor<T> {
    * })
    * ```
    */
-  public addRadar({
-    id = Utils.RandomUUID(),
-    data,
-    module,
-    position,
-    radius,
-    height,
-    slices = 120,
-    speed = 50,
-    thin = 0.25,
-    hpr = new HeadingPitchRoll(0, 0, 0),
-    color = Color.LAWNGREEN.withAlpha(0.3),
-    mode = ConicMode.MATH,
-  }: Sensor.Radar<T>) {
+  @validate
+  addRadar(
+    @is(Cartesian3, "position")
+    {
+      id = Utils.uuid(),
+      data,
+      module,
+      position,
+      radius,
+      height,
+      slices = 120,
+      speed = 50,
+      thin = 0.25,
+      hpr = new HeadingPitchRoll(0, 0, 0),
+      color = Color.LAWNGREEN.withAlpha(0.3),
+      mode = ConicMode.MATH,
+    }: Sensor.Radar<T>
+  ) {
     let r, h
     if (mode === ConicMode.MATH) {
       r = radius
@@ -280,7 +291,7 @@ export class Sensor<T> {
     )
 
     const instance = new GeometryInstance({
-      id: Utils.EncodeId(id, module),
+      id: Utils.encode(id, module),
       geometry: new CylinderGeometry({
         slices,
         length: h,
@@ -321,9 +332,9 @@ export class Sensor<T> {
       primitive.appearance.material.uniforms.offset = offset
     }
 
-    this.save(id, { primitive, data: { position, hpr, data, callback } })
+    this._save(id, { primitive, data: { position, hpr, data, callback } })
 
-    this.scene.preUpdate.addEventListener(callback)
+    this.#scene.preUpdate.addEventListener(callback)
   }
 
   /**
@@ -331,8 +342,8 @@ export class Sensor<T> {
    * @param id ID
    * @returns 数据
    */
-  public getEntity(id: string): Primitive | PhasedSensorPrimitive | undefined {
-    return this.cache.get(id)?.primitive
+  getEntity(id: string): Primitive | PhasedSensorPrimitive | undefined {
+    return this.#cache.get(id)?.primitive
   }
 
   /**
@@ -340,65 +351,58 @@ export class Sensor<T> {
    * @param id ID
    * @returns 数据
    */
-  public getData(id: string): Sensor.Data<T> | undefined {
-    return this.cache.get(id)?.data
+  getData(id: string): Sensor.Data<T> | undefined {
+    return this.#cache.get(id)?.data
   }
 
   /**
    * @description 移除所有传感器
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 根据ID移除传感器
    * @param id ID
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
-      const cache = this.cache.get(id)
+      const cache = this.#cache.get(id)
       if (cache) {
-        this.collection.remove(cache.primitive)
+        this._collection.remove(cache.primitive)
         if (cache.data.callback) {
-          this.scene.preUpdate.removeEventListener(cache.data.callback)
+          this.#scene.preUpdate.removeEventListener(cache.data.callback)
         }
-        this.cache.delete(id)
+        this.#cache.delete(id)
       }
     } else {
-      this.collection.removeAll()
-      this.cache.forEach((c) => {
+      this._collection.removeAll()
+      this.#cache.forEach((c) => {
         const callback = c.data.callback
         if (callback) {
-          this.scene.preUpdate.removeEventListener(callback)
+          this.#scene.preUpdate.removeEventListener(callback)
         }
       })
-      this.cache.clear()
+      this.#cache.clear()
     }
-  }
-
-  /**
-   * @description 获取销毁状态
-   */
-  public isDestroyed(): boolean {
-    return this.destroyed
   }
 
   /**
    * @description 销毁
    */
-  public destroy() {
-    if (this.destroyed) return
-    this.destroyed = true
-    this.collection.removeAll()
-    this.cache.forEach((c) => {
+  destroy() {
+    if (this._isDestroyed) return
+    this._isDestroyed = true
+    this._collection.removeAll()
+    this.#cache.forEach((c) => {
       const callback = c.data.callback
       if (callback) {
-        this.scene.preUpdate.removeEventListener(callback)
+        this.#scene.preUpdate.removeEventListener(callback)
       }
     })
-    this.scene.primitives.remove(this.collection)
-    this.cache.clear()
-    this.collection = undefined as any
-    this.scene = undefined as any
-    this.cache = undefined as any
+    this.#scene.primitives.remove(this._collection)
+    this.#cache.clear()
+    this._collection = undefined as any
+    this.#scene = undefined as any
+    this.#cache = undefined as any
   }
 }

@@ -1,40 +1,43 @@
 import {
+  Cartesian2,
+  Cartesian3,
   Cartographic,
-  DeveloperError,
   Math,
   SceneTransforms,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   type Camera,
-  type Cartesian2,
-  type Cartesian3,
   type Ellipsoid,
   type Scene,
 } from "cesium"
-import type { Earth } from "components/Earth"
 import { Geographic } from "./Geographic"
 import { ScreenCapture } from "enum"
+import { is, or, singleton, validate } from "decorators"
+import type { Earth } from "components/Earth"
 
 /**
  * @description 坐标系统
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const coordinate = earth.coordinate
  * //or
  * const coordinate = new Coordinate(earth)
  * ```
  */
+@singleton("Not necessay to create 'Coordinate', 'earth.coordinate' is available.")
 export class Coordinate {
-  private scene: Scene
-  private camera: Camera
-  private ellipsoid: Ellipsoid
-  private handler?: ScreenSpaceEventHandler
+  #earth: Earth
+  #scene: Scene
+  #camera: Camera
+  #ellipsoid: Ellipsoid
+  #handler?: ScreenSpaceEventHandler
 
-  constructor(private earth: Earth) {
-    this.scene = earth.scene
-    this.camera = earth.camera
-    this.ellipsoid = earth.scene.globe.ellipsoid
+  constructor(earth: Earth) {
+    this.#earth = earth
+    this.#scene = earth.scene
+    this.#camera = earth.camera
+    this.#ellipsoid = earth.scene.globe.ellipsoid
   }
 
   /**
@@ -46,16 +49,16 @@ export class Coordinate {
    * coordinate.registerMouseCoordinate((data) => { console.log(data) }, true)
    * ```
    */
-  public registerMouseCoordinate(callback: (data: Cartographic) => void, realtime: boolean = true) {
+  registerMouseCoordinate(callback: (data: Cartographic) => void, realtime: boolean = true) {
     let eventType: ScreenSpaceEventType
-    this.handler = new ScreenSpaceEventHandler(this.scene.canvas)
+    this.#handler = new ScreenSpaceEventHandler(this.#scene.canvas)
     if (realtime) {
       eventType = ScreenSpaceEventType.MOUSE_MOVE
     } else {
       eventType = ScreenSpaceEventType.LEFT_CLICK
-      this.earth.container.style.cursor = "crosshair"
+      this.#earth.container.style.cursor = "crosshair"
     }
-    this.handler.setInputAction((e: ScreenSpaceEventHandler.MotionEvent | ScreenSpaceEventHandler.PositionedEvent) => {
+    this.#handler.setInputAction((e: ScreenSpaceEventHandler.MotionEvent | ScreenSpaceEventHandler.PositionedEvent) => {
       const screen =
         (e as ScreenSpaceEventHandler.MotionEvent).endPosition ||
         (e as ScreenSpaceEventHandler.PositionedEvent).position
@@ -74,9 +77,9 @@ export class Coordinate {
    * coordinate.unregisterMouseCoordinate()
    * ```
    */
-  public unregisterMouseCoordinate() {
-    this.handler && this.handler.destroy()
-    this.handler = undefined
+  unregisterMouseCoordinate() {
+    this.#handler && this.#handler.destroy()
+    this.#handler = undefined
   }
 
   /**
@@ -98,25 +101,26 @@ export class Coordinate {
    * const cartesian3 = coordinate.screenToCartesian(position, ScreenCapture.ELLIPSOID)
    * ```
    */
-  public screenToCartesian(
-    position: Cartesian2,
+  @validate
+  screenToCartesian(
+    @is(Cartesian2) position: Cartesian2,
     mode: ScreenCapture = ScreenCapture.ELLIPSOID
   ): Cartesian3 | undefined {
     let coor: Cartesian3 | undefined
-    const ray = this.camera.getPickRay(position)
+    const ray = this.#camera.getPickRay(position)
     switch (mode) {
       case ScreenCapture.SCENE: {
-        coor = this.scene.pickPosition(position)
+        coor = this.#scene.pickPosition(position)
         break
       }
       case ScreenCapture.TERRAIN: {
         if (ray) {
-          coor = this.scene.globe.pick(ray, this.scene)
+          coor = this.#scene.globe.pick(ray, this.#scene)
         }
         break
       }
       case ScreenCapture.ELLIPSOID: {
-        coor = this.camera.pickEllipsoid(position, this.ellipsoid)
+        coor = this.#camera.pickEllipsoid(position, this.#ellipsoid)
         break
       }
     }
@@ -133,8 +137,9 @@ export class Coordinate {
    * const cartesian2 = coordinate.cartesianToScreen(position)
    * ```
    */
-  public cartesianToScreen(position: Cartesian3): Cartesian2 | undefined {
-    return SceneTransforms.worldToWindowCoordinates(this.scene, position)
+  @validate
+  cartesianToScreen(@is(Cartesian3) position: Cartesian3): Cartesian2 | undefined {
+    return SceneTransforms.worldToWindowCoordinates(this.#scene, position)
   }
 
   /**
@@ -147,21 +152,54 @@ export class Coordinate {
    * const cartesian3 = coordinate.cartographicToCartesian(position)
    * ```
    */
-  public cartographicToCartesian(cartographic: Cartographic): Cartesian3 {
-    return this.ellipsoid.cartographicToCartesian(cartographic)
+  @validate
+  cartographicToCartesian(@is(Cartographic) cartographic: Cartographic): Cartesian3 {
+    return this.#ellipsoid.cartographicToCartesian(cartographic)
+  }
+
+  /**
+   * @description 地理坐标数组转空间坐标数组
+   * @param cartographics {@link Cartographic} 地理坐标数组
+   * @returns `Cartesian3`坐标数组
+   * @example
+   * ```
+   * const positions = Cartographic.fromDegreesArray([104, 31, 0, 105, 32, 1])
+   * const cartesian3Array = coordinate.cartographicArrayToCartesianArray(positions)
+   * ```
+   */
+  @validate
+  cartographicArrayToCartesianArray(@is(Array) cartographics: Cartographic[]): Cartesian3[] {
+    return this.#ellipsoid.cartographicArrayToCartesianArray(cartographics)
   }
 
   /**
    * @description 空间坐标转地理坐标
    * @param position {@link Cartesian3} 空间坐标
    * @return `Cartographic`坐标
+   * @example
    * ```
    * const position = Cartesian3.fromDegrees(104, 31, 0)
    * const carto = coordinate.cartesianToCartographic(position)
    * ```
    */
-  public cartesianToCartographic(position: Cartesian3): Cartographic {
-    return this.ellipsoid.cartesianToCartographic(position)
+  @validate
+  cartesianToCartographic(@is(Cartesian3) position: Cartesian3): Cartographic {
+    return this.#ellipsoid.cartesianToCartographic(position)
+  }
+
+  /**
+   * @description 空间坐标数组转地理坐标数组
+   * @param positions {@link Cartesian3} 空间坐标数组
+   * @returns `Cartographic`坐标数组
+   * @example
+   * ```
+   * const positions = Cartesian3.fromDegreesArray([104, 31, 0, 105, 32, 1])
+   * const cartos = coordinate.cartesianArrayToCartographicArray(positions)
+   * ```
+   */
+  @validate
+  cartesianArrayToCartographicArray(@is(Array) positions: Cartesian3[]): Cartographic[] {
+    return this.#ellipsoid.cartesianArrayToCartographicArray(positions)
   }
 
   /**
@@ -174,13 +212,14 @@ export class Coordinate {
    * const geo = coordinate.screenToGeographic(position)
    * ```
    */
-  public screenToGeographic(position: Cartesian2): Geographic | undefined {
+  @validate
+  screenToGeographic(@is(Cartesian2) position: Cartesian2): Geographic | undefined {
     const cartesian = this.screenToCartesian(position)
     if (!cartesian) return
     const cartographic = Cartographic.fromCartesian(cartesian)
     const longitude = Math.toDegrees(cartographic.longitude)
     const latitude = Math.toDegrees(cartographic.latitude)
-    const altitude = this.scene.globe.getHeight(cartographic)
+    const altitude = this.#scene.globe.getHeight(cartographic)
     return new Geographic(longitude, latitude, altitude)
   }
 
@@ -194,7 +233,8 @@ export class Coordinate {
    * const carto = coordinate.screenToCartographic(position)
    * ```
    */
-  public screenToCartographic(position: Cartesian2): Cartographic | undefined {
+  @validate
+  screenToCartographic(@is(Cartesian2) position: Cartesian2): Cartographic | undefined {
     const cartesian = this.screenToCartesian(position)
     if (!cartesian) return
     return Cartographic.fromCartesian(cartesian)
@@ -204,16 +244,14 @@ export class Coordinate {
    * @description 获取坐标处位置的地面高度
    * @param position {@link Cartographic} | {@link Geographic} 地理或经纬度坐标
    * @returns 高度
-   * @exception Invaid position type, use cartographic or geographic.
    */
-  public positionSurfaceHeight(position: Cartographic | Geographic): number | undefined {
+  @validate
+  positionSurfaceHeight(@or([Cartographic, Geographic]) position: Cartographic | Geographic): number | undefined {
     if (position instanceof Cartographic) {
-      return this.scene.globe.getHeight(position)
+      return this.#scene.globe.getHeight(position)
     } else if (position instanceof Geographic) {
       const geo = position.toCartographic()
-      return this.scene.globe.getHeight(geo)
-    } else {
-      throw new DeveloperError("Invaid position type, use cartographic or geographic.")
+      return this.#scene.globe.getHeight(geo)
     }
   }
 }

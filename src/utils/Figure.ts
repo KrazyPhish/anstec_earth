@@ -7,11 +7,11 @@ import {
   Scene,
   sampleTerrainMostDetailed,
   PolylinePipeline,
-  DeveloperError,
 } from "cesium"
 import * as turf from "@turf/turf"
 import { Geographic } from "components/coordinate"
 import { EarthRadius } from "enum"
+import { moreThan, is, lessThan, validate, freeze, positive } from "decorators"
 
 const { abs, asin, pow, sqrt, sin, cos, PI } = window.Math
 
@@ -24,20 +24,8 @@ const { abs, asin, pow, sqrt, sin, cos, PI } = window.Math
  * 5. 动态绘制
  * 6. 地形测量
  */
-export namespace Figure {
-  type Coordinate = Cartographic | Geographic
-
-  type GeoTurple = [number, number]
-
-  const getDivisor = (target: Coordinate) => {
-    let divisor: number
-    if (target instanceof Cartographic) {
-      divisor = (1 / PI) * 180.0
-    } else {
-      divisor = 1
-    }
-    return divisor
-  }
+@freeze
+export class Figure {
   /**
    * @description 叉乘
    * 1. 多边形凹凸性
@@ -51,7 +39,12 @@ export namespace Figure {
    * 2. 返回值大于`0`则表示向量ac在ab的顺时针方向
    * 3. 返回值等于`0`则表示向量ab与ac共线
    */
-  export const CrossProduct = (a: GeoTurple, b: GeoTurple, c: GeoTurple) => {
+  @validate
+  static CrossProduct(
+    @moreThan(2, true, "length") @is(Array) a: number[],
+    @moreThan(2, true, "length") @is(Array) b: number[],
+    @moreThan(2, true, "length") @is(Array) c: number[]
+  ) {
     const [x1, y1] = a
     const [x2, y2] = b
     const [x3, y3] = c
@@ -65,10 +58,14 @@ export namespace Figure {
    * @param [units = "meters"] 单位
    * @returns 距离
    */
-  export const CalcDistance = <T extends Coordinate>(from: T, to: T, units: turf.Units = "meters"): number => {
-    const divisor = getDivisor(from)
-    const p1 = turf.point([from.longitude * divisor, from.latitude * divisor])
-    const p2 = turf.point([to.longitude * divisor, to.latitude * divisor])
+  @validate
+  static CalcDistance<T extends Geographic>(
+    @is(Geographic) from: T,
+    @is(Geographic) to: T,
+    units: turf.Units = "meters"
+  ): number {
+    const p1 = turf.point(from.toArray())
+    const p2 = turf.point(to.toArray())
     const distance = turf.distance(p1, p2, { units })
     return distance
   }
@@ -80,10 +77,14 @@ export namespace Figure {
    * @param [units = "meters"] 单位
    * @returns 距离
    */
-  export const CalcRhumbDistance = <T extends Coordinate>(from: T, to: T, units: turf.Units = "meters"): number => {
-    const divisor = getDivisor(from)
-    const p1 = turf.point([from.longitude * divisor, from.latitude * divisor])
-    const p2 = turf.point([to.longitude * divisor, to.latitude * divisor])
+  @validate
+  static CalcRhumbDistance<T extends Geographic>(
+    @is(Geographic) from: T,
+    @is(Geographic) to: T,
+    units: turf.Units = "meters"
+  ): number {
+    const p1 = turf.point(from.toArray())
+    const p2 = turf.point(to.toArray())
     const distance = turf.rhumbDistance(p1, p2, { units })
     return distance
   }
@@ -96,30 +97,24 @@ export namespace Figure {
    * @param terrainProvider 地形图层
    * @returns 距离 `m`
    */
-  export const CalcGroundDistance = async <T extends Coordinate>(
-    from: T,
-    to: T,
-    scene: Scene,
+  @validate
+  static async CalcGroundDistance<T extends Geographic>(
+    @is(Geographic) from: T,
+    @is(Geographic) to: T,
+    @is(Scene) scene: Scene,
     terrainProvider: TerrainProvider
-  ) => {
+  ) {
     let _from: Cartesian3
     let _to: Cartesian3
     let granularity = 0.00001
     const ellipsoid = scene.globe.ellipsoid
-    if (from instanceof Cartographic) {
-      _from = Cartographic.toCartesian(from, ellipsoid)
-      _to = Cartographic.toCartesian(to as Cartographic, ellipsoid)
-    } else {
-      _from = from.toCartesian()
-      _to = (to as Geographic).toCartesian()
-    }
-
+    _from = from.toCartesian()
+    _to = to.toCartesian()
     const _distance = Cartesian3.distance(_from, _to)
     if (!terrainProvider.availability) {
       console.warn("Lack of terrain data, or load terrain failed. Ground measuring makes no significance.")
       return _distance
     }
-
     if (_distance > 10000) {
       granularity = granularity * 10
     } else if (_distance > 50000) {
@@ -129,7 +124,6 @@ export namespace Figure {
     } else {
       granularity = granularity * 10000
     }
-
     const surfacePositions = PolylinePipeline.generateArc({
       positions: [_from, _to],
       granularity: 0.00001,
@@ -144,7 +138,6 @@ export namespace Figure {
       const cartesian = Cartesian3.unpack(surfacePositions, i)
       cartographicArray.push(ellipsoid.cartesianToCartographic(cartesian))
     }
-
     const updateLnglats: Cartographic[] = await sampleTerrainMostDetailed(terrainProvider, cartographicArray)
     let allLength = 0
     let offset = 10.0
@@ -160,7 +153,6 @@ export namespace Figure {
     for (let z = 0; z < raisedPositions.length - 1; z++) {
       allLength += Cartesian3.distance(raisedPositions[z], raisedPositions[z + 1])
     }
-
     return allLength
   }
 
@@ -172,12 +164,13 @@ export namespace Figure {
    * @param angle 角度 <角度制>
    * @return 另外的点
    */
-  export const CalcPointByPointDistanceAngle = (
-    longitude: number,
-    latitude: number,
-    distance: number,
-    angle: number
-  ) => {
+  @validate
+  static CalcPointByPointDistanceAngle(
+    @moreThan(-180) @lessThan(180) @is(Number) longitude: number,
+    @moreThan(-90) @lessThan(90) @is(Number) latitude: number,
+    @is(Number) distance: number,
+    @is(Number) angle: number
+  ) {
     const ea = EarthRadius.EQUATOR
     const eb = EarthRadius.POLE
     const dx = distance * sin((angle * PI) / 180)
@@ -186,7 +179,6 @@ export namespace Figure {
     const ed = ec * cos((latitude * PI) / 180)
     const lon = ((dx / ed + (longitude * PI) / 180) * 180) / PI
     const lat = ((dy / ec + (latitude * PI) / 180) * 180) / PI
-
     return [lon, lat]
   }
 
@@ -196,8 +188,9 @@ export namespace Figure {
    * @param rectangle 矩形
    * @returns `boolean`值
    */
-  export const PointInRectangle = (point: Cartographic, rectangle: Rectangle) => {
-    return Rectangle.contains(rectangle, point)
+  @validate
+  static PointInRectangle(@is(Geographic) point: Geographic, @is(Rectangle) rectangle: Rectangle) {
+    return Rectangle.contains(rectangle, point.toCartographic())
   }
 
   /**
@@ -208,13 +201,14 @@ export namespace Figure {
    * @param [units = "meters"] 单位
    * @returns `boolean`值
    */
-  export const PointInCircle = <T extends Coordinate>(
-    point: T,
-    center: T,
-    radius: number,
+  @validate
+  static PointInCircle<T extends Geographic>(
+    @is(Geographic) point: T,
+    @is(Geographic) center: T,
+    @positive() @is(Number) radius: number,
     units: turf.Units = "meters"
-  ) => {
-    const dis = CalcDistance(point, center, units)
+  ) {
+    const dis = this.CalcDistance(point, center, units)
     return radius > dis
   }
 
@@ -224,16 +218,16 @@ export namespace Figure {
    * @param polygon 多边形点坐标
    * @returns `boolean`值
    */
-  export const PointInPolygon = <T extends Coordinate>(point: T, polygon: T[]) => {
-    if (polygon.length < 4) {
-      return false
-    }
-    const divisor = getDivisor(point)
-    const p = turf.point([point.longitude * divisor, point.latitude * divisor])
+  @validate
+  static PointInPolygon<T extends Geographic>(
+    @is(Geographic) point: T,
+    @moreThan(4, true, "length") @is(Array) polygon: T[]
+  ) {
+    const p = turf.point([point.longitude, point.latitude])
     const pl = polygon.reduce((prev, curr) => {
-      prev.push([curr.longitude * divisor, curr.latitude * divisor])
+      prev.push(curr.toArray())
       return prev
-    }, [] as GeoTurple[])
+    }, [] as number[][])
     const pg = turf.polygon([pl])
     return turf.booleanPointInPolygon(p, pg)
   }
@@ -244,18 +238,18 @@ export namespace Figure {
    * @param line2 线段2
    * @returns `boolean`值
    */
-  export const PolylineIntersectPolyline = <T extends Coordinate>(line1: [T, T], line2: [T, T]) => {
-    const x1 = line1[0].longitude
-    const y1 = line1[0].latitude
-    const x2 = line1[1].longitude
-    const y2 = line1[1].latitude
-    const x3 = line2[0].longitude
-    const y3 = line2[0].latitude
-    const x4 = line2[1].longitude
-    const y4 = line2[1].latitude
-    if (CrossProduct([x1, y1], [x2, y2], [x3, y3]) * CrossProduct([x1, y1], [x2, y2], [x4, y4]) > 0) {
+  @validate
+  static PolylineIntersectPolyline(
+    @moreThan(2, true, "length") @is(Array) line1: Geographic[],
+    @moreThan(2, true, "length") @is(Array) line2: Geographic[]
+  ) {
+    const point1 = line1[0].toArray()
+    const point2 = line1[1].toArray()
+    const point3 = line2[0].toArray()
+    const point4 = line2[1].toArray()
+    if (this.CrossProduct(point1, point2, point3) * this.CrossProduct(point1, point2, point4) > 0) {
       return false
-    } else if (CrossProduct([x3, y3], [x4, y4], [x1, y1]) * CrossProduct([x3, y3], [x4, y4], [x2, y2]) > 0) {
+    } else if (this.CrossProduct(point3, point4, point1) * this.CrossProduct(point3, point4, point2) > 0) {
       return false
     } else {
       return true
@@ -268,16 +262,20 @@ export namespace Figure {
    * @param rectangle 矩形
    * @returns `boolean`值
    */
-  export const PolylineIntersectRectangle = (polyline: Cartographic[], rectangle: Rectangle) => {
+  @validate
+  static PolylineIntersectRectangle(
+    @moreThan(2, true, "length") @is(Array) polyline: Geographic[],
+    @is(Rectangle) rectangle: Rectangle
+  ) {
     let crossed: boolean = false
     const { east, north, south, west } = rectangle
     const points = [
-      new Cartographic(west, north),
-      new Cartographic(east, north),
-      new Cartographic(east, south),
-      new Cartographic(west, south),
+      new Geographic(west, north),
+      new Geographic(east, north),
+      new Geographic(east, south),
+      new Geographic(west, south),
     ]
-    const edges: [Cartographic, Cartographic][] = [
+    const edges: Geographic[][] = [
       [points[0], points[1]],
       [points[1], points[2]],
       [points[2], points[3]],
@@ -286,7 +284,7 @@ export namespace Figure {
 
     for (let i = 0; i < polyline.length - 1; i++) {
       if (crossed) break
-      crossed = edges.some((edge) => PolylineIntersectPolyline([polyline[i], polyline[i + 1]], edge))
+      crossed = edges.some((edge) => this.PolylineIntersectPolyline([polyline[i], polyline[i + 1]], edge))
     }
     return crossed
   }
@@ -295,13 +293,13 @@ export namespace Figure {
    * @description 计算测地线角度，以正北方向为基准
    * @param from 基准原点
    * @param to 参考点
-   * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
+   * @returns 角度 <角度制>
    */
-  export const CalcBearing = <T extends Coordinate>(from: T, to: T): number => {
-    const divisor = getDivisor(from)
-    const point1 = turf.point([from.longitude * divisor, from.latitude * divisor])
-    const point2 = turf.point([to.longitude * divisor, to.latitude * divisor])
-    const bearing = turf.bearing(point1, point2) / divisor
+  @validate
+  static CalcBearing<T extends Geographic>(@is(Geographic) from: T, @is(Geographic) to: T): number {
+    const point1 = turf.point(from.toArray())
+    const point2 = turf.point(to.toArray())
+    const bearing = turf.bearing(point1, point2)
     return bearing
   }
 
@@ -309,13 +307,13 @@ export namespace Figure {
    * @description 计算恒向线角度，以正北方向为基准
    * @param from 基准原点
    * @param to 参考点
-   * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
+   * @returns 角度 <角度制>
    */
-  export const CalcRhumbBearing = <T extends Coordinate>(from: T, to: T): number => {
-    const divisor = getDivisor(from)
-    const point1 = turf.point([from.longitude * divisor, from.latitude * divisor])
-    const point2 = turf.point([to.longitude * divisor, to.latitude * divisor])
-    const bearing = turf.rhumbBearing(point1, point2) / divisor
+  @validate
+  static CalcRhumbBearing<T extends Geographic>(@is(Geographic) from: T, @is(Geographic) to: T): number {
+    const point1 = turf.point(from.toArray())
+    const point2 = turf.point(to.toArray())
+    const bearing = turf.rhumbBearing(point1, point2)
     return bearing
   }
 
@@ -324,14 +322,14 @@ export namespace Figure {
    * @param a 夹角点
    * @param b 边缘点
    * @param c 边缘点
-   * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
+   * @returns 角度 <角度制>
    */
-  export const CalcAngle = <T extends Coordinate>(a: T, b: T, c: T) => {
-    const divisor = a instanceof Cartographic ? 1 : (1 / PI) * 180
-    const bearingAB = CalcBearing(a, b)
-    const bearingAC = CalcBearing(a, c)
+  @validate
+  static CalcAngle<T extends Geographic>(@is(Geographic) a: T, @is(Geographic) b: T, @is(Geographic) c: T) {
+    const bearingAB = this.CalcBearing(a, b)
+    const bearingAC = this.CalcBearing(a, c)
     const angle = bearingAB - bearingAC
-    return angle < 0 ? angle + PI * 2 * divisor : angle
+    return angle < 0 ? angle + 180 * 2 : angle
   }
 
   /**
@@ -340,19 +338,13 @@ export namespace Figure {
    * @param point2
    * @returns 中心点
    */
-  export const CalcMidPoint = <T extends Coordinate>(point1: T, point2: T): Coordinate => {
-    const divisor = getDivisor(point1)
-    const p1 = turf.point([point1.longitude * divisor, point1.latitude * divisor])
-    const p2 = turf.point([point2.longitude * divisor, point2.latitude * divisor])
+  @validate
+  static CalcMidPoint<T extends Geographic>(@is(Geographic) point1: T, @is(Geographic) point2: T): Geographic {
+    const p1 = turf.point(point1.toArray())
+    const p2 = turf.point(point2.toArray())
     const [longitude, latitude] = turf.midpoint(p1, p2).geometry.coordinates
-    let height: number | undefined = undefined
-    height = ((point1.height ?? 0) + (point2.height ?? 0)) / 2.0
-
-    if (point1 instanceof Cartographic) {
-      return new Cartographic(longitude, latitude, height)
-    } else {
-      return new Geographic(longitude, latitude, height)
-    }
+    const height = (point1.height + point2.height) / 2.0
+    return new Geographic(longitude, latitude, height)
   }
 
   /**
@@ -360,54 +352,41 @@ export namespace Figure {
    * @param points 多边形或平面的顶点
    * @param [withHeight = false] 是否计算时考虑高度
    * @returns 质心
-   * @exception Polygon needs at least 4 vertexes.
    */
-  export const CalcMassCenter = (points: Coordinate[], withHeight = false): Coordinate => {
-    if (points.length < 4) {
-      throw new DeveloperError(`Polygon needs at least 4 vertexes.`)
-    }
-    const divisor = getDivisor(points[0])
-    const feature = turf.polygon([points.map((p) => [p.longitude * divisor, p.latitude * divisor])])
+  @validate
+  static CalcMassCenter(
+    @moreThan(4, true, "length") @is(Array) points: Geographic[],
+    @is(Boolean) withHeight = false
+  ): Geographic {
+    const feature = turf.polygon([points.map((p) => p.toArray())])
     const [longitude, latitude] = turf.centroid(feature).geometry.coordinates
     const height = withHeight
       ? parseFloat(
           (
             points.reduce((prev, curr) => {
-              prev += curr.height ?? 0
+              prev += curr.height
               return prev
             }, 0) / points.length
           ).toFixed(2)
         )
-      : undefined
-    if (points[0] instanceof Cartographic) {
-      return new Cartographic(longitude, latitude, height)
-    } else {
-      return new Geographic(longitude, latitude, height)
-    }
+      : 0
+    return new Geographic(longitude, latitude, height)
   }
 
   /**
    * @description 计算一个一定位于多边形上的点
    * @param polygon 多边形
    * @returns 任意多边形上的点
-   * @exception Polygon needs at least 4 vertexes.
    */
-  export const CalcPointOnPolygon = (polygon: Coordinate[]): Coordinate => {
-    if (polygon.length < 4) {
-      throw new DeveloperError(`Polygon needs at least 4 vertexes.`)
-    }
-    const divisor = getDivisor(polygon[0])
+  @validate
+  static CalcPointOnPolygon(@moreThan(4, true, "length") @is(Array) polygon: Geographic[]): Geographic {
     const pl = polygon.reduce((prev, curr) => {
-      prev.push([curr.longitude * divisor, curr.latitude * divisor])
+      prev.push(curr.toArray())
       return prev
-    }, [] as GeoTurple[])
+    }, [] as number[][])
     const pg = turf.polygon([pl])
     const [longitude, latitude] = turf.pointOnFeature(pg).geometry.coordinates
-    if (polygon[0] instanceof Cartographic) {
-      return new Cartographic(longitude, latitude)
-    } else {
-      return new Geographic(longitude, latitude)
-    }
+    return new Geographic(longitude, latitude)
   }
 
   /**
@@ -415,13 +394,12 @@ export namespace Figure {
    * @param polygon 多边形
    * @returns 面积 `㎡`
    */
-  export const CalcPolygonArea = (polygon: Coordinate[]): number => {
-    if (polygon.length < 4) return 0
-    const divisor = getDivisor(polygon[0])
+  @validate
+  static CalcPolygonArea(@moreThan(4, true, "length") @is(Array) polygon: Geographic[]): number {
     const pl = polygon.reduce((prev, curr) => {
-      prev.push([curr.longitude * divisor, curr.latitude * divisor])
+      prev.push(curr.toArray())
       return prev
-    }, [] as GeoTurple[])
+    }, [] as number[][])
     const pg = turf.polygon([pl])
     return turf.area(pg)
   }
@@ -435,7 +413,14 @@ export namespace Figure {
    * @param rotate 旋转 <弧度制>
    * @returns 包络点集合
    */
-  export const CalcEnvelope = (x: number, y: number, radius1: number, radius2: number, rotate: number) => {
+  @validate
+  static CalcEnvelope(
+    @moreThan(-180) @lessThan(180) @is(Number) x: number,
+    @moreThan(-90) @lessThan(90) @is(Number) y: number,
+    @positive() @is(Number) radius1: number,
+    @positive() @is(Number) radius2: number,
+    @is(Number) rotate: number
+  ) {
     const positions = []
     const dx = PI * 2 * EarthRadius.AVERAGE
     const r1 = (radius1 * 360) / dx
@@ -458,7 +443,8 @@ export namespace Figure {
    * @param arc 测地线弧长
    * @returns 真实高度和半径
    */
-  export const CalcConic = (height: number, arc: number) => {
+  @validate
+  static CalcConic(@is(Number) height: number, @is(Number) arc: number) {
     const r = EarthRadius.AVERAGE * sin(arc / EarthRadius.AVERAGE)
     const h = height + EarthRadius.AVERAGE * (1 - cos(arc / EarthRadius.AVERAGE))
     return { radius: r, heihgt: h }
@@ -469,7 +455,8 @@ export namespace Figure {
    * @param positions 坐标
    * @returns 距离
    */
-  export const CalcMathDistance = (positions: GeoTurple[]) => {
+  @validate
+  static CalcMathDistance(@moreThan(2, true, "length") @is(Array) positions: number[][]) {
     const distance = positions.reduce((prev, curr, index, arr) => {
       if (index === 0) return prev
       prev += sqrt(pow(curr[0] - arr[index - 1][0], 2) + pow(curr[1] - arr[index - 1][1], 2))
@@ -487,14 +474,15 @@ export namespace Figure {
    * @param [revert = false] 是否逆时针
    * @returns 第三点
    */
-  export const CalcThirdPoint = (
-    target: GeoTurple,
-    origin: GeoTurple,
-    angle: number,
-    radius: number,
-    revert: boolean = false
-  ): GeoTurple => {
-    const g = CalcAzimuth(target, origin)
+  @validate
+  static CalcThirdPoint(
+    @moreThan(2, true, "length") @is(Array) target: number[],
+    @moreThan(2, true, "length") @is(Array) origin: number[],
+    @is(Number) angle: number,
+    @is(Number) radius: number,
+    @is(Boolean) revert: boolean = false
+  ): number[] {
+    const g = this.CalcAzimuth(target, origin)
     const i = revert ? g + angle : g - angle
     const s = radius * cos(i)
     const a = radius * sin(i)
@@ -507,8 +495,12 @@ export namespace Figure {
    * @param origin 点2
    * @returns 角度 <弧度制>
    */
-  export const CalcAzimuth = (target: GeoTurple, origin: GeoTurple): number => {
-    const l = CalcMathDistance([target, origin])
+  @validate
+  static CalcAzimuth(
+    @moreThan(2, true, "length") @is(Array) target: number[],
+    @moreThan(2, true, "length") @is(Array) origin: number[]
+  ): number {
+    const l = this.CalcMathDistance([target, origin])
     const d = l === 0 ? 0 : asin(abs(origin[1] - target[1]) / l)
     const res =
       origin[1] >= target[1] && origin[0] >= target[0]
@@ -528,10 +520,15 @@ export namespace Figure {
    * @param a 边缘点
    * @param b 夹角点
    * @param c 边缘点
-   * @returns 数学角度值 <弧度制>
+   * @returns 角度 <弧度制>
    */
-  export const CalcMathAngle = (a: GeoTurple, b: GeoTurple, c: GeoTurple) => {
-    const angle = CalcAzimuth(b, a) - CalcAzimuth(b, c)
+  @validate
+  static CalcMathAngle(
+    @moreThan(2, true, "length") @is(Array) a: number[],
+    @moreThan(2, true, "length") @is(Array) b: number[],
+    @moreThan(2, true, "length") @is(Array) c: number[]
+  ) {
+    const angle = this.CalcAzimuth(b, a) - this.CalcAzimuth(b, c)
     return angle < 0 ? angle + PI * 2 : angle
   }
 }

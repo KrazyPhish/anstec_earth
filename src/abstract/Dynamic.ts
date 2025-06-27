@@ -127,7 +127,7 @@ export abstract class Dynamic<L extends Dynamic.Layer> implements Destroyable {
    * @returns
    */
   _getPointOnEllipsoid(point: Cartesian2) {
-    return CameraTool.PickPointOnEllipsoid(point, this._scene, this.#camera)
+    return CameraTool.pickPointOnEllipsoid(point, this._scene, this.#camera)
   }
 
   /**

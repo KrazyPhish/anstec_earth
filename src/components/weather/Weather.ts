@@ -3,6 +3,8 @@ import { dark } from "shaders"
 import { ParticleLayer } from "components/layers"
 import { Utils } from "utils"
 import { rain, snow } from "images"
+import { enumerable, is, generate, singleton, validate } from "decorators"
+import type { Destroyable } from "abstract"
 import type { Earth } from "components/Earth"
 
 export namespace Weather {
@@ -26,80 +28,82 @@ export namespace Weather {
   }
 }
 
+export interface Weather {
+  _isDestroyed: boolean
+}
+
 /**
  * @description 天气特效
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const weather = earth.weather
  *
  * //or
  * const weather = new Weather(earth)
  * ```
  */
-export class Weather<T = unknown> {
-  public scene: Scene
-  private destroyed: boolean = false
-  private darkEffect?: PostProcessStage
-  private particleLayer: ParticleLayer<T>
+@singleton()
+export class Weather<T = unknown> implements Destroyable {
+  @generate(false) isDestroyed!: boolean
+  @enumerable(false) _scene: Scene
+  @enumerable(false) _particleLayer: ParticleLayer<T>
+
+  #darkEffect?: PostProcessStage
 
   constructor(earth: Earth) {
     earth.clock.shouldAnimate = true
-    this.scene = earth.scene
-    this.particleLayer = new ParticleLayer<T>(earth)
+    this._scene = earth.scene
+    this._particleLayer = new ParticleLayer<T>(earth)
   }
 
   /**
    * @description 大气/照明恢复的距离，仅当启用自然光照或大气层效果时生效
    */
+  @enumerable(true)
   get fadeInDistance() {
-    return this.scene.globe.lightingFadeInDistance
+    return this._scene.globe.lightingFadeInDistance
   }
   set fadeInDistance(value: number) {
-    this.scene.globe.lightingFadeInDistance = value
+    this._scene.globe.lightingFadeInDistance = value
   }
 
   /**
    * @description 一切都被点亮的距离，仅当启用自然光照或大气层效果时生效
    */
+  @enumerable(true)
   get fadeOutDistance() {
-    return this.scene.globe.lightingFadeOutDistance
+    return this._scene.globe.lightingFadeOutDistance
   }
   set fadeOutDistance(value: number) {
-    this.scene.globe.lightingFadeOutDistance = value
+    this._scene.globe.lightingFadeOutDistance = value
   }
 
   /**
    * @description 启用太阳光源的自然光照
    * @param value 是否启用
    */
-  public useNaturalLight(value: boolean) {
-    this.scene.globe.enableLighting = value
+  useNaturalLight(value: boolean) {
+    this._scene.globe.enableLighting = value
   }
 
   /**
    * @description 启用大气层效果
    * @param value 是否启用
    */
-  public enableAtmosphere(value: boolean) {
-    this.scene.globe.showGroundAtmosphere = value
+  enableAtmosphere(value: boolean) {
+    this._scene.globe.showGroundAtmosphere = value
   }
 
   /**
    * @description 新增雨天特效
    * @param param {@link Weather.AddParam} 参数
    */
-  private addRain({
-    id = Utils.RandomUUID(),
-    position,
-    effectRadius = 100000,
-    particleSize = 6,
-    data,
-  }: Weather.AddParam<T>) {
+  #addRain({ id = Utils.uuid(), position, effectRadius = 100000, particleSize = 6, data }: Weather.AddParam<T>) {
     const imageSize = new Cartesian2(particleSize * 0.5, particleSize * 4)
     const gravityScratch = new Cartesian3()
-    this.particleLayer.add({
+    this._particleLayer.add({
       id,
       position,
       data,
@@ -119,7 +123,7 @@ export class Weather<T = unknown> {
         Cartesian3.normalize(particle.position, gravityScratch)
         Cartesian3.multiplyByScalar(gravityScratch, -1200, gravityScratch)
         Cartesian3.add(particle.position, gravityScratch, particle.position)
-        const distance = Cartesian3.distance(this.scene.camera.position, particle.position)
+        const distance = Cartesian3.distance(this._scene.camera.position, particle.position)
         if (distance > effectRadius) {
           particle.endColor.alpha = 0
         } else {
@@ -133,16 +137,10 @@ export class Weather<T = unknown> {
    * @description 新增雪天特效
    * @param param {@link Weather.AddParam} 参数
    */
-  private addSnow({
-    id = Utils.RandomUUID(),
-    position,
-    effectRadius = 100000,
-    particleSize = 10,
-    data,
-  }: Weather.AddParam<T>) {
+  #addSnow({ id = Utils.uuid(), position, effectRadius = 100000, particleSize = 10, data }: Weather.AddParam<T>) {
     const minimumImageSize = new Cartesian2(particleSize, particleSize)
     const maximumImageSize = new Cartesian2(particleSize * 2, particleSize * 2)
-    this.particleLayer.add({
+    this._particleLayer.add({
       id,
       position,
       data,
@@ -164,7 +162,7 @@ export class Weather<T = unknown> {
         Cartesian3.normalize(particle.position, gravityScratch)
         Cartesian3.multiplyByScalar(gravityScratch, Math.randomBetween(-20, 0), gravityScratch)
         Cartesian3.add(particle.velocity, gravityScratch, particle.velocity)
-        const distance = Cartesian3.distance(this.scene.camera.position, particle.position)
+        const distance = Cartesian3.distance(this._scene.camera.position, particle.position)
         if (distance > effectRadius) {
           particle.endColor.alpha = 0
         } else {
@@ -178,16 +176,10 @@ export class Weather<T = unknown> {
    * @description 新增雾天特效
    * @param param {@link Weather.AddParam} 参数
    */
-  private addFog({
-    id = Utils.RandomUUID(),
-    position,
-    effectRadius = 100000,
-    particleSize = 80,
-    data,
-  }: Weather.AddParam<T>) {
+  #addFog({ id = Utils.uuid(), position, effectRadius = 100000, particleSize = 80, data }: Weather.AddParam<T>) {
     const minimumImageSize = new Cartesian2(particleSize, particleSize)
     const maximumImageSize = new Cartesian2(particleSize * 2, particleSize * 2)
-    this.particleLayer.add({
+    this._particleLayer.add({
       id,
       position,
       data,
@@ -210,7 +202,7 @@ export class Weather<T = unknown> {
         Cartesian3.normalize(particle.position, gravityScratch)
         Cartesian3.multiplyByScalar(gravityScratch, Math.randomBetween(-5, 5), gravityScratch)
         Cartesian3.add(particle.velocity, gravityScratch, particle.velocity)
-        const distance = Cartesian3.distance(this.scene.camera.position, particle.position)
+        const distance = Cartesian3.distance(this._scene.camera.position, particle.position)
         if (distance > effectRadius) {
           particle.endColor.alpha = 0
         } else {
@@ -224,18 +216,19 @@ export class Weather<T = unknown> {
    * @description 新增天气特效
    * @param param {@link Weather.AddParam} 天气参数
    */
-  public add(param: Weather.AddParam<T>) {
+  @validate
+  add(@is(Cartesian3, "position") param: Weather.AddParam<T>) {
     switch (param.type) {
       case "fog": {
-        this.addFog(param)
+        this.#addFog(param)
         break
       }
       case "rain": {
-        this.addRain(param)
+        this.#addRain(param)
         break
       }
       case "snow": {
-        this.addSnow(param)
+        this.#addSnow(param)
         break
       }
     }
@@ -245,9 +238,9 @@ export class Weather<T = unknown> {
    * @description 开启黑夜视图效果
    * @returns 关闭黑夜视图的函数
    */
-  public useDark() {
-    if (this.darkEffect) return
-    this.darkEffect = new PostProcessStage({
+  useDark() {
+    if (this.#darkEffect) return
+    this.#darkEffect = new PostProcessStage({
       name: "dark",
       fragmentShader: dark,
       uniforms: {
@@ -257,17 +250,17 @@ export class Weather<T = unknown> {
         },
       },
     })
-    this.scene.postProcessStages.add(this.darkEffect)
+    this._scene.postProcessStages.add(this.#darkEffect)
     return this.useLight
   }
 
   /**
    * @description 关闭黑夜视图/开启正常白天视图
    */
-  public useLight() {
-    if (this.darkEffect) {
-      this.scene.postProcessStages.remove(this.darkEffect)
-      this.darkEffect = undefined
+  useLight() {
+    if (this.#darkEffect) {
+      this._scene.postProcessStages.remove(this.#darkEffect)
+      this.#darkEffect = undefined
     } else return
   }
 
@@ -276,43 +269,35 @@ export class Weather<T = unknown> {
    * @param id ID
    * @returns
    */
-  public getData(id: string) {
-    return this.particleLayer.getData(id)
+  getData(id: string) {
+    return this._particleLayer.getData(id)
   }
 
   /**
    * @description 清除所有天气特效
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 按ID清除天气特效
    * @param id ID
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
-      this.particleLayer.remove(id)
+      this._particleLayer.remove(id)
     } else {
-      this.particleLayer.remove()
+      this._particleLayer.remove()
     }
-  }
-
-  /**
-   * @description 获取销毁状态
-   */
-  public isDestroyed(): boolean {
-    return this.destroyed
   }
 
   /**
    * @description 销毁
    */
-  public destroy() {
-    if (this.destroyed) return
-    this.destroyed = true
+  destroy() {
+    if (this._isDestroyed) return
+    this._isDestroyed = true
     this.useLight()
     this.remove()
-    this.particleLayer.destroy()
-    this.scene = undefined as any
+    this._particleLayer.destroy()
   }
 }

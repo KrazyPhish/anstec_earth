@@ -1,6 +1,5 @@
 import {
   Cartesian3,
-  DeveloperError,
   JulianDate,
   SampledPositionProperty,
   VelocityOrientationProperty,
@@ -11,6 +10,8 @@ import {
   type TimeIntervalCollection,
   type Viewer,
 } from "cesium"
+import { is, generate, singleton, validate, enumerable } from "decorators"
+import { Destroyable } from "abstract"
 import { Utils } from "utils"
 import type { Earth } from "components/Earth"
 
@@ -41,13 +42,16 @@ export namespace AnimationManager {
   }
 }
 
+export interface AnimationManager {
+  _isDestroyed: boolean
+}
+
 /**
  * @description 动画管理器
  * @param earth {@link Earth} 地球实例
- * @exception The instance of 'AnimationManager' can only be constructed once for each earth.
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const animationManager = new AnimationManager(earth)
  * animationManager.add({
  *  id: "test",
@@ -61,42 +65,33 @@ export namespace AnimationManager {
  *  },
  * })
  */
-export class AnimationManager {
-  private static recordCache: Map<string, boolean> = new Map()
-  private id: string
-  private cache: Map<string, Entity> = new Map()
-  private viewer: Viewer
-  private destroyed: boolean = false
+@singleton()
+export class AnimationManager implements Destroyable {
+  @enumerable(false) _cache: Map<string, Entity> = new Map()
+  @enumerable(false) _viewer: Viewer
+
+  @generate(false) isDestroyed!: boolean
 
   constructor(earth: Earth) {
-    if (AnimationManager.recordCache.has(earth.id)) {
-      throw new DeveloperError("The instance of 'AnimationManager' can only be constructed once for each earth.")
-    }
-    this.id = earth.id
-    this.viewer = earth.viewer
-    AnimationManager.recordCache.set(this.id, true)
+    this._viewer = earth.viewer
   }
 
   /**
    * @description 新增动画对象
    * @param param {@link AnimationManager.AddParam} 参数
    */
-  public add({
-    id = Utils.RandomUUID(),
-    module,
-    availability,
-    billboard,
-    model,
-    path,
-    positions,
-  }: AnimationManager.AddParam) {
-    const _id = Utils.EncodeId(id, module)
+  @validate
+  add(
+    @is(Array, "positions")
+    { id = Utils.uuid(), module, availability, billboard, model, path, positions }: AnimationManager.AddParam
+  ) {
+    const _id = Utils.encode(id, module)
     const property = new SampledPositionProperty()
     positions.forEach((position) => {
       const { longitude, latitude, height, time } = position
       property.addSample(JulianDate.fromDate(new Date(time)), Cartesian3.fromDegrees(longitude, latitude, height))
     })
-    const ent = this.viewer.entities.add({
+    const ent = this._viewer.entities.add({
       id: _id,
       availability,
       billboard,
@@ -105,26 +100,26 @@ export class AnimationManager {
       position: property,
       orientation: new VelocityOrientationProperty(property),
     })
-    this.cache.set(id, ent)
+    this._cache.set(id, ent)
   }
 
   /**
    * @description 显示所有动画
    */
-  public show(): void
+  show(): void
   /**
    * @description 按ID控制动画显示
    * @param id ID
    */
-  public show(id: string): void
-  public show(id?: string) {
+  show(id: string): void
+  show(id?: string) {
     if (id) {
-      const ent = this.cache.get(id)
+      const ent = this._cache.get(id)
       if (ent) {
         ent.show = true
       }
     } else {
-      this.cache.forEach((ent) => {
+      this._cache.forEach((ent) => {
         ent.show = true
       })
     }
@@ -133,20 +128,20 @@ export class AnimationManager {
   /**
    * @description 隐藏所有动画
    */
-  public hide(): void
+  hide(): void
   /**
    * @description 按ID控制动画隐藏
    * @param id ID
    */
-  public hide(id: string): void
-  public hide(id?: string) {
+  hide(id: string): void
+  hide(id?: string) {
     if (id) {
-      const ent = this.cache.get(id)
+      const ent = this._cache.get(id)
       if (ent) {
         ent.show = false
       }
     } else {
-      this.cache.forEach((ent) => {
+      this._cache.forEach((ent) => {
         ent.show = false
       })
     }
@@ -156,43 +151,34 @@ export class AnimationManager {
    * @description 根据ID移除动画对象
    * @param id ID
    */
-  public remove(id: string): void
+  remove(id: string): void
   /**
    * @description 移除所有动画对象
    * @param id ID
    */
-  public remove(): void
-  public remove(id?: string) {
+  remove(): void
+  remove(id?: string) {
     if (id) {
-      const entity = this.cache.get(id)
+      const entity = this._cache.get(id)
       if (entity) {
-        this.viewer.entities.remove(entity)
+        this._viewer.entities.remove(entity)
       }
     } else {
-      this.viewer.entities.removeAll()
+      this._viewer.entities.removeAll()
     }
-  }
-
-  /**
-   * @description 获取销毁状态
-   */
-  public isDestroyed(): boolean {
-    return this.destroyed
   }
 
   /**
    * @description 销毁
    */
-  public destroy() {
-    if (this.destroyed) return
-    this.destroyed = true
-    this.cache.forEach((entity) => {
-      this.viewer.entities.remove(entity)
+  destroy() {
+    if (this._isDestroyed) return
+    this._isDestroyed = true
+    this._cache.forEach((entity) => {
+      this._viewer.entities.remove(entity)
     })
-    this.cache.clear()
-    this.cache = undefined as any
-    this.viewer = undefined as any
-    AnimationManager.recordCache.delete(this.id)
-    this.id = undefined as any
+    this._cache.clear()
+    this._cache = undefined as any
+    this._viewer = undefined as any
   }
 }

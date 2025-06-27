@@ -12,7 +12,7 @@ import {
 } from "cesium"
 import { RectangleLayer } from "components/layers"
 import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Dynamic } from "./Dynamic"
+import { Dynamic } from "abstract"
 import { Utils, State } from "utils"
 import type { Draw } from "./Draw"
 import type { Earth } from "components/Earth"
@@ -21,9 +21,10 @@ const { min, max } = window.Math
 
 /**
  * @description 动态绘制矩形
+ * @extends Dynamic {@link Dynamic} 动态绘制基类
  */
 export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>> {
-  public type: string = "Rectangle"
+  type: string = "Rectangle"
   constructor(earth: Earth) {
     super(earth, new RectangleLayer(earth))
   }
@@ -32,7 +33,7 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
    * @description 添加可编辑对象
    * @param option 新增参数以及可编辑附加数据
    */
-  public add(option: RectangleLayer.AddParam<Dynamic.Rectangle>) {
+  add(option: RectangleLayer.AddParam<Dynamic.Rectangle>) {
     this.layer.add(option)
   }
 
@@ -41,8 +42,8 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
    * @param param {@link Draw.Rectangle} 画矩形参数
    * @returns 矩形
    */
-  public draw({
-    id = Utils.RandomUUID(),
+  draw({
+    id = Utils.uuid(),
     module = DefaultModuleName.RECTANGLE,
     color = Color.RED.withAlpha(0.4),
     keep = true,
@@ -59,24 +60,24 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
     let ent: Entity
     const rect = new Rectangle()
 
-    const handler = super.startEvent()
+    const handler = super._startEvent()
 
-    this.cacheHandler = handler
+    this._cacheHandler = handler
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const position = super.getPointOnEllipsoid(endPosition)
+      const position = super._getPointOnEllipsoid(endPosition)
       if (!position || !start) return
       end = position
     }, ScreenSpaceEventType.MOUSE_MOVE)
 
     return new Promise<Draw.RectangleReturn>((resolve, reject) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        super.setViewControl(false)
-        const point = super.getPointOnEllipsoid(position)
+        super._setViewControl(false)
+        const point = super._getPointOnEllipsoid(position)
         if (point) {
           start = point
           end = point.clone()
-          this.cacheEntity = ent = this.viewer.entities.add({
+          this._cacheEntity = ent = this._viewer.entities.add({
             rectangle: {
               coordinates: new CallbackProperty(() => {
                 const { longitude: lon1, latitude: lat1 } = Cartographic.fromCartesian(start)
@@ -91,19 +92,19 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
               heightReference: ground ? HeightReference.CLAMP_TO_GROUND : HeightReference.NONE,
             },
           })
-          this.eventBus.emit(SubEventType.DRAW_CERTAIN, {
+          this._eventBus.emit(SubEventType.DRAW_CERTAIN, {
             type: this.type,
             event: SubEventType.DRAW_CERTAIN,
             data: { id, position: point },
           })
         } else {
-          super.endEvent(handler)
+          super._endEvent(handler)
           reject("Please choose a point from earth.")
         }
       }, ScreenSpaceEventType.LEFT_DOWN)
 
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        end = super.getPointOnEllipsoid(position) ?? end
+        end = super._getPointOnEllipsoid(position) ?? end
         const { longitude: lon1, latitude: lat1 } = Cartographic.fromCartesian(start)
         const { longitude: lon2, latitude: lat2 } = Cartographic.fromCartesian(end)
         rect.north = max(lat1, lat2)
@@ -131,10 +132,10 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
             },
           })
         }
-        this.viewer.entities.remove(ent)
-        super.endEvent(handler)
+        this._viewer.entities.remove(ent)
+        super._endEvent(handler)
         onFinish?.(rect)
-        this.eventBus.emit(SubEventType.DRAW_FINISH, {
+        this._eventBus.emit(SubEventType.DRAW_FINISH, {
           type: this.type,
           event: SubEventType.DRAW_FINISH,
           data: { ...rectangle },
@@ -149,7 +150,7 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
    * @param id 目标ID
    * @returns
    */
-  public edit(id: string): Promise<Draw.RectangleReturn> {
+  edit(id: string): Promise<Draw.RectangleReturn> {
     const data: Dynamic.Rectangle | undefined = this.layer.getEntity(id)?.data.data
     if (!data) {
       return new Promise((_, reject) => reject(`Object ${id} does not exist.`))
@@ -158,7 +159,7 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
         reject("Another drawing or editing is in progress, end it first.")
       })
     }
-    const handler = super.startEvent()
+    const handler = super._startEvent()
     const tempPoints: Entity[] = []
     let ent: Entity
     let currentPoint: Entity | undefined
@@ -177,7 +178,7 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
 
     data.positions.forEach((value, index) => {
       tempPoints.push(
-        this.viewer.entities.add({
+        this._viewer.entities.add({
           id: `ModifyPoint_${index}`,
           position: value,
           point: {
@@ -190,7 +191,7 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
       )
     })
 
-    ent = this.viewer.entities.add({
+    ent = this._viewer.entities.add({
       rectangle: {
         coordinates: new CallbackProperty(() => {
           rect.north = north
@@ -207,7 +208,7 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
 
     handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
       if (!currentPoint) return
-      const _position = super.getPointOnEllipsoid(position) ?? lastPos
+      const _position = super._getPointOnEllipsoid(position) ?? lastPos
       const sameLatIndex = relation[currentIndex].sameLat
       const sameLonIndex = relation[currentIndex].sameLon
       const { longitude: lon1, latitude: lat1 } = Cartographic.fromCartesian(_position)
@@ -231,7 +232,7 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
     }, ScreenSpaceEventType.LEFT_UP)
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const position = super.getPointOnEllipsoid(endPosition)
+      const position = super._getPointOnEllipsoid(endPosition)
       if (!position || !currentPoint) return
       const sameLatIndex = relation[currentIndex].sameLat
       const sameLonIndex = relation[currentIndex].sameLon
@@ -257,11 +258,11 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
 
     return new Promise((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const _position = super.getPointOnEllipsoid(position)
-        const pick = this.scene.pick(position)
+        const _position = super._getPointOnEllipsoid(position)
+        const pick = this._scene.pick(position)
         if (!_position) return
         if (!pick || !tempPoints.some((entity) => entity.id === pick.id.id)) {
-          super.endEvent(handler)
+          super._endEvent(handler)
           this.layer.add({
             id,
             rectangle: rect,
@@ -277,19 +278,19 @@ export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>>
               attr: data.attr,
             },
           })
-          ent && this.viewer.entities.remove(ent)
-          tempPoints.forEach((entity) => this.viewer.entities.remove(entity))
-          this.eventBus.emit(SubEventType.EDIT_FINISH, {
+          ent && this._viewer.entities.remove(ent)
+          tempPoints.forEach((entity) => this._viewer.entities.remove(entity))
+          this._eventBus.emit(SubEventType.EDIT_FINISH, {
             type: this.type,
             event: SubEventType.EDIT_FINISH,
             data: { id, rectangle: rect },
           })
           resolve({ id, rectangle: rect })
         } else {
-          super.setViewControl(false)
+          super._setViewControl(false)
           currentIndex = pick.id.id.split("_")[1]
           currentPoint = tempPoints[currentIndex]
-          this.eventBus.emit(SubEventType.EDIT_CERTAIN, {
+          this._eventBus.emit(SubEventType.EDIT_CERTAIN, {
             type: this.type,
             event: SubEventType.EDIT_CERTAIN,
             data: { id, position: lastPos },

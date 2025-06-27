@@ -1,16 +1,21 @@
-import { BufferUsage, ClearCommand, Color, Pass, VertexArray } from "cesium"
+import { BufferUsage, ClearCommand, Color, Pass, VertexArray, type Context } from "cesium"
 import { ParticlesComputing } from "./ParticlesComputing"
 import { ParticlesRendering } from "./ParticlesRendering"
-import { WindField } from "./WindField"
+import type { WindField } from "./WindField"
 
 export class WindParticleSystem {
-  public context: any
-  public data: WindField.Data
-  public params: WindField.Param
-  public viewerParameters: WindField.ViewerParam
-  public particlesComputing: ParticlesComputing
-  public particlesRendering: ParticlesRendering
-  constructor(context: any, data: WindField.Data, params: WindField.Param, viewerParameters: WindField.ViewerParam) {
+  context: Context
+  data: WindField.Data
+  params: WindField.Param
+  viewerParameters: WindField.ViewerParam
+  particlesComputing: ParticlesComputing
+  particlesRendering: ParticlesRendering
+  constructor(
+    context: Context,
+    data: WindField.Data,
+    params: WindField.Param,
+    viewerParameters: WindField.ViewerParam
+  ) {
     this.context = context
     this.data = data
     this.params = params
@@ -19,7 +24,7 @@ export class WindParticleSystem {
     this.particlesRendering = new ParticlesRendering(context, data, params, viewerParameters, this.particlesComputing)
   }
 
-  canvasResize(context: any) {
+  canvasResize(context: Context) {
     this.particlesComputing.destroyParticlesTextures()
     if (this.particlesComputing.windTextures) {
       Object.keys(this.particlesComputing.windTextures).forEach((key: string) => {

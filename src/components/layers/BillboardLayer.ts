@@ -1,17 +1,18 @@
 import {
   Billboard,
   BillboardCollection,
+  Cartesian3,
   HorizontalOrigin,
   VerticalOrigin,
   type Cartesian2,
-  type Cartesian3,
   type Color,
   type DistanceDisplayCondition,
   type HeightReference,
   type NearFarScalar,
 } from "cesium"
+import { generate, is, validate } from "decorators"
 import { LabelLayer } from "./LabelLayer"
-import { Layer } from "./Layer"
+import { Labeled, Layer } from "abstract"
 import { Utils } from "utils"
 import type { Earth } from "components/Earth"
 
@@ -69,24 +70,31 @@ export namespace BillboardLayer {
   export type SetParam<T> = Partial<Pick<AddParam<T>, Attributes>> & { label?: LabelSetParam<T> }
 }
 
+export interface BillboardLayer<T = unknown> {
+  _labelLayer: LabelLayer<T>
+}
+
 /**
  * @decription 广告牌图层
  * @extends Layer {@link Layer} 图层基类
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const billboardLayer = new BillboardLayer(earth)
  * //or
- * const billboardLayer = earth.useDefaultLayers().billboard
+ * const billboardLayer = earth.layers.billboard
  * ```
  */
-export class BillboardLayer<T = unknown> extends Layer<BillboardCollection, Billboard, Layer.Data<T>> {
-  public labelLayer: LabelLayer<T>
+export class BillboardLayer<T = unknown>
+  extends Layer<BillboardCollection, Billboard, Layer.Data<T>>
+  implements Labeled<T>
+{
+  @generate() labelLayer!: LabelLayer<T>
 
   constructor(earth: Earth) {
     super(earth, new BillboardCollection())
-    this.labelLayer = new LabelLayer(earth)
+    this._labelLayer = new LabelLayer(earth)
   }
 
   /**
@@ -94,7 +102,7 @@ export class BillboardLayer<T = unknown> extends Layer<BillboardCollection, Bill
    * @param param {@link BillboardLayer.AddParam} 广告牌参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const billboardLayer = new BillboardLayer(earth)
    * billboardLayer.add({
    *  image: "/billboard.png",
@@ -112,20 +120,21 @@ export class BillboardLayer<T = unknown> extends Layer<BillboardCollection, Bill
    * })
    * ```
    */
-  public add(param: BillboardLayer.AddParam<T>) {
+  @validate
+  add(@is(Cartesian3, "position") param: BillboardLayer.AddParam<T>) {
     const _option = { ...param }
     const label = _option.label
     delete _option.label
-    const id = param.id ?? Utils.RandomUUID()
+    const id = param.id ?? Utils.uuid()
     const option = {
       horizontalOrigin: HorizontalOrigin.CENTER,
       verticalOrigin: VerticalOrigin.BOTTOM,
       ..._option,
-      id: Utils.EncodeId(id, param.module),
+      id: Utils.encode(id, param.module),
     }
 
     if (label) {
-      this.labelLayer.add({
+      this._labelLayer.add({
         id,
         module: param.module,
         position: option.position,
@@ -133,7 +142,7 @@ export class BillboardLayer<T = unknown> extends Layer<BillboardCollection, Bill
       })
     }
 
-    super.save(id, {
+    super._save(id, {
       primitive: new Billboard(option, this.collection),
       data: { module: param.module, data: param.data },
     })
@@ -145,7 +154,7 @@ export class BillboardLayer<T = unknown> extends Layer<BillboardCollection, Bill
    * @param param {@link BillboardLayer.SetParam} 广告牌参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const billboardLayer = new BillboardLayer(earth)
    * billboardLayer.set("some_id", {
    *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -154,7 +163,7 @@ export class BillboardLayer<T = unknown> extends Layer<BillboardCollection, Bill
    * })
    * ```
    */
-  public set(id: string, param: BillboardLayer.SetParam<T>) {
+  set(id: string, param: BillboardLayer.SetParam<T>) {
     const billboard = this.getEntity(id)?.primitive
     if (billboard) {
       if (param.color) billboard.color = param.color
@@ -164,64 +173,64 @@ export class BillboardLayer<T = unknown> extends Layer<BillboardCollection, Bill
       if (param.rotation) billboard.rotation = param.rotation
     }
     if (param.label) {
-      this.labelLayer.set(id, param.label)
+      this._labelLayer.set(id, param.label)
     }
   }
 
   /**
    * @description 隐藏所有广告牌
    */
-  public hide(): void
+  hide(): void
   /**
    * @description 隐藏所有广告牌
    * @param id 根据ID隐藏广告牌
    */
-  public hide(id: string): void
-  public hide(id?: string) {
+  hide(id: string): void
+  hide(id?: string) {
     if (id) {
       super.hide(id)
-      this.labelLayer.hide(id)
+      this._labelLayer.hide(id)
     } else {
       super.hide()
-      this.labelLayer.hide()
+      this._labelLayer.hide()
     }
   }
 
   /**
    * @description 显示所有广告牌
    */
-  public show(): void
+  show(): void
   /**
    * @description 根据ID显示广告牌
    * @param id ID
    */
-  public show(id: string): void
-  public show(id?: string) {
+  show(id: string): void
+  show(id?: string) {
     if (id) {
       super.show(id)
-      this.labelLayer.show(id)
+      this._labelLayer.show(id)
     } else {
       super.show()
-      this.labelLayer.show()
+      this._labelLayer.show()
     }
   }
 
   /**
    * @description 移除所有广告牌
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 移除所有广告牌
    * @param id 根据ID移除广告牌
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
       super.remove(id)
-      this.labelLayer.remove(id)
+      this._labelLayer.remove(id)
     } else {
       super.remove()
-      this.labelLayer.remove()
+      this._labelLayer.remove()
     }
   }
 
@@ -229,9 +238,9 @@ export class BillboardLayer<T = unknown> extends Layer<BillboardCollection, Bill
    * @description 销毁图层
    * @returns 返回`boolean`值
    */
-  public destroy(): boolean {
+  destroy(): boolean {
     if (super.destroy()) {
-      this.labelLayer.destroy()
+      this._labelLayer.destroy()
       return true
     } else return false
   }

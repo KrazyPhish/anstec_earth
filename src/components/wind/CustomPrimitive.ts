@@ -18,6 +18,7 @@ import {
   VertexArray,
   defined,
   destroyObject,
+  type Context,
 } from "cesium"
 
 export namespace CustomPrimitive {
@@ -76,21 +77,21 @@ export namespace CustomPrimitive {
 }
 
 export class CustomPrimitive {
-  public commandType?: string
-  public geometry?: Geometry
-  public attributeLocations?: CustomPrimitive.AttributeLocations
-  public primitiveType?: PrimitiveType
-  public uniformMap?: CustomPrimitive.Uniforms | any
-  public vertexShaderSource?: ShaderSource
-  public fragmentShaderSource?: ShaderSource
-  public rawRenderState: any
-  public framebuffer?: Framebuffer
-  public outputTexture: any
-  public autoClear: unknown
-  public preExecute?: () => void
-  public show: boolean
-  public commandToExecute: any
-  public clearCommand: ClearCommand | any
+  commandType?: string
+  geometry?: Geometry
+  attributeLocations?: CustomPrimitive.AttributeLocations
+  primitiveType?: PrimitiveType
+  uniformMap?: CustomPrimitive.Uniforms | any
+  vertexShaderSource?: ShaderSource
+  fragmentShaderSource?: ShaderSource
+  rawRenderState: any
+  framebuffer?: Framebuffer
+  outputTexture: any
+  autoClear: unknown
+  preExecute?: () => void
+  show: boolean
+  commandToExecute: any
+  clearCommand: ClearCommand | any
   constructor(options: CustomPrimitive.ConstructorOptions) {
     if (options.commandType) {
       this.commandType = options.commandType
@@ -136,7 +137,7 @@ export class CustomPrimitive {
     }
   }
 
-  createCommand(context: any) {
+  createCommand(context: Context) {
     switch (this.commandType) {
       case "Draw": {
         const vertexArray = VertexArray.fromGeometry({
@@ -179,7 +180,7 @@ export class CustomPrimitive {
     }
   }
 
-  setGeometry(context: any, geometry: Geometry) {
+  setGeometry(context: Context, geometry: Geometry) {
     this.geometry = geometry
     const vertexArray = VertexArray.fromGeometry({
       context: context,

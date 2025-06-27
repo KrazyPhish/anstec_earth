@@ -1,17 +1,19 @@
 import {
   Cartesian2,
+  Cartesian3,
   Color,
   DeveloperError,
   Ellipsoid,
   EllipsoidalOccluder,
   SceneMode,
   type Camera,
-  type Cartesian3,
   type Scene,
   type Viewer,
 } from "cesium"
-import type { Earth } from "components/Earth"
+import { is, generate, validate, enumerable } from "decorators"
+import { Destroyable } from "abstract"
 import { Utils } from "utils"
+import type { Earth } from "components/Earth"
 
 export namespace Covering {
   export type AnchorPosition = "TOP_LEFT" | "TOP_RIGHT" | "BOTTOM_LEFT" | "BOTTOM_RIGHT"
@@ -75,30 +77,35 @@ export namespace Covering {
   export type SetParam<T> = Partial<Pick<AddParam<T>, "position" | "title" | "content" | "data">>
 }
 
+export interface Covering {
+  _isDestroyed: boolean
+}
+
 /**
  * @description 自定义覆盖物
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth
+ * const earth = createEarth
  * const cover = new Covering(earth)
  * ```
  */
-export class Covering<T = unknown> {
-  private viewer: Viewer
-  private scene: Scene
-  private camera: Camera
-  private cache: Map<string, Covering.Data<T>> = new Map()
-  private draggable: boolean = false
-  private destroyed: boolean = false
+export class Covering<T = unknown> implements Destroyable {
+  #viewer: Viewer
+  #scene: Scene
+  #camera: Camera
+  #draggable: boolean = false
+
+  @enumerable(false) _cache: Map<string, Covering.Data<T>> = new Map()
+  @generate(false) isDestroyed!: boolean
 
   constructor(earth: Earth) {
-    this.viewer = earth.viewer
-    this.scene = earth.scene
-    this.camera = earth.camera
+    this.#viewer = earth.viewer
+    this.#scene = earth.scene
+    this.#camera = earth.camera
   }
 
-  private createConnectionLine(param: {
+  #createConnectionLine(param: {
     x1: number
     x2: number
     y1: number
@@ -114,14 +121,14 @@ export class Covering<T = unknown> {
         y1="${param.y1}"
         x2="${param.x2}"
         y2="${param.y2}"
-        opacity="${this.draggable ? (enabled ? 1 : 0) : 0}"
+        opacity="${this.#draggable ? (enabled ? 1 : 0) : 0}"
         stroke="${stroke}"
         stroke-width="${width}"
         ${dashed ? 'stroke-dasharray="' + dashed.join(",") + '"' : ""}
       />`
   }
 
-  private createCallback({
+  #createCallback({
     id,
     reference,
     tail,
@@ -156,13 +163,17 @@ export class Covering<T = unknown> {
         tailLast.x = refLeft + reference.clientWidth
         tailLast.y = refTop + reference.clientHeight
       } else {
-        if (coord.x >= refLeft + reference.clientWidth / 2) {
+        if (coord.x > refLeft + reference.clientWidth) {
           tailLast.x = refLeft + reference.clientWidth
+        } else if (coord.x >= refLeft) {
+          tailLast.x = refLeft + reference.clientWidth / 2
         } else {
           tailLast.x = refLeft
         }
-        if (coord.y >= refTop + reference.clientHeight / 2) {
+        if (coord.y > refTop + reference.clientHeight) {
           tailLast.y = refTop + reference.clientHeight
+        } else if (coord.y >= refTop) {
+          tailLast.y = refTop + reference.clientHeight / 2
         } else {
           tailLast.y = refTop
         }
@@ -184,17 +195,17 @@ export class Covering<T = unknown> {
       left = -reference.clientWidth
       top = 0
     }
-    const canvasCoordinate = this.scene.cartesianToCanvasCoordinates(position)
+    const canvasCoordinate = this.#scene.cartesianToCanvasCoordinates(position)
     const refLeft = canvasCoordinate.x + left + offset.x
     const refTop = canvasCoordinate.y + top + offset.y
-    tail.style.width = `${this.scene.canvas.width}px`
-    tail.style.height = `${this.scene.canvas.height}px`
+    tail.style.width = `${this.#scene.canvas.width}px`
+    tail.style.height = `${this.#scene.canvas.height}px`
     tail.style.position = "absolute"
     tail.style.pointerEvents = "none"
     tail.style.left = `0px`
     tail.style.top = `0px`
     computeTail(refTop, refLeft, canvasCoordinate)
-    tail.innerHTML = this.createConnectionLine({
+    tail.innerHTML = this.#createConnectionLine({
       x1: canvasCoordinate.x,
       y1: canvasCoordinate.y,
       x2: isNaN(tailLast.x) ? canvasCoordinate.x : tailLast.x,
@@ -208,15 +219,15 @@ export class Covering<T = unknown> {
       if (initialize) {
         _position = position
       } else {
-        const ent = this.cache.get(id)
+        const ent = this._cache.get(id)
         _position = ent!.position
       }
-      const canvasCoordinate = this.scene.cartesianToCanvasCoordinates(_position)
+      const canvasCoordinate = this.#scene.cartesianToCanvasCoordinates(_position)
       const moveX = canvasCoordinate.x - lastPosition.x
       const moveY = canvasCoordinate.y - lastPosition.y
       lastPosition.x = canvasCoordinate.x
       lastPosition.y = canvasCoordinate.y
-      if (!this.draggable) {
+      if (!this.#draggable) {
         const refLeft = canvasCoordinate.x + left + offset.x
         const refTop = canvasCoordinate.y + top + offset.y
         computeTail(refTop, refLeft, canvasCoordinate)
@@ -227,13 +238,13 @@ export class Covering<T = unknown> {
         let refTop = parseFloat(reference.style.getPropertyValue("top").slice(0, -2)) + moveY
         if (refLeft < 0) {
           refLeft = 0
-        } else if (refLeft > this.scene.canvas.width - reference.clientWidth) {
-          refLeft = this.scene.canvas.width - reference.clientWidth
+        } else if (refLeft > this.#scene.canvas.width - reference.clientWidth) {
+          refLeft = this.#scene.canvas.width - reference.clientWidth
         }
         if (refTop < 0) {
           refTop = 0
-        } else if (refTop > this.scene.canvas.height - reference.clientHeight) {
-          refTop = this.scene.canvas.height - reference.clientHeight
+        } else if (refTop > this.#scene.canvas.height - reference.clientHeight) {
+          refTop = this.#scene.canvas.height - reference.clientHeight
         }
         computeTail(refTop, refLeft, canvasCoordinate)
         reference.style.left = `${refLeft}px`
@@ -244,20 +255,20 @@ export class Covering<T = unknown> {
         reference.style.top = `${refTop}px`
         initialize = false
       }
-      tail.innerHTML = this.createConnectionLine({
+      tail.innerHTML = this.#createConnectionLine({
         x1: canvasCoordinate.x,
         y1: canvasCoordinate.y,
         x2: isNaN(tailLast.x) ? canvasCoordinate.x : tailLast.x,
         y2: isNaN(tailLast.y) ? canvasCoordinate.y : tailLast.y,
         connectionLine,
       })
-      const cameraOccluder = new EllipsoidalOccluder(Ellipsoid.WGS84, this.camera.position)
+      const cameraOccluder = new EllipsoidalOccluder(Ellipsoid.WGS84, this.#camera.position)
       if (
         canvasCoordinate.x < 0 ||
         canvasCoordinate.y < 0 ||
-        canvasCoordinate.x > this.scene.canvas.clientWidth ||
-        canvasCoordinate.y > this.scene.canvas.clientHeight ||
-        (this.scene.mode === SceneMode.SCENE3D && !cameraOccluder.isPointVisible(_position))
+        canvasCoordinate.x > this.#scene.canvas.clientWidth ||
+        canvasCoordinate.y > this.#scene.canvas.clientHeight ||
+        (this.#scene.mode === SceneMode.SCENE3D && !cameraOccluder.isPointVisible(_position))
       ) {
         reference.style.display = "none"
         tail.style.opacity = "0"
@@ -272,8 +283,8 @@ export class Covering<T = unknown> {
    * @description 设置覆盖物是否可拖拽
    * @param value 是否启用可拖拽
    */
-  public setDraggable(value: boolean) {
-    this.draggable = value
+  setDraggable(value: boolean) {
+    this.#draggable = value
   }
 
   /**
@@ -282,7 +293,7 @@ export class Covering<T = unknown> {
    * @exception Reference element is required when customizing.
    * @example
    * ```
-   * const earth = useEarth
+   * const earth = createEarth
    * const cover = new Covering(earth)
    *
    * //custom
@@ -300,21 +311,25 @@ export class Covering<T = unknown> {
    * })
    * ```
    */
-  public add({
-    id = Utils.RandomUUID(),
-    customize = false,
-    className = [],
-    title = "",
-    content = "",
-    anchorPosition = "TOP_LEFT",
-    closeable = true,
-    follow = true,
-    reference: _reference,
-    offset = Cartesian2.ZERO,
-    connectionLine,
-    position,
-    data,
-  }: Covering.AddParam<T>) {
+  @validate
+  add(
+    @is(Cartesian3, "position")
+    {
+      id = Utils.uuid(),
+      customize = false,
+      className = [],
+      title = "",
+      content = "",
+      anchorPosition = "TOP_LEFT",
+      closeable = true,
+      follow = true,
+      reference: _reference,
+      offset = Cartesian2.ZERO,
+      connectionLine,
+      position,
+      data,
+    }: Covering.AddParam<T>
+  ) {
     let reference: HTMLDivElement
     if (customize) {
       if (!_reference) {
@@ -349,13 +364,13 @@ export class Covering<T = unknown> {
       })
     }
     const tail = document.createElementNS("http://www.w3.org/2000/svg", "svg")
-    this.viewer.container.appendChild(reference)
-    this.viewer.container.appendChild(tail)
+    this.#viewer.container.appendChild(reference)
+    this.#viewer.container.appendChild(tail)
     reference.style.position = "absolute"
     reference.draggable = false
     const tailLast = { x: 0, y: 0 }
     reference.addEventListener("mousedown", (event: MouseEvent) => {
-      if (!this.draggable) return
+      if (!this.#draggable) return
       let downX = event.clientX
       let downY = event.clientY
       const onReferenceMove = (ev: MouseEvent) => {
@@ -370,8 +385,8 @@ export class Covering<T = unknown> {
         if (
           lastLeft + offsetX <= 0 ||
           lastTop + offsetY <= 0 ||
-          lastLeft + offsetX + reference.clientWidth >= this.scene.canvas.width ||
-          lastTop + offsetY + reference.clientHeight >= this.scene.canvas.height
+          lastLeft + offsetX + reference.clientWidth >= this.#scene.canvas.width ||
+          lastTop + offsetY + reference.clientHeight >= this.#scene.canvas.height
         ) {
           return
         }
@@ -391,7 +406,7 @@ export class Covering<T = unknown> {
       width: 1,
       ...connectionLine,
     }
-    const callback = this.createCallback({
+    const callback = this.#createCallback({
       id,
       reference,
       tail,
@@ -402,8 +417,8 @@ export class Covering<T = unknown> {
       offset,
       follow,
     })
-    this.scene.preRender.addEventListener(callback)
-    this.cache.set(id, { title, content, position, reference, tail, data, callback })
+    this.#scene.preRender.addEventListener(callback)
+    this._cache.set(id, { title, content, position, reference, tail, data, callback })
   }
 
   /**
@@ -412,8 +427,8 @@ export class Covering<T = unknown> {
    * @param param {@link Covering.SetParam} 参数
    * @returns
    */
-  public set(id: string, { position, title, content, data }: Covering.SetParam<T>) {
-    const cover = this.cache.get(id)
+  set(id: string, { position, title, content, data }: Covering.SetParam<T>) {
+    const cover = this._cache.get(id)
     if (!cover) return
     if (position) cover.position = position
     if (title) cover.title = title
@@ -432,63 +447,56 @@ export class Covering<T = unknown> {
    * @param id ID
    * @returns 是否存在覆盖物
    */
-  public has(id: string) {
-    return this.cache.has(id)
+  has(id: string) {
+    return this._cache.has(id)
   }
 
   /**
    * @description 获取附加数据
    * @param id ID
    */
-  public getData(id: string): T | undefined {
-    return this.cache.get(id)?.data
+  getData(id: string): T | undefined {
+    return this._cache.get(id)?.data
   }
 
   /**
    * @description 移除所有覆盖物
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 按ID移除覆盖物
    * @param id ID
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
-      const ent = this.cache.get(id)
+      const ent = this._cache.get(id)
       if (ent) {
-        this.viewer.container.removeChild(ent.tail)
-        this.viewer.container.removeChild(ent.reference)
-        this.scene.preRender.removeEventListener(ent.callback)
-        this.cache.delete(id)
+        this.#viewer.container.removeChild(ent.tail)
+        this.#viewer.container.removeChild(ent.reference)
+        this.#scene.preRender.removeEventListener(ent.callback)
+        this._cache.delete(id)
       }
     } else {
-      this.cache.forEach((ent) => {
-        this.viewer.container.removeChild(ent.tail)
-        this.viewer.container.removeChild(ent.reference)
-        this.scene.preRender.removeEventListener(ent.callback)
+      this._cache.forEach((ent) => {
+        this.#viewer.container.removeChild(ent.tail)
+        this.#viewer.container.removeChild(ent.reference)
+        this.#scene.preRender.removeEventListener(ent.callback)
       })
-      this.cache.clear()
+      this._cache.clear()
     }
-  }
-
-  /**
-   * @description 获取销毁状态
-   */
-  public isDestroyed(): boolean {
-    return this.destroyed
   }
 
   /**
    * @description 销毁
    */
-  public destroy() {
-    if (this.destroyed) return
-    this.destroyed = true
+  destroy() {
+    if (this._isDestroyed) return
+    this._isDestroyed = true
     this.remove()
-    this.cache.clear()
-    this.viewer = undefined as any
-    this.scene = undefined as any
-    this.camera = undefined as any
+    this._cache.clear()
+    this.#viewer = undefined as any
+    this.#scene = undefined as any
+    this.#camera = undefined as any
   }
 }

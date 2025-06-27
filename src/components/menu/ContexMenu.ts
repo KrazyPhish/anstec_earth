@@ -1,7 +1,9 @@
-import { ScreenSpaceEventHandler, Cartesian2, ScreenSpaceEventType, Entity, DeveloperError } from "cesium"
+import { except, is, generate, singleton, validate, enumerable } from "decorators"
+import { ScreenSpaceEventHandler, Cartesian2, ScreenSpaceEventType, Entity } from "cesium"
 import { MenuEventType, DefaultContextMenuItem } from "enum"
 import { State, Utils } from "utils"
 import type { Earth } from "components/Earth"
+import type { Destroyable } from "abstract"
 
 export namespace ContextMenu {
   /**
@@ -29,6 +31,21 @@ export namespace ContextMenu {
   }
 
   /**
+   * @property module 模块
+   * @property belong 归属
+   * @property key 键值
+   * @property [id] ID
+   * @property [status] 状态
+   */
+  export type ToggleStatusOptions = {
+    module: string
+    belong: string
+    key: string
+    id?: string
+    status?: boolean
+  }
+
+  /**
    * @property [separator = true] 分隔符
    * @property [icon] 图标
    * @property [iconClass] 图标类名
@@ -48,6 +65,18 @@ export namespace ContextMenu {
     children?: Item[]
     callback?: Callback
   }
+
+  export type MenuCache = {
+    menus: Item[]
+    callback?: Callback
+  }
+}
+
+export interface ContextMenu {
+  _classList: Set<string>
+  _isDestroyed: boolean
+  _hideKeys: Set<string>
+  _cache: Map<string, ContextMenu.MenuCache>
 }
 
 /**
@@ -55,38 +84,37 @@ export namespace ContextMenu {
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const contextMenu = new ContextMenu(earth)
- * //or
- * const contextMenu = earth.useContextMenu()
  * ```
  */
-export class ContextMenu {
-  public animationClassName: string = "show"
-  public classList: Set<string> = new Set(["context-menu"])
-  private destroyed: boolean = false
-  private container: HTMLElement
-  private handler: ScreenSpaceEventHandler
-  private cache: Map<
-    string,
-    {
-      menus: ContextMenu.Item[]
-      callback?: ContextMenu.Callback
-    }
-  > = new Map()
-  private toggleOpCache: Map<string, Set<string>> = new Map()
-  private toggleDfCache: Map<string, string> = new Map()
-  private hideKeys = new Set<string>()
-  private currentEnt?: { id: string; module?: string }
+@singleton()
+export class ContextMenu implements Destroyable {
+  animationClassName: string = "show"
+  @generate(false) isDestroyed!: boolean
+  @generate() classList!: Set<string>
+  @generate() hideKeys!: Set<string>
+  @generate() cache!: Map<string, ContextMenu.MenuCache>
+  @enumerable(false) _container: HTMLElement
 
-  constructor(private earth: Earth) {
-    this.container = earth.container
-    this.handler = new ScreenSpaceEventHandler(earth.viewer.canvas)
-    this.initContextMenu()
-    this.disableBrowserDefault()
+  #earth: Earth
+  #handler: ScreenSpaceEventHandler
+  #toggleOpCache: Map<string, Set<string>> = new Map()
+  #toggleDfCache: Map<string, string> = new Map()
+  #currentEnt?: { id: string; module?: string }
+
+  constructor(earth: Earth) {
+    this.#earth = earth
+    this._container = earth.container
+    this._classList = new Set(["context-menu"])
+    this._hideKeys = new Set<string>()
+    this._cache = new Map()
+    this.#handler = new ScreenSpaceEventHandler(earth.viewer.canvas)
+    this.#initContextMenu()
+    this.#disableBrowserDefault()
   }
 
-  private disableBrowserDefault() {
+  #disableBrowserDefault() {
     window.oncontextmenu = (event: MouseEvent) => {
       event.preventDefault()
     }
@@ -99,14 +127,14 @@ export class ContextMenu {
    * @param key Key
    * @returns `boolean`
    */
-  private checkToggleRendered(module: string, belong: string, key: string) {
+  #checkToggleRendered(module: string, belong: string, key: string) {
     const op = `${module}_${belong}`
-    const keys = this.toggleOpCache.get(op)
+    const keys = this.#toggleOpCache.get(op)
     if (!keys) return false
-    if (keys.has(this.currentEnt?.id ?? "none")) {
-      return key === this.toggleDfCache.get(op)
+    if (keys.has(this.#currentEnt?.id ?? "none")) {
+      return key === this.#toggleDfCache.get(op)
     } else {
-      return key !== this.toggleDfCache.get(op)
+      return key !== this.#toggleDfCache.get(op)
     }
   }
 
@@ -116,7 +144,7 @@ export class ContextMenu {
    * @param position 位置
    * @param items 菜单项
    */
-  private renderContextMenu(module: string, position: Cartesian2, realPosition: Cartesian2, items: ContextMenu.Item[]) {
+  #renderContextMenu(module: string, position: Cartesian2, realPosition: Cartesian2, items: ContextMenu.Item[]) {
     const renderItems = (ctx: ContextMenu.Item[], classNames: string[]) => {
       const appendClasses = (el: HTMLElement, classes: string | string[] = []) => {
         if (typeof classes === "string") {
@@ -133,8 +161,8 @@ export class ContextMenu {
       ul.classList.add(...classNames)
       for (const item of ctx) {
         if (item.key) {
-          if (this.hideKeys.has(item.key)) continue
-          if (item.toggle && item.toggle.belong && !this.checkToggleRendered(module, item.toggle.belong, item.key))
+          if (this._hideKeys.has(item.key)) continue
+          if (item.toggle && item.toggle.belong && !this.#checkToggleRendered(module, item.toggle.belong, item.key))
             continue
         }
 
@@ -193,7 +221,7 @@ export class ContextMenu {
       const scaleY = position.y / realPosition.y
       const baseHeight = counts * 35.56 * scaleY
       const baseWidth = depth * 112 * scaleX
-      const { width, height } = this.container.getBoundingClientRect()
+      const { width, height } = this._container.getBoundingClientRect()
       let resOriginX = "left",
         resOriginY = "top",
         resTransX = 0,
@@ -237,14 +265,14 @@ export class ContextMenu {
       return counts
     }
 
-    for (const child of Array.from(this.container.children)) {
+    for (const child of Array.from(this._container.children)) {
       if (child.classList.contains("context-menu")) {
         child.remove()
       }
     }
 
     const div = document.createElement("div")
-    this.classList.forEach((className) => {
+    this._classList.forEach((className) => {
       div.classList.add(className)
     })
     const depth = getDepth(items)
@@ -262,7 +290,7 @@ export class ContextMenu {
       if (dataKey) {
         const data = getMenuItemData(items, dataKey)
         if (data && data.key) {
-          this.onMenuClick(module, data)
+          this.#onMenuClick(module, data)
           if (data.toggle) {
             this.toggleMenuStatus({
               module,
@@ -273,9 +301,9 @@ export class ContextMenu {
         }
       }
 
-      this.container.removeChild(div)
+      this._container.removeChild(div)
     })
-    this.container.append(div)
+    this._container.append(div)
     // use async thread to trigger the animation
     setTimeout(() => {
       div.classList.add(this.animationClassName)
@@ -285,24 +313,24 @@ export class ContextMenu {
   /**
    * @description 初始化菜单
    */
-  private initContextMenu() {
-    this.handler.setInputAction(() => {
+  #initContextMenu() {
+    this.#handler.setInputAction(() => {
       const menuDiv = document.querySelector(".context-menu")
       if (menuDiv) {
-        this.container.removeChild(menuDiv)
+        this._container.removeChild(menuDiv)
       }
     }, ScreenSpaceEventType.LEFT_DOWN)
-    this.handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
+    this.#handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
       if (State.isOperate()) return
 
       let module = ""
       let menus: ContextMenu.Item[] = []
-      const rect = this.container.getBoundingClientRect()
-      const scaleX = rect.width / this.container.clientWidth
-      const scaleY = rect.height / this.container.clientHeight
+      const rect = this._container.getBoundingClientRect()
+      const scaleX = rect.width / this._container.clientWidth
+      const scaleY = rect.height / this._container.clientHeight
       const realPosition = new Cartesian2(position.x / scaleX, position.y / scaleY)
-      const pick = this.earth.viewer.scene.pick(realPosition)
-      this.currentEnt = undefined
+      const pick = this.#earth.viewer.scene.pick(realPosition)
+      this.#currentEnt = undefined
 
       if (pick) {
         let id = ""
@@ -312,25 +340,25 @@ export class ContextMenu {
           id = pick.id.id
         }
         if (id) {
-          this.currentEnt = Utils.DecodeId(id)
-          if (this.currentEnt && this.currentEnt.module) {
-            const currentMenus = this.cache.get(this.currentEnt.module)
+          this.#currentEnt = Utils.decode(id)
+          if (this.#currentEnt && this.#currentEnt.module) {
+            const currentMenus = this._cache.get(this.#currentEnt.module)
             if (currentMenus) menus = currentMenus.menus
           }
         }
       }
 
       if (menus.length === 0) {
-        module = "default"
-        const defaultMenus = this.cache.get(module)
+        module = "__default__"
+        const defaultMenus = this._cache.get(module)
         if (defaultMenus) menus = defaultMenus.menus
-      } else if (this.currentEnt && this.currentEnt.module) {
-        module = this.currentEnt.module
+      } else if (this.#currentEnt && this.#currentEnt.module) {
+        module = this.#currentEnt.module
       }
-      if (menus.length > 0) this.renderContextMenu(module, position, realPosition, menus)
-      if (this.cache.has(module)) {
-        this.cache.get(module)!.callback?.({
-          id: this.currentEnt?.id,
+      if (menus.length > 0) this.#renderContextMenu(module, position, realPosition, menus)
+      if (this._cache.has(module)) {
+        this._cache.get(module)!.callback?.({
+          id: this.#currentEnt?.id,
           module,
           type: MenuEventType.RightClick,
         })
@@ -343,24 +371,24 @@ export class ContextMenu {
    * @param module 模块
    * @param item 菜单项
    */
-  private onMenuClick(module: string, item: ContextMenu.Item) {
+  #onMenuClick(module: string, item: ContextMenu.Item) {
     if (!item.key) return
     switch (item.key) {
       case DefaultContextMenuItem.Scene2D:
       case DefaultContextMenuItem.Scene3D: {
-        this.earth.morphTo(item.key)
+        this.#earth.morphTo(item.key)
         break
       }
       case DefaultContextMenuItem.EnableDepth: {
-        this.earth.setDepthTestAgainstTerrain(true)
+        this.#earth.setDepthTestAgainstTerrain(true)
         break
       }
       case DefaultContextMenuItem.DisableDepth: {
-        this.earth.setDepthTestAgainstTerrain(false)
+        this.#earth.setDepthTestAgainstTerrain(false)
         break
       }
       case DefaultContextMenuItem.FullScreen: {
-        this.container.requestFullscreen()
+        this._container.requestFullscreen()
         break
       }
       case DefaultContextMenuItem.ExitFullScreen: {
@@ -368,14 +396,14 @@ export class ContextMenu {
         break
       }
       case DefaultContextMenuItem.Home: {
-        this.earth.flyHome()
+        this.#earth.flyHome()
         break
       }
       default: {
-        if (this.currentEnt && this.currentEnt.module) {
+        if (this.#currentEnt && this.#currentEnt.module) {
           item.callback?.({
-            id: this.currentEnt.id,
-            module: this.currentEnt.module,
+            id: this.#currentEnt.id,
+            module: this.#currentEnt.module,
             key: item.key,
             type: MenuEventType.ItemClick,
           })
@@ -396,13 +424,13 @@ export class ContextMenu {
    * @param module 模块
    * @param menus 相应的菜单
    */
-  private setToggle(module: string, menus: ContextMenu.Item[]) {
+  #setToggle(module: string, menus: ContextMenu.Item[]) {
     menus.forEach((menu) => {
       if (menu.key && menu.toggle && menu.toggle.belong && menu.toggle.default) {
-        this.toggleDfCache.set(`${module}_${menu.toggle.belong}`, menu.key)
-        this.toggleOpCache.set(`${module}_${menu.toggle.belong}`, new Set())
+        this.#toggleDfCache.set(`${module}_${menu.toggle.belong}`, menu.key)
+        this.#toggleOpCache.set(`${module}_${menu.toggle.belong}`, new Set())
       }
-      if (menu.children) this.setToggle(module, menu.children)
+      if (menu.children) this.#setToggle(module, menu.children)
     })
   }
 
@@ -412,7 +440,7 @@ export class ContextMenu {
    * @param callback 右键回调
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const ctxMenu = new ContextMenu(earth)
    * ctxMenu.setDefaultMenu({
    *  menus: [
@@ -439,9 +467,10 @@ export class ContextMenu {
    * })
    * ```
    */
-  public setDefaultMenu(menus: ContextMenu.Item[], callback?: ContextMenu.Callback) {
-    this.cache.set("default", { menus, callback })
-    this.setToggle("default", menus)
+  @validate
+  setDefaultMenu(@is(Array) menus: ContextMenu.Item[], callback?: ContextMenu.Callback) {
+    this._cache.set("__default__", { menus, callback })
+    this.#setToggle("__default__", menus)
   }
 
   /**
@@ -449,10 +478,9 @@ export class ContextMenu {
    * @param module 模块名称
    * @param menus 菜单项
    * @param [callback] {@link ContextMenu.Callback} 右键回调
-   * @exception Argument param 'module' cannot be '' or 'default'.
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const ctxMenu = new ContextMenu(earth)
    * ctxMenu.add("billboard", [
    *  {
@@ -470,15 +498,13 @@ export class ContextMenu {
    * ], callback: (res) => { console.log(res) })
    * ```
    */
-  public add(module: string, menus: ContextMenu.Item[], callback?: ContextMenu.Callback) {
-    if (module === "" || module === "default") {
-      throw new DeveloperError("Argument param 'module' cannot be '' or 'default'.")
-    }
-    let exist = this.cache.has(module)
-    this.cache.set(module, { menus, callback })
-    this.setToggle(module, menus)
+  @validate
+  add(@except("__default__") module: string, @is(Array) menus: ContextMenu.Item[], callback?: ContextMenu.Callback) {
+    const exist = this._cache.has(module)
+    this._cache.set(module, { menus, callback })
+    this.#setToggle(module, menus)
     if (exist) {
-      console.warn(`Menus of '${module}' are existent, <add> option would replace the previous.`, menus)
+      console.warn(`Menus of '${module}' are existent, 'add' option would replace the previous.`)
     }
   }
 
@@ -487,7 +513,7 @@ export class ContextMenu {
    * @param param 参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const ctxMenu = new ContextMenu(earth)
    * ctxMenu.toggleMenuStatus({
    *  module: "default",
@@ -496,27 +522,15 @@ export class ContextMenu {
    * })
    * ```
    */
-  public toggleMenuStatus({
-    module,
-    belong,
-    key,
-    id,
-    status,
-  }: {
-    module: string
-    belong: string
-    key: string
-    id?: string
-    status?: boolean
-  }) {
+  toggleMenuStatus({ module, belong, key, id, status }: ContextMenu.ToggleStatusOptions) {
     const op = `${module}_${belong}`
-    const keys = this.toggleOpCache.get(op)
-    const _id = id || this.currentEnt?.id || "none"
+    const keys = this.#toggleOpCache.get(op)
+    const _id = id || this.#currentEnt?.id || "none"
     if (!keys) return
     if (status !== undefined) {
       status ? keys.add(_id) : keys.delete(_id)
     } else {
-      const menuItems = this.cache.get(module)
+      const menuItems = this._cache.get(module)
       if (!menuItems) return
       const check = (items: ContextMenu.Item[]): boolean => {
         let res = false
@@ -544,7 +558,7 @@ export class ContextMenu {
    * @param keys
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const ctxMenu = new ContextMenu(earth)
    * ctxMenu.hide([
    *  DefaultContextMenuItem.EnableDepth,
@@ -552,8 +566,9 @@ export class ContextMenu {
    * ])
    * ```
    */
-  public hide(keys: string[]) {
-    keys.forEach((key) => this.hideKeys.add(key))
+  @validate
+  hide(@is(Array) keys: string[]) {
+    keys.forEach((key) => this._hideKeys.add(key))
   }
 
   /**
@@ -561,7 +576,7 @@ export class ContextMenu {
    * @param keys
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const ctxMenu = new ContextMenu(earth)
    * ctxMenu.unhide([
    *  DefaultContextMenuItem.EnableDepth,
@@ -569,35 +584,22 @@ export class ContextMenu {
    * ])
    * ```
    */
-  public unhide(keys: string[]) {
-    keys.forEach((key) => this.hideKeys.delete(key))
-  }
-
-  /**
-   * @description 获取销毁状态
-   */
-  public isDestroyed(): boolean {
-    return this.destroyed
+  @validate
+  unhide(@is(Array) keys: string[]) {
+    keys.forEach((key) => this._hideKeys.delete(key))
   }
 
   /**
    * @description 销毁
    */
-  public destroy() {
-    if (this.destroyed) return
-    this.destroyed = true
-    this.handler.destroy()
-    this.cache.clear()
-    this.toggleDfCache.clear()
-    this.toggleOpCache.clear()
-    this.hideKeys.clear()
-    this.container = undefined as any
-    this.handler = undefined as any
-    this.cache = undefined as any
-    this.toggleDfCache = undefined as any
-    this.toggleOpCache = undefined as any
-    this.hideKeys = undefined as any
-    this.earth = undefined as any
-    this.currentEnt = undefined
+  destroy() {
+    if (this._isDestroyed) return
+    this._isDestroyed = true
+    this.#handler.destroy()
+    this._cache.clear()
+    this.#toggleDfCache.clear()
+    this.#toggleOpCache.clear()
+    this._hideKeys.clear()
+    this.#currentEnt = undefined
   }
 }

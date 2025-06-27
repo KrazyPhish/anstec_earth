@@ -41,7 +41,7 @@ export namespace H337 {
  * @description 事件调度
  */
 class Coordinator {
-  private cStore: any = {}
+  cStore: any = {}
 
   on(evtName: string, callback: any, scope: any) {
     let cStore = this.cStore
@@ -123,7 +123,7 @@ class Canvas2dRenderer {
    * @param {any} config
    * @return {*}
    */
-  private static _getColorPalette(config: any) {
+  static _getColorPalette(config: any) {
     let gradientConfig = config.gradient
     let paletteCanvas = document.createElement("canvas")
     let paletteCtx = paletteCanvas.getContext("2d") as CanvasRenderingContext2D
@@ -142,7 +142,7 @@ class Canvas2dRenderer {
     return paletteCtx.getImageData(0, 0, 256, 1).data
   }
 
-  private static _getPointTemplate(radius: any, blurFactor: any) {
+  static _getPointTemplate(radius: any, blurFactor: any) {
     let tplCanvas = document.createElement("canvas")
     let tplCtx = tplCanvas.getContext("2d") as CanvasRenderingContext2D
     let x = radius
@@ -164,7 +164,7 @@ class Canvas2dRenderer {
     return tplCanvas
   }
 
-  private static _prepareData(data: any) {
+  static _prepareData(data: any) {
     let renderData = []
     let min = data.min
     let max = data.max
@@ -198,7 +198,7 @@ class Canvas2dRenderer {
     }
   }
 
-  private _setStyles(config: any) {
+  _setStyles(config: any) {
     this._blur = config.blur == 0 ? 0 : config.blur
 
     if (config.backgroundColor) {
@@ -214,7 +214,7 @@ class Canvas2dRenderer {
     this._useGradientOpacity = !!config.useGradientOpacity
   }
 
-  private _drawAlpha(data: any) {
+  _drawAlpha(data: any) {
     let min = (this._min = data.min)
     let max = (this._max = data.max)
     data = data.data || []
@@ -265,7 +265,7 @@ class Canvas2dRenderer {
     }
   }
 
-  private _colorize() {
+  _colorize() {
     let x = this._renderBoundaries[0]
     let y = this._renderBoundaries[1]
     let width = this._renderBoundaries[2] - x
@@ -329,7 +329,7 @@ class Canvas2dRenderer {
     this._renderBoundaries = [1000, 1000, 0, 0]
   }
 
-  private _clear() {
+  _clear() {
     this.shadowCtx.clearRect(0, 0, this._width, this._height)
     this.ctx.clearRect(0, 0, this._width, this._height)
   }
@@ -359,15 +359,15 @@ class Canvas2dRenderer {
  * @description 贮存
  */
 class Store {
-  private _coordinator: any
-  private _data: any
-  private _radi: any
-  private _min: number
-  private _max: number
-  private _xField: string
-  private _yField: string
-  private _valueField: string
-  private _cfgRadius: number
+  _coordinator: any
+  _data: any
+  _radi: any
+  _min: number
+  _max: number
+  _xField: string
+  _yField: string
+  _valueField: string
+  _cfgRadius: number
 
   constructor(config: any) {
     this._coordinator = {}
@@ -388,7 +388,7 @@ class Store {
    * @param {boolean} forceRender
    * @return {*}
    */
-  private _organiseData(dataPoint: any, forceRender: boolean) {
+  _organiseData(dataPoint: any, forceRender: boolean) {
     let x = dataPoint[this._xField]
     let y = dataPoint[this._yField]
     let radi = this._radi
@@ -437,14 +437,14 @@ class Store {
     }
   }
 
-  private _onExtremaChange() {
+  _onExtremaChange() {
     this._coordinator.emit("extremachange", {
       min: this._min,
       max: this._max,
     })
   }
 
-  private _getInternalData() {
+  _getInternalData() {
     return {
       max: this._max,
       min: this._min,
@@ -496,7 +496,7 @@ class Store {
  * @exception Plugin 'plugin' not found. Maybe it was not registered.
  */
 export class H337 {
-  private defaults: any = {
+  defaults: any = {
     radius: 40,
     renderer: "canvas2d",
     gradient: {
@@ -513,10 +513,10 @@ export class H337 {
     valueField: "value",
     plugins: {},
   }
-  private _config: any = {}
-  private _coordinator: Coordinator = new Coordinator()
-  private _renderer: Canvas2dRenderer
-  private _store: Store
+  _config: any = {}
+  _coordinator: Coordinator = new Coordinator()
+  _renderer: Canvas2dRenderer
+  _store: Store
 
   constructor(config: H337.ConstructorOptions) {
     Object.assign(this._config, this.defaults, config)
@@ -537,7 +537,7 @@ export class H337 {
     this._connect()
   }
 
-  private _connect() {
+  _connect() {
     const self = this
     let renderer = this._renderer
     let coordinator = this._coordinator

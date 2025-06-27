@@ -11,14 +11,18 @@ import {
   type Entity,
 } from "cesium"
 import { DefaultModuleName, SubEventType, DrawType } from "enum"
-import { Dynamic } from "./Dynamic"
+import { Dynamic } from "abstract"
 import { LabelLayer } from "components/layers"
 import { Utils, State } from "utils"
 import type { Earth } from "components/Earth"
 import type { Draw } from "./Draw"
 
+/**
+ * @description 动态绘制标签
+ * @extends Dynamic {@link Dynamic} 动态绘制基类
+ */
 export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
-  public type: string = "Label"
+  type: string = "Label"
   constructor(earth: Earth) {
     super(earth, new LabelLayer(earth))
   }
@@ -27,7 +31,7 @@ export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
    * @description 添加可编辑对象
    * @param option 新增参数以及可编辑附加数据
    */
-  public add(option: LabelLayer.AddParam<Dynamic.Label>) {
+  add(option: LabelLayer.AddParam<Dynamic.Label>) {
     this.layer.add(option)
   }
 
@@ -36,8 +40,8 @@ export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
    * @param param {@link Draw.Label} 画标签参数
    * @returns 标签的坐标
    */
-  public draw({
-    id = Utils.RandomUUID(),
+  draw({
+    id = Utils.uuid(),
     module = DefaultModuleName.LABEL,
     text = "新建文本",
     font = "14px sans-serif",
@@ -62,20 +66,20 @@ export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
 
     const points: Draw.LabelReturn[] = []
     let index = -1
-    const handler = super.startEvent()
+    const handler = super._startEvent()
 
-    this.cacheHandler = handler
+    this._cacheHandler = handler
 
     return new Promise<Draw.LabelReturn[]>((resolve) => {
       const finish = () => {
-        super.endEvent(handler)
+        super._endEvent(handler)
         if (!keep) {
           points.forEach(({ id }: Draw.LabelReturn) => {
             this.layer.remove(id)
           })
         }
         onFinish?.(points.map((v) => v.position))
-        this.eventBus.emit(SubEventType.DRAW_FINISH, {
+        this._eventBus.emit(SubEventType.DRAW_FINISH, {
           type: this.type,
           event: SubEventType.DRAW_FINISH,
           data: { labels: points },
@@ -85,7 +89,7 @@ export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
 
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
         index++
-        const cartesian = super.getPointOnEllipsoid(position)
+        const cartesian = super._getPointOnEllipsoid(position)
         if (!cartesian) return
         const _id = `${id}_${index}`
         const point = { id: _id, position: cartesian }
@@ -127,7 +131,7 @@ export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
           },
         })
         onEvery?.(cartesian, index)
-        this.eventBus.emit(SubEventType.DRAW_CERTAIN, {
+        this._eventBus.emit(SubEventType.DRAW_CERTAIN, {
           type: this.type,
           event: SubEventType.DRAW_CERTAIN,
           data: { ...point },
@@ -146,7 +150,7 @@ export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
    * @param id 目标ID
    * @returns
    */
-  public edit(id: string): Promise<Draw.LabelReturn> {
+  edit(id: string): Promise<Draw.LabelReturn> {
     const data: Dynamic.Label | undefined = this.layer.getEntity(id)?.data.data
     if (!data) {
       return new Promise((_, reject) => reject(`Object ${id} does not exist.`))
@@ -155,13 +159,13 @@ export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
         reject("Another drawing or editing is in progress, end it first.")
       })
     }
-    const handler = super.startEvent()
+    const handler = super._startEvent()
     const point = data.positions[0]
     let ent: Entity
     let currentPoint: Entity | undefined
     let lastPos: Cartesian3 = point.clone()
 
-    ent = this.viewer.entities.add({
+    ent = this._viewer.entities.add({
       position: point,
       point: {
         color: Color.RED,
@@ -174,14 +178,14 @@ export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
       if (!currentPoint) return
-      const position = super.getPointOnEllipsoid(endPosition)
+      const position = super._getPointOnEllipsoid(endPosition)
       if (position) {
         ;(ent.position as ConstantPositionProperty).setValue(position)
         this.layer.set(id, { position })
         const data = this.layer.getData(id)!
         data.data!.positions[0] = position
         lastPos = position
-        this.eventBus.emit(SubEventType.EDIT_MOVE, {
+        this._eventBus.emit(SubEventType.EDIT_MOVE, {
           type: this.type,
           event: SubEventType.EDIT_MOVE,
           data: { id, position },
@@ -195,20 +199,20 @@ export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
 
     return new Promise((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const pick = this.scene.pick(position)
+        const pick = this._scene.pick(position)
         if (!pick || pick.id.id !== ent.id) {
-          super.endEvent(handler)
-          ent && this.viewer.entities.remove(ent)
-          this.eventBus.emit(SubEventType.EDIT_FINISH, {
+          super._endEvent(handler)
+          ent && this._viewer.entities.remove(ent)
+          this._eventBus.emit(SubEventType.EDIT_FINISH, {
             type: this.type,
             event: SubEventType.EDIT_FINISH,
             data: { id, position: lastPos },
           })
           resolve({ id, position: lastPos })
         } else {
-          super.setViewControl(false)
+          super._setViewControl(false)
           currentPoint = ent
-          this.eventBus.emit(SubEventType.EDIT_CERTAIN, {
+          this._eventBus.emit(SubEventType.EDIT_CERTAIN, {
             type: this.type,
             event: SubEventType.EDIT_CERTAIN,
             data: { id, position: lastPos },

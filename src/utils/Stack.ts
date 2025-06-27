@@ -1,4 +1,5 @@
-import { Queue } from "./Queue"
+import { enumerable } from "decorators"
+import type { Queue } from "./Queue"
 
 export namespace Stack {
   export type Comparator<T> = (a: T, b: T) => number
@@ -18,39 +19,41 @@ export namespace Stack {
  * ```
  */
 export class Stack<T = unknown> {
-  private cache: T[]
+  #cache: T[]
 
   constructor(array?: T[]) {
-    this.cache = array ? [...array] : []
+    this.#cache = array ? [...array] : []
   }
 
   /**
    * @description 当前栈长度
    */
+  @enumerable(true)
   get length() {
-    return this.cache.length
+    return this.#cache.length
   }
 
   /**
    * @description 以数组形式获取栈中的所有元素
    */
+  @enumerable(true)
   get elements() {
-    return [...this.cache]
+    return [...this.#cache]
   }
 
   /**
    * @description 删除栈中所有元素
    */
-  public clear() {
-    this.cache = []
+  clear() {
+    this.#cache = []
   }
 
   /**
    * @description 克隆当前栈
    * @returns 新的栈
    */
-  public clone() {
-    return new Stack(this.cache)
+  clone() {
+    return new Stack(this.#cache)
   }
 
   /**
@@ -58,8 +61,19 @@ export class Stack<T = unknown> {
    * @param element 元素
    * @returns 是否包含
    */
-  public contains(element: T) {
-    return this.cache.some((value) => value === element)
+  contains(element: T) {
+    return this.#cache.some((value) => value === element)
+  }
+
+  /**
+   * @description 删除具体元素
+   * @param element 元素
+   */
+  delete(element: T) {
+    const index = this.#cache.findIndex((value) => element === value)
+    if (index !== -1) {
+      this.#cache.splice(index, 1)
+    }
   }
 
   /**
@@ -67,32 +81,32 @@ export class Stack<T = unknown> {
    * @param elements 元素
    * @returns 当前栈的长度
    */
-  public push(elements: T[]): number {
-    return this.cache.push(...elements)
+  push(...elements: T[]): number {
+    return this.#cache.push(...elements)
   }
 
   /**
    * @description 弹出元素
    * @returns 弹出的元素
    */
-  public pop(): T | undefined {
-    return this.cache.pop()
+  pop(): T | undefined {
+    return this.#cache.pop()
   }
 
   /**
    * @description 获取栈底的元素
    * @returns 栈底的元素
    */
-  public bottom(): T | undefined {
-    return this.cache[0]
+  bottom(): T | undefined {
+    return this.#cache[0]
   }
 
   /**
    * @description 排序当前栈
    * @param comparator {@link Stack.Comparator} 排序函数
    */
-  public sort(comparator?: Stack.Comparator<T>) {
-    this.cache.sort(comparator)
+  sort(comparator?: Stack.Comparator<T>) {
+    this.#cache.sort(comparator)
   }
 
   /**
@@ -100,7 +114,7 @@ export class Stack<T = unknown> {
    * @param array 数组
    * @returns 栈
    */
-  public static fromArray<T = unknown>(array: T[]) {
+  static fromArray<T = unknown>(array: T[]) {
     return new Stack(array)
   }
 
@@ -109,7 +123,7 @@ export class Stack<T = unknown> {
    * @param queue 队列
    * @returns 栈
    */
-  public static fromQueue<T = unknown>(queue: Queue<T>) {
+  static fromQueue<T = unknown>(queue: Queue<T>) {
     return new Stack(queue.elements)
   }
 }

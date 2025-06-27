@@ -21,7 +21,8 @@ import {
 } from "cesium"
 import { Geographic } from "components/coordinate"
 import { LabelLayer } from "./LabelLayer"
-import { Layer } from "./Layer"
+import { Labeled, Layer } from "abstract"
+import { enumerable, generate, is, validate } from "decorators"
 import { polygon, union, type Feature, type MultiPolygon, type Polygon } from "@turf/turf"
 import { Utils, Figure } from "utils"
 import type { Earth } from "components/Earth"
@@ -87,27 +88,34 @@ export namespace EllipsoidLayer {
   }
 }
 
+export interface EllipsoidLayer<T = unknown> {
+  _labelLayer: LabelLayer<T>
+}
+
 /**
  * @description 球、椭球、模型包络
  * @extends Layer {@link Layer} 图层基类
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const ellipsoidLayer = new EllipsoidLayer(earth)
  * ```
  */
-export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive, EllipsoidLayer.Data<T>> {
-  public labelLayer: LabelLayer<T>
-  private border?: GroundPolylinePrimitive
+export class EllipsoidLayer<T = unknown>
+  extends Layer<PrimitiveCollection, Primitive, EllipsoidLayer.Data<T>>
+  implements Labeled<T>
+{
+  @generate() labelLayer!: LabelLayer<T>
+  @enumerable(false) _border?: GroundPolylinePrimitive
 
   constructor(earth: Earth) {
     super(earth, new PrimitiveCollection())
-    this.labelLayer = new LabelLayer(earth)
+    this._labelLayer = new LabelLayer(earth)
   }
 
-  private getDefaultOption({
-    id = Utils.RandomUUID(),
+  #getDefaultOption({
+    id = Utils.uuid(),
     center,
     radii,
     material = Material.fromType("Color", {
@@ -156,13 +164,13 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
    * @description 当前球体集合的二维投影包络计算
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const envelope = new EllipsoidLayer(earth)
    * envelope.calcEnvProjection()
    * ```
    */
-  public calcEnvProjection() {
-    if (this.border) this.collection.remove(this.border)
+  calcEnvProjection() {
+    if (this._border) this.collection.remove(this._border)
     const points: {
       center: Cartesian3
       radii: Cartesian3
@@ -234,7 +242,7 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
       appearance: new PolylineColorAppearance({ translucent: false }),
     })
 
-    this.border = this.collection.add(primitive)
+    this._border = this.collection.add(primitive)
   }
 
   /**
@@ -242,7 +250,7 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
    * @param param {@link EllipsoidLayer.AddParam} 新增参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const ellipsoidLayer = new EllipsoidLayer(earth)
    * ellipsoidLayer.add({
    *  center: Cartesian3.fromDegrees(104, 31, 5000),
@@ -258,12 +266,17 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
    * })
    * ```
    */
-  public add(param: EllipsoidLayer.AddParam<T>) {
+  @validate
+  add(
+    @is(Cartesian3, "center")
+    @is(Cartesian3, "radii")
+    param: EllipsoidLayer.AddParam<T>
+  ) {
     const { center, radii, hpr, data, module } = param
-    const { ellipsoid, label } = this.getDefaultOption(param)
+    const { ellipsoid, label } = this.#getDefaultOption(param)
 
     const outline = new GeometryInstance({
-      id: Utils.EncodeId(ellipsoid.id + "_outline", module),
+      id: Utils.encode(ellipsoid.id + "_outline", module),
       geometry: new EllipsoidOutlineGeometry({
         radii: ellipsoid.radii,
         stackPartitions: ellipsoid.stackPartitions,
@@ -275,7 +288,7 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
     })
 
     const instance = new GeometryInstance({
-      id: Utils.EncodeId(ellipsoid.id, module),
+      id: Utils.encode(ellipsoid.id, module),
       geometry: new EllipsoidGeometry({
         radii: ellipsoid.radii,
         vertexFormat: EllipsoidSurfaceAppearance.VERTEX_FORMAT,
@@ -305,14 +318,14 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
     })
 
     if (label) {
-      this.labelLayer.add({
+      this._labelLayer.add({
         id: ellipsoid.id,
         position: ellipsoid.center,
         ...label,
       })
     }
 
-    super.save(ellipsoid.id, {
+    super._save(ellipsoid.id, {
       primitive: instancePrimitive,
       data: {
         module,
@@ -322,7 +335,7 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
         data,
       },
     })
-    super.save(ellipsoid.id + "_outline", {
+    super._save(ellipsoid.id + "_outline", {
       primitive: outlinePrimitive,
       data: {
         module,
@@ -340,7 +353,7 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
    * @param param {@link EllipsoidLayer.SetParam} 包络参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const ellipsoidLayer = new EllipsoidLayer(earth)
    * ellipsoidLayer.set("some_id", {
    *  center: Cartesian3.fromDegrees(104, 31, 8000),
@@ -348,9 +361,9 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
    * })
    * ```
    */
-  public set(id: string, param: EllipsoidLayer.SetParam<T>) {
+  set(id: string, param: EllipsoidLayer.SetParam<T>) {
     const { center, hpr, label } = param
-    if (label) this.labelLayer.set(id, label)
+    if (label) this._labelLayer.set(id, label)
     if (!center && !hpr) return
 
     const env = super.getEntity(id)
@@ -380,60 +393,60 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
   /**
    * @description 隐藏所有包络
    */
-  public hide(): void
+  hide(): void
   /**
    * @description 隐藏所有包络
    * @param id 根据ID隐藏包络
    */
-  public hide(id: string): void
-  public hide(id?: string) {
+  hide(id: string): void
+  hide(id?: string) {
     if (id) {
       super.hide(id)
       super.hide(id + "_outline")
-      this.labelLayer.hide(id)
+      this._labelLayer.hide(id)
     } else {
       super.hide()
-      this.labelLayer.hide()
+      this._labelLayer.hide()
     }
   }
 
   /**
    * @description 显示所有包络
    */
-  public show(): void
+  show(): void
   /**
    * @description 根据ID显示包络
    * @param id ID
    */
-  public show(id: string): void
-  public show(id?: string) {
+  show(id: string): void
+  show(id?: string) {
     if (id) {
       super.show(id)
       super.show(id + "_outline")
-      this.labelLayer.show(id)
+      this._labelLayer.show(id)
     } else {
       super.show()
-      this.labelLayer.show()
+      this._labelLayer.show()
     }
   }
 
   /**
    * @description 移除所有包络
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 根据ID移除包络
    * @param id ID
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
       super.remove(id)
       super.remove(id + "_outline")
-      this.labelLayer.remove(id)
+      this._labelLayer.remove(id)
     } else {
       super.remove()
-      this.labelLayer.remove()
+      this._labelLayer.remove()
     }
   }
 
@@ -441,9 +454,9 @@ export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Prim
    * @description 销毁图层
    * @returns 返回`boolean`值
    */
-  public destroy(): boolean {
+  destroy(): boolean {
     if (super.destroy()) {
-      this.labelLayer.destroy()
+      this._labelLayer.destroy()
       return true
     } else return false
   }

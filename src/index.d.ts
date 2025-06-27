@@ -1,37 +1,41 @@
 /// <reference path="cesium.extend.d.ts" />
-import {
-  ArcType,
+import type {
   Billboard,
   BillboardCollection,
+  BillboardGraphics,
   Camera,
   Cartesian2,
   Cartesian3,
+  Cartesian4,
   Cartographic,
   Clock,
-  Color,
+  CloudCollection,
+  Color as Czm_Color,
   ColorBlendMode,
+  CumulusCloud,
   DepthFunction,
   DistanceDisplayCondition,
-  Entity,
+  Ellipsoid,
+  FrameState,
   GroundPolylinePrimitive,
   GroundPrimitive,
   HeadingPitchRoll,
-  HeightReference,
-  HorizontalOrigin,
   ImageryLayer,
   ImageryProvider,
+  JulianDate,
   Label,
   LabelCollection,
-  LabelStyle,
   Material,
   Matrix4,
   Model,
   ModelAnimationLoop,
+  ModelGraphics,
   NearFarScalar,
   Particle,
   ParticleBurst,
   ParticleEmitter,
   ParticleSystem,
+  PathGraphics,
   PixelDatatype,
   PixelFormat,
   PointPrimitive,
@@ -40,25 +44,16 @@ import {
   PrimitiveCollection,
   Rectangle,
   Rectangle as Rect,
-  Scene,
-  ScreenSpaceEventHandler,
-  TerrainProvider,
-  UrlTemplateImageryProvider,
-  VerticalOrigin,
-  Viewer,
-  FrameState,
   Sampler,
+  Scene,
+  TerrainProvider,
   TextureMagnificationFilter,
   TextureMinificationFilter,
-  BillboardGraphics,
-  ModelGraphics,
-  PathGraphics,
   TimeIntervalCollection,
-  Ellipsoid,
-  CumulusCloud,
-  CloudCollection,
+  UrlTemplateImageryProvider,
+  Viewer,
 } from "cesium"
-import { EChartsOption } from "echarts"
+import type { EChartsOption } from "echarts"
 
 declare module "@anstec/earth" {
   /**
@@ -73,7 +68,6 @@ declare module "@anstec/earth" {
     DisableDepth = "DisableDepth",
     EnableDepth = "EnableDepth",
   }
-
   /**
    * @description 菜单项事件类型
    */
@@ -81,7 +75,6 @@ declare module "@anstec/earth" {
     RightClick = "RightClick",
     ItemClick = "ItemClick",
   }
-
   /**
    * @description 屏幕捕获模式
    * 1. `SCENE` 基于场景绘制物获取最顶层空间坐标
@@ -93,7 +86,6 @@ declare module "@anstec/earth" {
     TERRAIN = "terrain",
     ELLIPSOID = "ellipsoid",
   }
-
   /**
    * @description 动态绘制类型
    */
@@ -112,7 +104,6 @@ declare module "@anstec/earth" {
     STROKE = 11,
     LABEL = 12,
   }
-
   /**
    * @description 默认动态模块名
    */
@@ -131,7 +122,6 @@ declare module "@anstec/earth" {
     STROKE = "D_stroke",
     LABEL = "D_label",
   }
-
   /**
    * @description 可编辑类型
    */
@@ -149,7 +139,6 @@ declare module "@anstec/earth" {
     STRAIGHT_ARROW = 10,
     WALL = 11,
   }
-
   /**
    * @description 订阅事件类型
    */
@@ -167,7 +156,6 @@ declare module "@anstec/earth" {
     EDIT_CERTAIN = "Edit_Certain",
     EDIT_FINISH = "Edit_Finish",
   }
-
   /**
    * @description 测量会算类型
    */
@@ -181,7 +169,6 @@ declare module "@anstec/earth" {
     AZIMUTH = 6,
     SECTION = 7,
   }
-
   /**
    * @description 全局事件类型
    */
@@ -201,7 +188,6 @@ declare module "@anstec/earth" {
      */
     HOVER = 15,
   }
-
   /**
    * @description 模型视角
    */
@@ -209,7 +195,6 @@ declare module "@anstec/earth" {
     FIRST = 0,
     THIRD = 1,
   }
-
   /**
    * @description 圆锥计算模式
    * 1. `MATH` 将`radius`当作标准的数学值计算
@@ -219,7 +204,6 @@ declare module "@anstec/earth" {
     MATH = 0,
     GEODESIC = 1,
   }
-
   /**
    * @description 传感器相控阵扫描模式
    */
@@ -227,7 +211,6 @@ declare module "@anstec/earth" {
     HORIZONTAL = 0,
     VERTICAL = 1,
   }
-
   /**
    * @description 地球近似半径
    * 1. `AVERAGE`-近似平均半径
@@ -239,27 +222,187 @@ declare module "@anstec/earth" {
     EQUATOR = 6378137,
     POLE = 6356725,
   }
-
-  /**
-   * @description uid连接符格式
-   * 1. `D`-减号连接符
-   * 2. `P`-加号连接符
-   * 3. `N`-无连接符
-   */
-  export enum UidFormat {
-    D = "Decrease",
-    P = "Plus",
-    N = "None",
-  }
-
   /**
    * @description 经纬度格式化格式
-   * 1. `DMS`-度分秒(Degrees Minute Second)
-   * 2. `DMSS`-度分秒简写(Degrees Minute Second Short)
+   * 1. `DMS`-度分秒
+   * 2. `DMSS`-度分秒简写
    */
   export enum CoorFormat {
     DMS = "DMS",
     DMSS = "DMSS",
+  }
+  /**
+   * @description 弧线类型
+   */
+  export enum ArcType {
+    /**
+     * @description 最短直线
+     */
+    NONE = 0,
+    /**
+     * @description 测地线
+     */
+    GEODESIC = 1,
+    /**
+     * @description 恒向线
+     */
+    RHUMB = 2,
+  }
+  /**
+   * @description 时钟运行范围
+   */
+  export enum ClockRange {
+    /**
+     * @description 时钟始终延播放方向推进
+     */
+    UNBOUNDED = 0,
+    /**
+     * @description 播放时到达起始时间或结束时间将停止
+     */
+    CLAMPED = 1,
+    /**
+     * @description 正向播放时循环，反向播放时在起始时间停止
+     */
+    LOOP_STOP = 2,
+  }
+  /**
+   * @description 分类类型
+   */
+  export enum ClassificationType {
+    /**
+     * @description 只有地形会被分类
+     */
+    TERRAIN = 0,
+    /**
+     * @description 只有3D瓦片会被分类
+     */
+    TILES = 1,
+    /**
+     * @description 地形和3D瓦片都会被分类
+     */
+    BOTH = 2,
+  }
+  /**
+   * @description 高度参考
+   */
+  export enum HeightReference {
+    /**
+     * @description 无参考，绝对位置
+     */
+    NONE = 0,
+    /**
+     * @description 位置被夹在地形或3D瓦片上
+     */
+    CLAMP_TO_GROUND = 1,
+    /**
+     * @description 位置高度相对在地形或3D瓦片之上
+     */
+    RELATIVE_TO_GROUND = 2,
+    /**
+     * @description 位置被夹在地形上
+     */
+    CLAMP_TO_TERRAIN = 3,
+    /**
+     * @description 位置高度相对在地形之上
+     */
+    RELATIVE_TO_TERRAIN = 4,
+    /**
+     * @description 位置被夹在3D瓦片上
+     */
+    CLAMP_TO_3D_TILE = 5,
+    /**
+     * @description 位置高度相对在3D瓦片之上
+     */
+    RELATIVE_TO_3D_TILE = 6,
+  }
+  /**
+   * @description 横向锚点
+   */
+  export enum HorizontalOrigin {
+    /**
+     * @description 锚点位置在对象右侧
+     */
+    RIGHT = -1,
+    /**
+     * @description 锚点位置在对象中心
+     */
+    CENTER = 0,
+    /**
+     * @description 锚点位置在对象左侧
+     */
+    LEFT = 1,
+  }
+  /**
+   * @description 纵向锚点
+   */
+  export enum VerticalOrigin {
+    /**
+     * @description 锚点位置在对象顶部
+     */
+    TOP = -1,
+    /**
+     * @description 锚点位置在对象中心
+     */
+    CENTER = 0,
+    /**
+     * @description 锚点位置在对象底部
+     */
+    BOTTOM = 1,
+    /**
+     * @description 如果对象包含文本，则锚点位置在文本的基线，否则锚点位置在对象底部
+     */
+    BASELINE = 2,
+  }
+  /**
+   * @description 标签样式
+   */
+  export enum LabelStyle {
+    /**
+     * @description 填充文本，但不描边
+     */
+    FILL = 0,
+    /**
+     * @description 描边文本，但不填充
+     */
+    OUTLINE = 1,
+    /**
+     * @description 填充且描边文本
+     */
+    FILL_AND_OUTLINE = 2,
+  }
+  /**
+   * @description 2D模式下地图操作模式
+   */
+  export enum MapMode2D {
+    /**
+     * @description 2D 模式下地图可以绕 z 轴旋转
+     */
+    ROTATE = 0,
+    /**
+     * @description 2D 模式下地图可以在水平方向无限滚动
+     */
+    INFINITE_SCROLL = 1,
+  }
+  /**
+   * @description 场景模式
+   */
+  export enum SceneMode {
+    /**
+     * @description 在各模式间变形
+     */
+    MORPHING = 0,
+    /**
+     * @description 哥伦比亚视图
+     */
+    COLUMBUS_VIEW = 1,
+    /**
+     * @description 2D 模式
+     */
+    SCENE2D = 2,
+    /**
+     * @description 3D 模式
+     */
+    SCENE3D = 3,
   }
 
   export namespace Earth {
@@ -268,16 +411,19 @@ declare module "@anstec/earth" {
      * @property [showAnimation = false] 是否显示动画控件
      * @property [showTimeline = false] 是否显示时间轴控件
      * @property [lockCamera] {@link CameraLockOptions} 相机锁定选项
+     * @property [adaptiveAnimation = true] 是否使用适应性的动画控件
      * @property [adaptiveCameraController = true] 是否使用适应性的相机控制器
+     * @property [adaptiveTimeline = true] 是否使用适应性的时间轴控件
      */
     export type ConstructorOptions = {
       defaultViewRectangle?: Rectangle
       showAnimation?: boolean
       showTimeline?: boolean
       lockCamera?: CameraLockOptions
+      adaptiveAnimation?: boolean
       adaptiveCameraController?: boolean
+      adaptiveTimeline?: boolean
     }
-
     /**
      * @description 相机锁定选项
      * @property [enable = false] 启用锁定
@@ -288,6 +434,34 @@ declare module "@anstec/earth" {
       enable?: boolean
       rectangle?: Rectangle
       height?: number
+    }
+    /**
+     * @property [position] {@link Cartesian3} 位置
+     * @property [rectangle] {@link Rectangle} 视窗矩形
+     * @property [duration = 2] 动画时间
+     * @property [orientation] 相机姿态
+     */
+    export type CameraFlyOptions = {
+      position?: Cartesian3
+      rectangle?: Rectangle
+      duration?: number
+      orientation?: {
+        direction?: Cartesian3
+        up?: Cartesian3
+        heading?: number
+        pitch?: number
+        roll?: number
+      }
+    }
+    /**
+     * @property [timelineFormatter] 时间轴时间显示格式化函数
+     * @property [animationDateFormatter] 动画控件日期显示格式化函数
+     * @property [animationTimeFormatter] 动画控件时间显示格式化函数
+     */
+    export type Formatters = {
+      timelineFormatter?: (time: JulianDate) => string
+      animationDateFormatter?: (time: JulianDate) => string
+      animationTimeFormatter?: (time: JulianDate) => string
     }
   }
 
@@ -300,11 +474,11 @@ declare module "@anstec/earth" {
    * ```
    * //use hook
    * //already have a viewer
-   * const earth = useEarth("my_earth", viewer)
+   * const earth = createEarth("my_earth", viewer)
    *
    * //use hook
    * //no available viewer
-   * const earth = useEarth()
+   * const earth = createEarth()
    *
    * //use class
    * //already have a viewer
@@ -334,10 +508,19 @@ declare module "@anstec/earth" {
    * ```
    */
   export class Earth {
+    constructor(
+      container: string | HTMLDivElement | Viewer,
+      cesiumOptions?: Viewer.ConstructorOptions,
+      options?: Earth.ConstructorOptions
+    )
     /**
      * @description ID
      */
-    id: string
+    readonly id: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
     /**
      * @description HTML容器
      */
@@ -375,40 +558,10 @@ declare module "@anstec/earth" {
      */
     readonly layers: GraphicsLayer
     /**
-     * @description 全局事件
-     * @deprecated 已废弃，按需手动初始化
-     * @deleted 已删除
+     * @description 自定义时间轴及动画控件时间显示格式化函数
+     * @param formatters {@link Earth.Formatters} 格式化配置
      */
-    readonly global?: GlobalEvent
-    /**
-     * @description 测量组件
-     * @deprecated 已废弃，按需手动初始化
-     * @deleted 已删除
-     */
-    readonly measure?: Measure
-    /**
-     * @description 动态绘制
-     * @deprecated 已废弃，按需手动初始化
-     * @deleted 已删除
-     */
-    readonly drawTool?: Draw
-    /**
-     * @description 菜单组件
-     * @deprecated 已废弃，按需手动初始化
-     * @deleted 已删除
-     */
-    readonly contextMenu?: ContextMenu
-    /**
-     * @description 天气场景特效
-     * @deprecated 已废弃，按需手动初始化
-     * @deleted 已删除
-     */
-    readonly weather?: Weather
-    constructor(
-      container: string | HTMLDivElement | Viewer,
-      cesiumOptions?: Viewer.ConstructorOptions,
-      options?: Earth.ConstructorOptions
-    )
+    setFormatters(formatters: Earth.Formatters): void
     /**
      * @description 使用Echarts插件并映射坐标系统
      * 1. 该坐标系统跟随Cesium视角调整Echarts坐标
@@ -417,46 +570,18 @@ declare module "@anstec/earth" {
      * 4. 其他Echarts图形实例也可加载，但不随视图更新位置
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * earth.useEcharts()
      * const overlay = new Overlay({ earth, echartsOption })
      * ```
      */
     useEcharts(): void
     /**
-     * @description 使用默认图层类
-     * @returns 默认暴露的图层类
-     * @deprecated Now can directly read the public value `earth.layers`
-     * @deleted 已删除
-     */
-    useDefaultLayers(): GraphicsLayer
-    /**
-     * @description 使用默认测量类
-     * @returns 测量工具
-     * @deprecated Now can directly read the public value `earth.measure`
-     * @deleted 已删除
-     */
-    useMeasure(): Measure
-    /**
-     * @description 使用默认绘制类
-     * @returns 绘制工具
-     * @deprecated Now can directly read the public value `earth.drawTool`
-     * @deleted 已删除
-     */
-    useDraw(): Draw
-    /**
-     * @description 使用默认上下文菜单
-     * @returns 上下文菜单实例
-     * @deprecated Now can directly read the public value `earth.contextMenu`
-     * @deleted 已删除
-     */
-    useContextMenu(): ContextMenu
-    /**
      * @description 锁定相机
      * @param param {@link Earth.CameraLockOptions} 参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * earth.lockCamera({
      *  enable: true,
      *  rectangle: Rectangle.fromDegrees(72.004, 0.8293, 137.8347, 55.8271),
@@ -470,19 +595,30 @@ declare module "@anstec/earth" {
      * @param provider 影像图层
      * @example
      * ```
-     * const earth = useEarth()
-     * const imageryProvider = useTileImageryProvider({ url: "/api/imagery", maximumLevel: 18 })
+     * const earth = createEarth()
+     * const imageryProvider = new UrlTemplateImageryProvider({ url: "/api/imagery", maximumLevel: 18 })
      * earth.addImageryProvider(imageryProvider)
      * ```
      */
     addImageryProvider(provider: ImageryProvider): ImageryLayer
     /**
      * @description 移除所有地图影像层
+     * @example
+     * ```
+     * earth.removeImageryProvider()
+     * ```
      */
     removeImageryProvider(): void
     /**
      * @description 移除地图影像层
      * @param layer 图层
+     * @example
+     * ```
+     * const earth = createEarth()
+     * const imageryProvider = new UrlTemplateImageryProvider({ url: "/api/imagery", maximumLevel: 18 })
+     * earth.addImageryProvider(imageryProvider)
+     * earth.removeImageryProvider(imageryProvider)
+     * ```
      */
     removeImageryProvider(layer: ImageryLayer): void
     /**
@@ -490,7 +626,7 @@ declare module "@anstec/earth" {
      * @param terrainProvider 地形
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const terrainProvider = await CesiumTerrainProvider.fromUrl("/api/terrain")
      * earth.setTerrain(terrainProvider)
      * ```
@@ -501,7 +637,7 @@ declare module "@anstec/earth" {
      * @param value
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      *
      * //turn on
      * earth.setDepthTestAgainstTerrain(true)
@@ -520,55 +656,27 @@ declare module "@anstec/earth" {
      * @param target 目标位置参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * earth.flyTo({ position: Cartesian3.fromDegrees(104, 31) })
      * ```
      */
-    flyTo(target: {
-      position?: Cartesian3
-      rectangle?: Rectangle
-      duration?: number
-      orientation?: {
-        heading?: number
-        pitch?: number
-        roll?: number
-      }
-    }): void
-    flyTo(target: {
-      position?: Cartesian3
-      rectangle?: {
-        west: number
-        south: number
-        east: number
-        north: number
-      }
-      duration?: number
-      orientation?: {
-        heading?: number
-        pitch?: number
-        roll?: number
-      }
-    }): void
+    flyTo(target: Earth.CameraFlyOptions): void
     /**
      * @description 设置地图视图模式
      * @param mode  2D视图，3D视图
-     * @param duration 动画时间，默认`2s`
+     * @param [duration = 2] 动画时间
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      *
      * //2D
-     * earth.morphTo(MapMode.Scene2D)
+     * earth.morphTo(DefaultContextMenuItem.Scene2D)
      *
      * //3D
-     * earth.morphTo(MapMode.Scene3D)
+     * earth.morphTo(DefaultContextMenuItem.Scene3D)
      * ```
      */
     morphTo(mode: DefaultContextMenuItem.Scene2D | DefaultContextMenuItem.Scene3D, duration?: number): void
-    /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -605,10 +713,9 @@ declare module "@anstec/earth" {
   /**
    * @description 动画管理器
    * @param earth {@link Earth} 地球实例
-   * @exception The instance of 'AnimationManager' can only be constructed once for each earth.
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const animationManager = new AnimationManager(earth)
    * animationManager.add({
    *  id: "test",
@@ -624,6 +731,10 @@ declare module "@anstec/earth" {
    */
   export class AnimationManager {
     constructor(earth: Earth)
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
     /**
      * @description 新增动画对象
      * @param param {@link AnimationManager.AddParam} 参数
@@ -658,10 +769,6 @@ declare module "@anstec/earth" {
      */
     remove(): void
     /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
-    /**
      * @description 销毁
      */
     destroy(): void
@@ -689,7 +796,7 @@ declare module "@anstec/earth" {
    * @param [delay = 300] 事件触发节流的间隔时间`ms`
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    *
    * //订阅
    * earth.global.subscribe(param => console.log(param), GlobalEventType.LEFT_CLICK, "*")
@@ -700,6 +807,10 @@ declare module "@anstec/earth" {
    */
   export class GlobalEvent {
     constructor(earth: Earth, delay?: number)
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
     /**
      * @description 订阅全局事件
      * @param callback {@link GlobalEvent.Callback} 回调
@@ -720,10 +831,6 @@ declare module "@anstec/earth" {
      * 3. 传入模块名则仅取消订阅该模块事件
      */
     unsubscribe(callback: GlobalEvent.Callback, event: GlobalEventType, module?: string): void
-    /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -765,6 +872,11 @@ declare module "@anstec/earth" {
     }
   }
 
+  /**
+   * @description 控制摇杆
+   * @param viewer 视窗
+   * @param options {@link CesiumNavigation.ConstructorOptions} 参数
+   */
   export class CesiumNavigation {
     constructor(viewer: Viewer, options: CesiumNavigation.ConstructorOptions)
   }
@@ -789,18 +901,16 @@ declare module "@anstec/earth" {
 
   export namespace Cluster {
     type PinNum = "single" | "pin10" | "pin50" | "pin100" | "pin200" | "pin500" | "pin999"
-
     /**
-     * @property [single = {@link Color.VIOLET}] 单个标签颜色样式
-     * @property [pin10 = {@link Color.BLUE}] `10+`标签颜色样式
-     * @property [pin50 = {@link Color.GREEN}] `50+`标签颜色样式
-     * @property [pin100 = {@link Color.YELLOW}] `100+`标签颜色样式
-     * @property [pin200 = {@link Color.ORANGE}] `200+`标签颜色样式
-     * @property [pin500 = {@link Color.ORANGERED}] `500+`标签颜色样式
-     * @property [pin999 = {@link Color.RED}] `999+`标签颜色样式
+     * @property [single = {@link Czm_Color.VIOLET}] 单个标签颜色样式
+     * @property [pin10 = {@link Czm_Color.BLUE}] `10+`标签颜色样式
+     * @property [pin50 = {@link Czm_Color.GREEN}] `50+`标签颜色样式
+     * @property [pin100 = {@link Czm_Color.YELLOW}] `100+`标签颜色样式
+     * @property [pin200 = {@link Czm_Color.ORANGE}] `200+`标签颜色样式
+     * @property [pin500 = {@link Czm_Color.ORANGERED}] `500+`标签颜色样式
+     * @property [pin999 = {@link Czm_Color.RED}] `999+`标签颜色样式
      */
-    export type PinStyle = { [K in PinNum]?: Color }
-
+    export type PinStyle = { [K in PinNum]?: Czm_Color }
     /**
      * @description 自定义样式
      * @param clusteredEntities 聚合实例
@@ -810,7 +920,11 @@ declare module "@anstec/earth" {
       clusteredEntities: any[],
       cluster: { billboard: Billboard; label: Label; point: PointPrimitive }
     ) => void
-
+    export type Data = {
+      billboard?: Billboard.ConstructorOptions
+      label?: Label.ConstructorOptions
+      point?: PointPrimitive
+    }
     /**
      * @property pixelRange 触发聚合的像素范围
      * @property minimumClusterSize 最小聚合数
@@ -831,13 +945,21 @@ declare module "@anstec/earth" {
    * @param [options] {@link Cluster.ConstructorOptions} 自定义聚合参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const cluster = new Cluster(earth)
    * cluster.load(data)
    * ```
    */
   export class Cluster {
     constructor(earth: Earth, options?: Cluster.ConstructorOptions)
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 聚合集合
+     */
+    readonly collection: PrimitiveCollection
     /**
      * @description 设置自定义样式
      * @param callback {@link Cluster.CustomFunction} 自定义样式函数
@@ -847,13 +969,7 @@ declare module "@anstec/earth" {
      * @description 加载数据
      * @param data 数据
      */
-    load(
-      data: {
-        billboard?: Billboard.ConstructorOptions
-        label?: Label.ConstructorOptions
-        point?: PointPrimitive
-      }[]
-    ): void
+    load(data: Cluster.Data[]): void
     /**
      * @description 是否启用聚合，初始时是启用的
      */
@@ -863,10 +979,6 @@ declare module "@anstec/earth" {
      */
     clear(): void
     /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
-    /**
      * @description 销毁
      */
     destroy(): void
@@ -874,9 +986,10 @@ declare module "@anstec/earth" {
 
   /**
    * @description 坐标系统
+   * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const coordinate = earth.coordinate
    * //or
    * const coordinate = new Coordinate(earth)
@@ -932,7 +1045,7 @@ declare module "@anstec/earth" {
      * const cartesian2 = coordinate.cartesianToScreen(position)
      * ```
      */
-    cartesianToScreen(position: Cartesian3): Cartesian2
+    cartesianToScreen(position: Cartesian3): Cartesian2 | undefined
     /**
      * @description 地理坐标转空间坐标
      * @param cartographic {@link Cartographic} 地理坐标
@@ -945,15 +1058,38 @@ declare module "@anstec/earth" {
      */
     cartographicToCartesian(cartographic: Cartographic): Cartesian3
     /**
+     * @description 地理坐标数组转空间坐标数组
+     * @param cartographics {@link Cartographic} 地理坐标数组
+     * @returns `Cartesian3`坐标数组
+     * @example
+     * ```
+     * const positions = Cartographic.fromDegreesArray([104, 31, 0, 105, 32, 1])
+     * const cartesian3Array = coordinate.cartographicArrayToCartesianArray(positions)
+     * ```
+     */
+    cartographicArrayToCartesianArray(cartographics: Cartographic[]): Cartesian3[]
+    /**
      * @description 空间坐标转地理坐标
      * @param position {@link Cartesian3} 空间坐标
      * @return `Cartographic`坐标
+     * @example
      * ```
      * const position = Cartesian3.fromDegrees(104, 31, 0)
      * const carto = coordinate.cartesianToCartographic(position)
      * ```
      */
     cartesianToCartographic(position: Cartesian3): Cartographic
+    /**
+     * @description 空间坐标数组转地理坐标数组
+     * @param positions {@link Cartesian3} 空间坐标数组
+     * @returns `Cartographic`坐标数组
+     * @example
+     * ```
+     * const positions = Cartesian3.fromDegreesArray([104, 31, 0, 105, 32, 1])
+     * const cartos = coordinate.cartesianArrayToCartographicArray(positions)
+     * ```
+     */
+    cartesianArrayToCartographicArray(positions: Cartesian3[]): Cartographic[]
     /**
      * @description 屏幕坐标转经纬度坐标
      * @param position {@link cartesian2} 屏幕坐标
@@ -980,7 +1116,6 @@ declare module "@anstec/earth" {
      * @description 获取坐标处位置的地面高度
      * @param position {@link Cartographic} | {@link Geographic} 地理或经纬度坐标
      * @returns 高度
-     * @exception Invaid position type, use cartographic or geographic.
      */
     positionSurfaceHeight(position: Cartographic | Geographic): number | undefined
   }
@@ -996,10 +1131,18 @@ declare module "@anstec/earth" {
    * ```
    */
   export class Geographic {
+    constructor(longitude: number, latitude: number, height?: number)
     longitude: number
     latitude: number
     height: number
-    constructor(longitude: number, latitude: number, height?: number)
+    /**
+     * @description 北极点
+     */
+    static readonly NORTH_POLE: Geographic
+    /**
+     * @description 南极点
+     */
+    static readonly SOUTH_POLE: Geographic
     /**
      * @description 转为笛卡尔坐标系
      * @param [ellipsoid = Ellipsoid.WGS84] {@link Ellipsoid} 坐标球体类型
@@ -1045,6 +1188,7 @@ declare module "@anstec/earth" {
     toArrayHeight(): number[]
     /**
      * @description 克隆当前坐标
+     * @param [result] 存储的对象
      * @returns 新的`Geographic`坐标
      * @example
      * ```
@@ -1052,7 +1196,7 @@ declare module "@anstec/earth" {
      * const clone = geo.clone()
      * ```
      */
-    clone(): Geographic
+    clone(result?: Geographic): Geographic
     /**
      * @description 格式化经纬度
      * @param [format = CoorFormat.DMS] {@link CoorFormat} 格式
@@ -1070,6 +1214,22 @@ declare module "@anstec/earth" {
      */
     format(format?: CoorFormat): { longitude: string; latitude: string }
     /**
+     * @description 转换为字符串
+     * @param [template = "(%x, %y)"] 字符串模板（`%x` 经度，`%y` 纬度，`%z` 高度）
+     * @param [decimal = 2] 数据转为字符串保留的小数点
+     * @example
+     * ```
+     * const geo = new Geographic(104, 31, 5000)
+     *
+     * //default
+     * const tip = geo.toString() //tip "(104, 31)"
+     *
+     * //template
+     * const tip = geo.toString("[%x, %y]") //tip "[104, 31]"
+     * ```
+     */
+    toString(template?: string, decimal?: number): string
+    /**
      * @description 从已知地理坐标克隆结果
      * @param geo {@link Geographic} 需要克隆的对象
      * @param [result] {@link Geographic} 存储结果对象
@@ -1077,7 +1237,7 @@ declare module "@anstec/earth" {
      */
     static clone(geo: Geographic, result?: Geographic): Geographic
     /**
-     * @description 比较两个地理坐标是否全等
+     * @description 比较两个地理坐标是否相等
      * @param left {@link Geographic} 左值
      * @param right {@link Geographic} 右值
      * @param [diff = 0] 可接受的数学误差
@@ -1120,8 +1280,6 @@ declare module "@anstec/earth" {
     /**
      * @description 数组批量转坐标
      * @param coordinates 数组坐标
-     * @exception Array length must be a mutiple of 2.
-     * @exception Invaid longitude or latitude value.
      * @example
      * ```
      * const arr = [104, 31]
@@ -1132,8 +1290,6 @@ declare module "@anstec/earth" {
     /**
      * @description 数组批量转坐标 <弧度制>
      * @param coordinates 数组坐标
-     * @exception Array length must be a mutiple of 2.
-     * @exception Invaid longitude or latitude value.
      * @example
      * ```
      * const arr = [2.1, 1.04]
@@ -1144,8 +1300,6 @@ declare module "@anstec/earth" {
     /**
      * @description 带高程的数组批量转坐标
      * @param coordinates 带高程的数组坐标
-     * @exception Array length must be a mutiple of 3.
-     * @exception Invaid longitude or latitude value.
      * @example
      * ```
      * const arr = [104, 31, 500]
@@ -1156,8 +1310,6 @@ declare module "@anstec/earth" {
     /**
      * @description 带高程的数组批量转坐标 <弧度制>
      * @param coordinates 带高程的数组坐标
-     * @exception Array length must be a mutiple of 3.
-     * @exception Invaid longitude or latitude value.
      * @example
      * ```
      * const arr = [2.1, 1.03, 500]
@@ -1169,22 +1321,20 @@ declare module "@anstec/earth" {
 
   export namespace Covering {
     export type AnchorPosition = "TOP_LEFT" | "TOP_RIGHT" | "BOTTOM_LEFT" | "BOTTOM_RIGHT"
-
     /**
-     * @property [color = new Color(43, 44, 47, 0.8)] {@link Color} 连接线颜色
+     * @property [color = new Color(43, 44, 47, 0.8)] {@link Czm_Color} 连接线颜色
      * @property [dashed] 连接线虚线样式参数数组，不传入则为实现样式
      * @property [enabled = true] 是否启用连接线
      * @property [pinned] 连接线与覆盖物的固定位置，传入则将始终锚定在具体点
      * @property [width = 1] 连接线宽度
      */
     export type LineOptions = {
-      color?: Color
+      color?: Czm_Color
       dashed?: number[]
       enabled?: boolean
       pinned?: AnchorPosition
       width?: number
     }
-
     /**
      * @property [id] 覆盖物ID
      * @property [customize = false] 是否自定义实现
@@ -1214,14 +1364,8 @@ declare module "@anstec/earth" {
       connectionLine?: LineOptions
       closeable?: boolean
       follow?: boolean
-      /**
-       * @deprecated use `connectionLine.color`
-       * @deleted 已删除
-       */
-      lineStroke?: string
       position: Cartesian3
     }
-
     export type SetParam<T> = Partial<Pick<AddParam<T>, "position" | "title" | "content" | "data">>
   }
 
@@ -1230,12 +1374,16 @@ declare module "@anstec/earth" {
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth
+   * const earth = createEarth
    * const cover = new Covering(earth)
    * ```
    */
   export class Covering<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
     /**
      * @description 设置覆盖物是否可拖拽
      * @param value 是否启用可拖拽
@@ -1247,7 +1395,7 @@ declare module "@anstec/earth" {
      * @exception Reference element is required when customizing.
      * @example
      * ```
-     * const earth = useEarth
+     * const earth = createEarth
      * const cover = new Covering(earth)
      *
      * //custom
@@ -1294,10 +1442,6 @@ declare module "@anstec/earth" {
      */
     remove(id: string): void
     /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
-    /**
      * @description 销毁
      */
     destroy(): void
@@ -1309,11 +1453,10 @@ declare module "@anstec/earth" {
      * @property [id] ID
      * @property [module] {@link DefaultModuleName} 模块名
      */
-    type Base = {
+    export type Base = {
       id?: string
       module?: string
     }
-
     /**
      * @property type 图形类型
      * @property event {@link SubEventType} 事件类型
@@ -1324,9 +1467,7 @@ declare module "@anstec/earth" {
       event: SubEventType
       data: { [key: string]: any }
     }
-
     export type EventCallback = (param: CallbackParam) => void
-
     export type Options =
       | AttackArrow
       | Billboard
@@ -1341,7 +1482,6 @@ declare module "@anstec/earth" {
       | Wall
       | Stroke
       | Label
-
     export type Features =
       | PolygonLayer.AddParam<Dynamic.AttackArrow>
       | BillboardLayer.AddParam<Dynamic.Billboard>
@@ -1355,22 +1495,20 @@ declare module "@anstec/earth" {
       | RectangleLayer.AddParam<Dynamic.Rectangle>
       | PolygonLayer.AddParam<Dynamic.StraightArrow>
       | WallLayer.AddParam<Dynamic.Wall>
-
     export type LabelReturn = {
       id: string
       position: Cartesian3
     }
-
     /**
      * @extends Base {@link Base} 基本属性
      * @property [text = "新建文本"] 标签文本
      * @property [font = "14px sans-serif"] 字体样式
      * @property [scale = 1] 缩放
-     * @property [fillColor = {@link Color.BLACK}] 字体填充色
-     * @property [outlineColor = {@link Color.WHITE}] 字体描边色
+     * @property [fillColor = {@link Czm_Color.BLACK}] 字体填充色
+     * @property [outlineColor = {@link Czm_Color.WHITE}] 字体描边色
      * @property [outlineWidth = 1] 字体描边粗细
      * @property [showBackground = true] 是否显示背景
-     * @property [backgroundColor = {@link Color.LIGHTGREY}] 标签背景色
+     * @property [backgroundColor = {@link Czm_Color.LIGHTGREY}] 标签背景色
      * @property [backgroundPadding = {@link Cartesian2.ZERO}] 背景Padding值
      * @property [style = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
      * @property [pixelOffset = {@link Cartesian2.ZERO}] 像素偏移
@@ -1383,11 +1521,11 @@ declare module "@anstec/earth" {
       text?: string
       font?: string
       scale?: number
-      fillColor?: Color
-      outlineColor?: Color
+      fillColor?: Czm_Color
+      outlineColor?: Czm_Color
       outlineWidth?: number
       showBackground?: boolean
-      backgroundColor?: Color
+      backgroundColor?: Czm_Color
       backgroundPadding?: Cartesian2
       style?: LabelStyle
       pixelOffset?: Cartesian2
@@ -1396,36 +1534,32 @@ declare module "@anstec/earth" {
       onEvery?: (position: Cartesian3, index: number) => void
       onFinish?: (positions: Cartesian3[]) => void
     }
-
     export type StrokeReturn = {
       id: string
       positions: Cartesian3[]
     }
-
     /**
      * @extends Base {@link Base} 基本属性
-     * @property [color = {@link Color.RED}] 笔触填充色
+     * @property [color = {@link Czm_Color.RED}] 笔触填充色
      * @property [width = 2] 笔触宽度
      * @property [keep = true] 是否保留绘制图形
      * @property [ground = false] 图形是否贴地
      * @property [onFinish] 绘制结束的回调
      */
     export type Stroke = Base & {
-      color?: Color
+      color?: Czm_Color
       width?: number
       keep?: boolean
       ground?: boolean
       onFinish?: (positions: Cartesian3[]) => void
     }
-
     export type PointReturn = {
       id: string
       position: Cartesian3
     }
-
     /**
      * @extends Base {@link Base} 基本属性
-     * @property [color = {@link Color.RED}] 填充色
+     * @property [color = {@link Czm_Color.RED}] 填充色
      * @property [pixelSize = 5] 像素大小
      * @property [limit = 0] 绘制数量，`0`为无限制绘制，手动结束
      * @property [keep = true] 是否保留绘制图形
@@ -1433,7 +1567,7 @@ declare module "@anstec/earth" {
      * @property [onFinish] 绘制结束的回调
      */
     export type Point = Base & {
-      color?: Color
+      color?: Czm_Color
       pixelSize?: number
       /**
        * @description 绘制数量，`0`为无限制绘制，手动结束
@@ -1446,22 +1580,20 @@ declare module "@anstec/earth" {
       onEvery?: (position: Cartesian3, index: number) => void
       onFinish?: (positions: Cartesian3[]) => void
     }
-
     export type CircleReturn = {
       id: string
       center: Cartesian3
       radius: number
     }
-
     /**
      * @extends Base {@link Base} 基本属性
-     * @property [color = {@link Color.RED}] 填充色
+     * @property [color = {@link Czm_Color.RED}] 填充色
      * @property [keep = true] 是否保留绘制图形
      * @property [ground = false] 图形是否贴地
      * @property [onFinish] 绘制结束的回调
      */
     export type Circle = Base & {
-      color?: Color
+      color?: Czm_Color
       /**
        * @description 是否保留绘制图形
        */
@@ -1469,21 +1601,19 @@ declare module "@anstec/earth" {
       ground?: boolean
       onFinish?: (center: Cartesian3, radius: number) => void
     }
-
     export type RectangleReturn = {
       id: string
       rectangle: Rect
     }
-
     /**
      * @extends Base {@link Base} 基本属性
-     * @property [color = {@link Color.RED}] 填充色
+     * @property [color = {@link Czm_Color.RED}] 填充色
      * @property [keep = true] 是否保留绘制图形
      * @property [ground = false] 图形是否贴地
      * @property [onFinish] 绘制结束的回调
      */
     export type Rectangle = Base & {
-      color?: Color
+      color?: Czm_Color
       /**
        * @description 是否保留绘制图形
        */
@@ -1491,16 +1621,14 @@ declare module "@anstec/earth" {
       ground?: boolean
       onFinish?: (rectangle: Rect) => void
     }
-
     export type PolygonReturn = {
       id: string
       positions: Cartesian3[]
     }
-
     /**
      * @extends Base {@link Base} 基本属性
-     * @property [color = {@link Color.RED}] 填充色
-     * @property [outlineColor = {@link Color.RED}] 边框颜色
+     * @property [color = {@link Czm_Color.RED}] 填充色
+     * @property [outlineColor = {@link Czm_Color.RED}] 边框颜色
      * @property [outlineWidth = 1] 边框宽度
      * @property [keep = true] 是否保留绘制图形
      * @property [ground = false] 图形是否贴地
@@ -1509,8 +1637,8 @@ declare module "@anstec/earth" {
      * @property [onFinish] 绘制结束的回调
      */
     export type Polygon = Base & {
-      color?: Color
-      outlineColor?: Color
+      color?: Czm_Color
+      outlineColor?: Czm_Color
       outlineWidth?: number
       keep?: boolean
       ground?: boolean
@@ -1518,16 +1646,14 @@ declare module "@anstec/earth" {
       onEvery?: (position: Cartesian3, index: number) => void
       onFinish?: (positions: Cartesian3[]) => void
     }
-
     export type PolylineReturn = {
       id: string
       positions: Cartesian3[]
     }
-
     /**
      * @extends Base {@link Base} 基本属性
      * @property [materialType = "Color"] {@link PolylineLayer.MaterialType} 线条材质类型
-     * @property [materialUniforms = { color: {@link Color.RED} }] {@link PolylineLayer.MaterialUniforms} 材质参数
+     * @property [materialUniforms = { color: {@link Czm_Color.RED} }] {@link PolylineLayer.MaterialUniforms} 材质参数
      * @property [width = 2] 线条宽度
      * @property [keep = true] 是否保留绘制图形
      * @property [ground = false] 图形是否贴地
@@ -1547,12 +1673,10 @@ declare module "@anstec/earth" {
       onEvery?: (position: Cartesian3, index: number) => void
       onFinish?: (positions: Cartesian3[]) => void
     }
-
     export type BillboardReturn = {
       id: string
       position: Cartesian3
     }
-
     /**
      * @extends Base {@link Base} 基本属性
      * @property image 图片
@@ -1578,18 +1702,16 @@ declare module "@anstec/earth" {
       onEvery?: (position: Cartesian3, index: number) => void
       onFinish?: (positions: Cartesian3[]) => void
     }
-
     export type ModelReturn = {
       id: string
       position: Cartesian3
     }
-
     /**
      * @extends Base {@link Base} 基本属性
      * @property url 源
      * @property [scale = 1] 缩放
      * @property [minimumPixelSize = 24] 模型的近似最小像素
-     * @property [silhouetteColor = {@link Color.LIGHTYELLOW}] 轮廓颜色
+     * @property [silhouetteColor = {@link Czm_Color.LIGHTYELLOW}] 轮廓颜色
      * @property [silhouetteSize = 1] 轮廓大小
      * @property [limit = 0] 绘制数量，`0`为无限制绘制，手动结束
      * @property [keep = true] 是否保留绘制图形
@@ -1600,24 +1722,22 @@ declare module "@anstec/earth" {
       url: string
       scale?: number
       minimumPixelSize?: number
-      silhouetteColor?: Color
+      silhouetteColor?: Czm_Color
       silhouetteSize?: number
       limit?: number
       keep?: boolean
       onEvery?: (position: Cartesian3, index: number) => void
       onFinish?: (positions: Cartesian3[]) => void
     }
-
     export type WallReturn = {
       id: string
       positions: Cartesian3[]
     }
-
     /**
      * @extends Base {@link Base} 基本属性
-     * @property [color = {@link Color.ORANGE}] 墙体颜色
+     * @property [color = {@link Czm_Color.ORANGE}] 墙体颜色
      * @property [height = 2000] 墙体高度
-     * @property [outlineColor = {@link Color.ORANGE}] 边框颜色
+     * @property [outlineColor = {@link Czm_Color.ORANGE}] 边框颜色
      * @property [outlineWidth = 1] 边框宽度
      * @property [closed = true] 是否形成闭合墙体
      * @property [keep = false] 是否保留绘制图形
@@ -1626,9 +1746,9 @@ declare module "@anstec/earth" {
      * @property [onFinish] 绘制结束的回调
      */
     export type Wall = Base & {
-      color?: Color
+      color?: Czm_Color
       height?: number
-      outlineColor?: Color
+      outlineColor?: Czm_Color
       outlineWidth?: number
       closed?: boolean
       keep?: boolean
@@ -1636,13 +1756,11 @@ declare module "@anstec/earth" {
       onEvery?: (position: Cartesian3, index: number) => void
       onFinish?: (positions: Cartesian3[]) => void
     }
-
     export type StraightArrowReturn = {
       id: string
       start: Cartesian3
       end: Cartesian3
     }
-
     /**
      * @extends Base {@link Base} 基本属性
      * @property [headAngle = PI/8.5] 头部角度
@@ -1650,8 +1768,8 @@ declare module "@anstec/earth" {
      * @property [tailWidthFactor = 0.1] 尾部宽度系数因子
      * @property [neckWidthFactor = 0.2] 颈部宽度系数因子
      * @property [headWidthFactor = 0.25] 头部宽度系数因子
-     * @property [color = {@link Color.YELLOW}] 填充颜色
-     * @property [outlineColor = {@link Color.YELLOW}] 边框颜色
+     * @property [color = {@link Czm_Color.YELLOW}] 填充颜色
+     * @property [outlineColor = {@link Czm_Color.YELLOW}] 边框颜色
      * @property [outlineWidth = 1] 边框宽度
      * @property [keep = false] 是否保留绘制图形
      * @property [ground = false] 图形是否贴地
@@ -1663,19 +1781,17 @@ declare module "@anstec/earth" {
       tailWidthFactor?: number
       neckWidthFactor?: number
       headWidthFactor?: number
-      color?: Color
-      outlineColor?: Color
+      color?: Czm_Color
+      outlineColor?: Czm_Color
       outlineWidth?: number
       keep?: boolean
       ground?: boolean
       onFinish?: (positions: Cartesian3[]) => void
     }
-
     export type AttackArrowReturn = {
       id: string
       positions: Cartesian3[]
     }
-
     /**
      * @extends Base {@link Base} 基本属性
      * @property [headHeightFactor = 0.18] 头部高度系数因子
@@ -1685,8 +1801,8 @@ declare module "@anstec/earth" {
      * @property [tailWidthFactor = 0.1] 尾部宽度系数因子
      * @property [headTailFactor = 0.8] 头尾系数因子
      * @property [swallowTailFactor = 1] 燕尾系数因子
-     * @property [color = {@link Color.YELLOW}] 填充颜色
-     * @property [outlineColor = {@link Color.YELLOW}] 边框颜色
+     * @property [color = {@link Czm_Color.YELLOW}] 填充颜色
+     * @property [outlineColor = {@link Czm_Color.YELLOW}] 边框颜色
      * @property [outlineWidth = 1] 边框宽度
      * @property [keep = false] 是否保留绘制图形
      * @property [ground = false] 图形是否贴地
@@ -1701,28 +1817,26 @@ declare module "@anstec/earth" {
       tailWidthFactor?: number
       headTailFactor?: number
       swallowTailFactor?: number
-      color?: Color
-      outlineColor?: Color
+      color?: Czm_Color
+      outlineColor?: Czm_Color
       outlineWidth?: number
       keep?: boolean
       ground?: boolean
       onEvery?: (position: Cartesian3, index: number) => void
       onFinish?: (positions: Cartesian3[]) => void
     }
-
     export type PincerArrowReturn = {
       id: string
       positions: Cartesian3[]
     }
-
     /**
      * @extends Base {@link Base} 基本属性
      * @property [headHeightFactor = 0.25] 头部高度系数因子
      * @property [headWidthFactor = 0.3] 头部宽度系数因子
      * @property [neckHeightFactor = 0.85] 颈部高度系数因子
      * @property [neckWidthFactor = 0.15] 颈部宽度系数因子
-     * @property [color = {@link Color.YELLOW}] 填充颜色
-     * @property [outlineColor = {@link Color.YELLOW}] 边框颜色
+     * @property [color = {@link Czm_Color.YELLOW}] 填充颜色
+     * @property [outlineColor = {@link Czm_Color.YELLOW}] 边框颜色
      * @property [outlineWidth = 1] 边框宽度
      * @property [keep = false] 是否保留绘制图形
      * @property [ground = false] 图形是否贴地
@@ -1734,15 +1848,14 @@ declare module "@anstec/earth" {
       headWidthFactor?: number
       headHeightFactor?: number
       neckHeightFactor?: number
-      color?: Color
-      outlineColor?: Color
+      color?: Czm_Color
+      outlineColor?: Czm_Color
       outlineWidth?: number
       keep?: boolean
       ground?: boolean
       onEvery?: (position: Cartesian3, index: number) => void
       onFinish?: (positions: Cartesian3[]) => void
     }
-
     /**
      * @description 按类别移除绘制对象参数
      * @property [point] 点
@@ -1778,16 +1891,19 @@ declare module "@anstec/earth" {
 
   /**
    * @description 绘制工具
+   * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth
-   * const draw = earth.useDraw()
-   * //or
+   * const earth = createEarth()
    * const draw = new Draw(earth)
    * ```
    */
   export class Draw {
     constructor(earth: Earth)
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
     /**
      * @description 根据ID获取动态绘制实体
      * @param id ID
@@ -1796,10 +1912,19 @@ declare module "@anstec/earth" {
     getEntity(
       id: string
     ):
-      | Layer.Cache<Billboard, Layer.Data<unknown>>
-      | Layer.Cache<Primitive | GroundPolylinePrimitive, Layer.Data<unknown>>
-      | Layer.Cache<PointPrimitive, Layer.Data<unknown>>
-      | Layer.Cache<Model, ModelLayer.Data<unknown>>
+      | Layer.Cache<Primitive | GroundPolylinePrimitive, unknown>
+      | Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.AttackArrow>
+      | Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.Circle>
+      | Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.PincerArrow>
+      | Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.Polygon>
+      | Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.Polyline>
+      | Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.Rectangle>
+      | Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.StraightArrow>
+      | Layer.Cache<Primitive, Dynamic.Wall>
+      | Layer.Cache<PointPrimitive, Dynamic.Point>
+      | Layer.Cache<Billboard, Dynamic.Billboard>
+      | Layer.Cache<Label, Dynamic.Label>
+      | ModelLayer.Cache<Dynamic.Model>
       | undefined
     /**
      * @description 设置动态绘制对象是否可编辑
@@ -1826,8 +1951,8 @@ declare module "@anstec/earth" {
      * @param option {@link Draw.Features} 配置项
      * @example
      * ```
-     * const earth = useEarth()
-     * const drawTool = earth.useDraw()
+     * const earth = createEarth()
+     * const drawTool = new Draw(earth)
      * drawTool.setEditable(true)
      *
      * //polyline
@@ -1923,7 +2048,7 @@ declare module "@anstec/earth" {
      * @returns {Promise} 绘制的Promise
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const tool = new Draw(earth)
      *
      * //attack arrow
@@ -2110,7 +2235,7 @@ declare module "@anstec/earth" {
      * @description 清除所有动态绘制对象
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const draw = new Draw()
      * draw.remove()
      * ```
@@ -2121,7 +2246,7 @@ declare module "@anstec/earth" {
      * @param id ID
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const draw = new Draw()
      * draw.remove("some_id")
      * ```
@@ -2132,16 +2257,12 @@ declare module "@anstec/earth" {
      * @param option 类别
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const draw = new Draw()
      * draw.remove({ polygon: true, polyline: true })
      * ```
      */
     remove(option: Draw.RemoveOptions): void
-    /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -2149,21 +2270,6 @@ declare module "@anstec/earth" {
   }
 
   export namespace Dynamic {
-    export type Layer =
-      | PointLayer<Point>
-      | BillboardLayer<Billboard>
-      | EllipseLayer<Circle>
-      | ModelLayer<Model>
-      | RectangleLayer<Rectangle>
-      | PolygonLayer<Polygon>
-      | PolylineLayer<Polyline>
-      | WallLayer<Wall>
-      | LabelLayer<Label>
-      | PolygonLayer<AttackArrow>
-      | PolygonLayer<PincerArrow>
-      | PolygonLayer<StraightArrow>
-      | PolylineLayer
-
     export type Data<T, D = unknown> = {
       type: T
       positions: Cartesian3[]
@@ -2171,155 +2277,33 @@ declare module "@anstec/earth" {
         [K in keyof D]-?: D[K]
       }
     }
-
     export type AttackArrow = Data<
       DrawType.ATTACK_ARROW,
       Omit<Draw.AttackArrow, "onFinish" | "onEvery" | "keep" | "id">
     >
-
     export type Billboard = Data<
       DrawType.BILLBOARD,
       Omit<Draw.Billboard, "onEvery" | "onFinish" | "keep" | "limit" | "id">
     >
-
     export type Circle = Data<DrawType.CIRCLE, Omit<Draw.Circle, "onFinish" | "keep" | "id"> & { radius: number }>
-
     export type Label = Data<DrawType.LABEL, Omit<Draw.Label, "id" | "limit" | "keep" | "onEvery" | "onFinish">>
-
     export type Model = Data<
       DrawType.MODEL,
       Omit<Draw.Model, "onEvery" | "onFinish" | "keep" | "color" | "limit" | "id">
     >
-
     export type PincerArrow = Data<
       DrawType.PINCER_ARROW,
       Omit<Draw.PincerArrow, "onFinish" | "onEvery" | "keep" | "id">
     >
-
     export type Point = Data<DrawType.POINT, Pick<Draw.Point, "color" | "pixelSize" | "module">>
-
     export type Polygon = Data<DrawType.POLYGON, Omit<Draw.Polygon, "onEvery" | "onFinish" | "onMove" | "keep" | "id">>
-
     export type Polyline = Data<
       DrawType.POLYLINE,
       Omit<Draw.Polyline, "id" | "keep" | "onMove" | "onEvery" | "onFinish">
     >
-
     export type Rectangle = Data<DrawType.RECTANGLE, Pick<Draw.Rectangle, "color" | "ground" | "module">>
-
     export type StraightArrow = Data<DrawType.STRAIGHT_ARROW, Omit<Draw.StraightArrow, "onFinish" | "keep" | "id">>
-
     export type Wall = Data<DrawType.WALL, Omit<Draw.Wall, "id" | "keep" | "onMove" | "onEvery" | "onFinish">>
-  }
-
-  /**
-   * @description 动态绘制基类
-   */
-  export abstract class Dynamic<L extends Dynamic.Layer> {
-    abstract type: string
-    protected layer: L
-    protected viewer: Viewer
-    protected scene: Scene
-    protected camera: Camera
-    protected eventBus: EventBus
-    protected editHandler: ScreenSpaceEventHandler
-    protected cacheHandler?: ScreenSpaceEventHandler
-    protected cacheEntity?: Entity
-    constructor(earth: Earth, layer: L)
-    /**
-     * @description 开始绘制事件
-     * @returns 事件管理器
-     */
-    protected startEvent(): ScreenSpaceEventHandler
-    /**
-     * @description 结束绘制事件
-     * @param handler 要结束的事件管理器
-     */
-    protected endEvent(handler: ScreenSpaceEventHandler): void
-    /**
-     * @description 屏幕坐标获取球体上的点
-     * @param point {@link Cartesian2} 屏幕坐标
-     * @returns
-     */
-    protected getPointOnEllipsoid(point: Cartesian2): Cartesian3 | undefined
-    /**
-     * @description 锁定镜头控制权
-     * @param value 值
-     */
-    protected setViewControl(value: boolean): void
-    /**
-     * @description 添加实体的抽象方法
-     * @param param 选项
-     */
-    abstract add(param: any): void
-    /**
-     * @description 动态绘制的抽象方法
-     * @param param 选项
-     */
-    abstract draw(param: any): Promise<unknown>
-    /**
-     * @description 动态编辑的抽象方法
-     * @param id 编辑的实体ID
-     */
-    abstract edit(id: string): Promise<unknown>
-    /**
-     * @description 订阅绘制或编辑事件
-     * @param event 事件类型
-     * @param callback 回调
-     */
-    subscribe(event: SubEventType, callback: (...args: any) => void): void
-    /**
-     * @description 取消订阅绘制或编辑事件
-     * @param event 事件类型
-     * @param callback 回调
-     */
-    unsubscribe(event: SubEventType, callback: (...args: any) => void): void
-    /**
-     * @description 根据ID获取动态绘制实体
-     * @param id ID
-     * @returns 实体
-     */
-    getEntity(
-      id: string
-    ):
-      | Layer.Cache<Billboard, Layer.Data<Dynamic.Billboard>>
-      | Layer.Cache<
-          Primitive | GroundPolylinePrimitive,
-          Layer.Data<
-            | Dynamic.AttackArrow
-            | Dynamic.Circle
-            | Dynamic.PincerArrow
-            | Dynamic.Polygon
-            | Dynamic.Polyline
-            | Dynamic.Rectangle
-            | Dynamic.StraightArrow
-          >
-        >
-      | Layer.Cache<PointPrimitive, Layer.Data<Dynamic.Point>>
-      | Layer.Cache<Model, ModelLayer.Data<Dynamic.Model>>
-      | Layer.Cache<Label, Layer.Data<Dynamic.Label>>
-      | undefined
-    /**
-     * @description 强制终断，仅终断绘制，不终断编辑
-     */
-    interrupt(): void
-    /**
-     * @description 清除所有动态绘制对象
-     */
-    remove(): void
-    /**
-     * @description 按ID清除动态绘制对象
-     * @param id ID
-     */
-    remove(id: string): void
-    /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
-    /**
-     * @description 销毁
-     */
-    destroy(): void
   }
 
   export namespace Heatmap {
@@ -2335,7 +2319,6 @@ declare module "@anstec/earth" {
       value?: number
       radius?: number
     }
-
     /**
      * @property [min] 最小值
      * @property [max] 最大值
@@ -2346,7 +2329,6 @@ declare module "@anstec/earth" {
       max: number
       data: Point[]
     }
-
     /**
      * @description 热力图构造参数
      * @property [radius = 60] 半径
@@ -2361,16 +2343,16 @@ declare module "@anstec/earth" {
      * @property [maxScaleDenominator = 2000] 最大比例尺
      */
     export type ConstructorOptions = {
-      radius: number
-      spacingFactor: number
-      maxOpacity: number
-      minOpacity: number
-      blur: number
-      gradient: { [key: string]: string }
-      minCanvasSize: number
-      maxCanvasSize: number
-      minScaleDenominator: number
-      maxScaleDenominator: number
+      radius?: number
+      spacingFactor?: number
+      maxOpacity?: number
+      minOpacity?: number
+      blur?: number
+      gradient?: { [key: string]: string }
+      minCanvasSize?: number
+      maxCanvasSize?: number
+      minScaleDenominator?: number
+      maxScaleDenominator?: number
     }
   }
 
@@ -2380,14 +2362,29 @@ declare module "@anstec/earth" {
    * @param [options] {@link Heatmap.ConstructorOptions} 参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const heatmap = new Heatmap(earth)
    * heatmap.render({ min: 0, max: 5, data: [] })
    * ```
    */
   export class Heatmap {
-    id: string
     constructor(earth: Earth, options?: Heatmap.ConstructorOptions)
+    /**
+     * @description ID
+     */
+    readonly id: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 热力图数据
+     */
+    readonly data: Heatmap.Data | undefined
+    /**
+     * @description 热力图原始数据
+     */
+    readonly rawData: Heatmap.Data
     /**
      * @description 设置WGS84位置的数据
      * @param param 数据
@@ -2400,18 +2397,17 @@ declare module "@anstec/earth" {
      */
     render(data: Heatmap.Data): void
     /**
-     * @description 设置是否在地图上显示热图
-     * @param value
+     * @description 在地图上显示热图
      */
-    show(value: boolean): void
+    show(): void
+    /**
+     * @description 在地图上隐藏热图
+     */
+    hide(): void
     /**
      * @description 移除地图上的热图
      */
     remove(): void
-    /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
     /**
      * @description 销毁热图
      */
@@ -2420,11 +2416,8 @@ declare module "@anstec/earth" {
 
   export namespace BillboardLayer {
     type Attributes = "color" | "position" | "image" | "rotation" | "scale"
-
     export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
     export type LabelSetParam<T> = Omit<LabelLayer.SetParam<T>, "position">
-
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property position {@link Cartesian3} 位置
@@ -2434,7 +2427,7 @@ declare module "@anstec/earth" {
      * @property [heightReference = {@link HeightReference.NONE}] 位置高度参考
      * @property [scale = 1] 缩放
      * @property image 图片
-     * @property [color = {@link Color.WHITE}] 颜色
+     * @property [color = {@link Czm_Color.WHITE}] 颜色
      * @property [rotation = 0] 旋转
      * @property [alignedAxis = {@link Cartesian3.ZERO}] 轴向量
      * @property [width] 宽度
@@ -2455,7 +2448,7 @@ declare module "@anstec/earth" {
       heightReference?: HeightReference
       scale?: number
       image: string
-      color?: Color
+      color?: Czm_Color
       rotation?: number
       alignedAxis?: Cartesian3
       width?: number
@@ -2468,31 +2461,53 @@ declare module "@anstec/earth" {
       disableDepthTestDistance?: number
       label?: LabelAddParam<T>
     }
-
     export type SetParam<T> = Partial<Pick<AddParam<T>, Attributes>> & { label?: LabelSetParam<T> }
   }
 
   /**
    * @decription 广告牌图层
-   * @extends Layer {@link Layer} 图层基类
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const billboardLayer = new BillboardLayer(earth)
    * //or
-   * const billboardLayer = earth.useDefaultLayers().billboard
+   * const billboardLayer = earth.layers.billboard
    * ```
    */
-  export class BillboardLayer<T = unknown> extends Layer<BillboardCollection, Billboard, Layer.Data<T>> {
-    labelLayer: LabelLayer<T>
+  export class BillboardLayer<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 标签图层
+     */
+    readonly labelLayer: LabelLayer<T>
+    /**
+     * @description 集合
+     */
+    readonly collection: BillboardCollection
+    /**
+     * @description 对象实体缓存
+     */
+    readonly cache: Map<string, Layer.Cache<Billboard, T>>
+    /**
+     * @description 设置是否可被销毁
+     * @param status
+     */
+    setAllowDestroy(status: boolean): void
     /**
      * @description 新增广告牌
      * @param param {@link BillboardLayer.AddParam} 广告牌参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const billboardLayer = new BillboardLayer(earth)
      * billboardLayer.add({
      *  image: "/billboard.png",
@@ -2517,7 +2532,7 @@ declare module "@anstec/earth" {
      * @param param {@link BillboardLayer.SetParam} 广告牌参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const billboardLayer = new BillboardLayer(earth)
      * billboardLayer.set("some_id", {
      *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -2527,6 +2542,36 @@ declare module "@anstec/earth" {
      * ```
      */
     set(id: string, param: BillboardLayer.SetParam<T>): void
+    /**
+     * @description 根据ID获取缓存的对象
+     * @param id ID
+     * @returns 缓存对象
+     */
+    getEntity(id: string): Layer.Cache<Billboard, T> | undefined
+    /**
+     * @description 根据ID获取实体的数据
+     * @param id ID
+     * @returns 实体数据
+     */
+    getData(id: string): Layer.Data<T> | undefined
+    /**
+     * @description 根据ID获取图元
+     * @param id ID
+     * @returns 图元
+     */
+    getPrimitive(id: string): Billboard | undefined
+    /**
+     * @description 根据ID测试实体条目是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    has(id: string): boolean
+    /**
+     * @description 根据ID判断实体图元是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    exist(id: string): boolean
     /**
      * @description 隐藏所有广告牌
      */
@@ -2546,6 +2591,16 @@ declare module "@anstec/earth" {
      */
     show(id: string): void
     /**
+     * @description 判断所有广告牌是否显示
+     */
+    shown(): boolean
+    /**
+     * @description 根据ID判断广告牌是否显示
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    shown(id: string): boolean
+    /**
      * @description 移除所有广告牌
      */
     remove(): void
@@ -2555,7 +2610,7 @@ declare module "@anstec/earth" {
      */
     remove(id: string): void
     /**
-     * @description 销毁图层
+     * @description 销毁
      * @returns 返回`boolean`值
      */
     destroy(): boolean
@@ -2570,14 +2625,13 @@ declare module "@anstec/earth" {
       noiseDetail?: number
       noiseOffset?: Cartesian3
     }
-
     /**
      * @property position {@link Cartesian3} 位置
      * @property [id] ID
      * @property [data] 附加数据
      * @property [show = true] 是否显示
      * @property [brightness = 0] 灰度 `[0, 1]`
-     * @property [color = {@link Color.WHITE}] 颜色
+     * @property [color = {@link Czm_Color.WHITE}] 颜色
      * @property [scale] {@link Cartesian2} 缩放
      * @property [maximumSize] {@link Cartesian3} 云体最大渲染椭球体积
      * @property [slice = 0.5] 切片值 `[0, 1]`，为云的外观选择特定横截面
@@ -2592,34 +2646,53 @@ declare module "@anstec/earth" {
       data?: T
       show?: boolean
       brightness?: number
-      color?: Color
+      color?: Czm_Color
       scale?: Cartesian2
       maximumSize?: Cartesian3
       slice?: number
     }
-
     export type SetParam<T> = Omit<Partial<AddParam<T>>, "id" | "data">
   }
 
   /**
    * @decription 积云图层
-   * @extends Layer {@link Layer} 图层基类
    * @param earth {@link Earth} 地球实例
    * @param [options] {@link CloudLayer.ConstructorOptions} 参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const cloudLayer = new CloudLayer(earth)
    * ```
    */
-  export class CloudLayer<T = unknown> extends Layer<CloudCollection, CumulusCloud, Layer.Data<T>> {
+  export class CloudLayer<T = unknown> {
     constructor(earth: Earth, options?: CloudLayer.ConstructorOptions)
+    /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 集合
+     */
+    readonly collection: CloudCollection
+    /**
+     * @description 对象实体缓存
+     */
+    readonly cache: Map<string, Layer.Cache<CumulusCloud, T>>
+    /**
+     * @description 设置是否可被销毁
+     * @param status
+     */
+    setAllowDestroy(status: boolean): void
     /**
      * @description 新增积云
      * @param param {@link CloudLayer.AddParam} 新增参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const cloudLayer = new CloudLayer(earth)
      * cloudLayer.add({
      *  id: "cloud",
@@ -2640,6 +2713,78 @@ declare module "@anstec/earth" {
      * @param param {@link CloudLayer.SetParam} 修改参数
      */
     set(id: string, param: CloudLayer.SetParam<T>): void
+    /**
+     * @description 根据ID获取缓存的对象
+     * @param id ID
+     * @returns 缓存对象
+     */
+    getEntity(id: string): Layer.Cache<CumulusCloud, T> | undefined
+    /**
+     * @description 根据ID获取实体的数据
+     * @param id ID
+     * @returns 实体数据
+     */
+    getData(id: string): Layer.Data<T> | undefined
+    /**
+     * @description 根据ID获取图元
+     * @param id ID
+     * @returns 图元
+     */
+    getPrimitive(id: string): CumulusCloud | undefined
+    /**
+     * @description 根据ID测试实体条目是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    has(id: string): boolean
+    /**
+     * @description 根据ID判断实体图元是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    exist(id: string): boolean
+    /**
+     * @description 显示所有积云
+     */
+    show(): void
+    /**
+     * @description 根据ID显示积云
+     * @param id ID
+     */
+    show(id: string): void
+    /**
+     * @description 隐藏所有积云
+     */
+    hide(): void
+    /**
+     * @description 根据ID隐藏积云
+     * @param id ID
+     */
+    hide(id: string): void
+    /**
+     * @description 判断所有积云是否显示
+     */
+    shown(): boolean
+    /**
+     * @description 根据ID判断积云是否显示
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    shown(id: string): boolean
+    /**
+     * @description 移除所有积云
+     */
+    remove(): void
+    /**
+     * @description 根据ID移除积云
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     * @returns 返回`boolean`值
+     */
+    destroy(): boolean
   }
 
   export namespace DiffusePointLayer {
@@ -2655,14 +2800,13 @@ declare module "@anstec/earth" {
       data?: T
       callback: () => void
     }
-
     /**
      * @property position {@link Cartesian3} 位置
      * @property [id] ID
      * @property [className] 类名
      * @property [pixelSize = 10] 像素大小
-     * @property [color = {@link Color.RED}] 颜色
-     * @property [strokeColor = {@link Color.RED}] 描线颜色
+     * @property [color = {@link Czm_Color.RED}] 颜色
+     * @property [strokeColor = {@link Czm_Color.RED}] 描线颜色
      * @property [data] 数据
      */
     export type AddParam<T> = {
@@ -2670,40 +2814,42 @@ declare module "@anstec/earth" {
       id?: string
       className?: string[]
       pixelSize?: number
-      color?: Color
-      strokeColor?: Color
+      color?: Czm_Color
+      strokeColor?: Czm_Color
       data?: T
     }
-
     /**
      * @property [position] {@link Cartesian3} 位置
      * @property [data] 数据
      */
-    export type SetParam<T> = {
-      position?: Cartesian3
-      data?: T
-    }
+    export type SetParam<T> = { position?: Cartesian3; data?: T }
   }
 
   /**
    * @description 扩散点图层
+   * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const diffusePointLayer = new DiffusePointLayer(earth)
    * ```
    */
   export class DiffusePointLayer<T = unknown> {
     constructor(earth: Earth)
     /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    readonly cache: Map<string, DiffusePointLayer.Data<T>>
+    /**
      * @description 设置是否可被销毁
      * @param status
      */
     setAllowDestroy(status: boolean): void
-    /**
-     * @description 获取是否可被销毁的属性
-     */
-    getAllowDestroy(): boolean
     /**
      * @description 新增一个扩散点
      * @param param {@link DiffusePointLayer.AddParam} 参数
@@ -2748,10 +2894,6 @@ declare module "@anstec/earth" {
      */
     remove(id: string): void
     /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
-    /**
      * @description 销毁
      */
     destroy(): void
@@ -2759,7 +2901,6 @@ declare module "@anstec/earth" {
 
   export namespace EllipseLayer {
     export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property center {@link Cartesian3} 圆心
@@ -2767,7 +2908,7 @@ declare module "@anstec/earth" {
      * @property minorAxis 短半径
      * @property [rotation] 旋转
      * @property [height] 高度
-     * @property [color = {@link Color.RED}] 填充色
+     * @property [color = {@link Czm_Color.RED}] 填充色
      * @property [ground = false] 是否贴地
      * @property [label] {@link LabelAddParam} 对应标签
      */
@@ -2777,7 +2918,7 @@ declare module "@anstec/earth" {
       minorAxis: number
       rotation?: number
       height?: number
-      color?: Color
+      color?: Czm_Color
       ground?: boolean
       label?: LabelAddParam<T>
     }
@@ -2785,29 +2926,48 @@ declare module "@anstec/earth" {
 
   /**
    * @description 椭圆图层
-   * @extends Layer {@link Layer} 图层基类
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const ellipseLayer = new EllipseLayer(earth)
    * //or
-   * const ellipseLayer = earth.useDefaultLayers().ellipse
+   * const ellipseLayer = earth.layers.ellipse
    * ```
    */
-  export class EllipseLayer<T = unknown> extends Layer<
-    PrimitiveCollection,
-    Primitive | GroundPrimitive,
-    Layer.Data<T>
-  > {
-    labelLayer: LabelLayer<T>
+  export class EllipseLayer<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 标签图层
+     */
+    readonly labelLayer: LabelLayer<T>
+    /**
+     * @description 集合
+     */
+    readonly collection: PrimitiveCollection
+    /**
+     * @description 对象实体缓存
+     */
+    readonly cache: Map<string, Layer.Cache<Primitive | GroundPrimitive, T>>
+    /**
+     * @description 设置是否可被销毁
+     * @param status
+     */
+    setAllowDestroy(status: boolean): void
     /**
      * @description 新增椭圆
      * @param param {@link EllipseLayer.AddParam} 椭圆参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const ellipseLayer = new EllipseLayer(earth)
      * ellipseLayer.add({
      *  center: Cartesian3.fromDegrees(104, 31),
@@ -2819,6 +2979,36 @@ declare module "@anstec/earth" {
      * ```
      */
     add(param: EllipseLayer.AddParam<T>): void
+    /**
+     * @description 根据ID获取缓存的对象
+     * @param id ID
+     * @returns 缓存对象
+     */
+    getEntity(id: string): Layer.Cache<Primitive | GroundPrimitive, T> | undefined
+    /**
+     * @description 根据ID获取实体的数据
+     * @param id ID
+     * @returns 实体数据
+     */
+    getData(id: string): Layer.Data<T> | undefined
+    /**
+     * @description 根据ID获取图元
+     * @param id ID
+     * @returns 图元
+     */
+    getPrimitive(id: string): Primitive | GroundPrimitive | undefined
+    /**
+     * @description 根据ID测试实体条目是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    has(id: string): boolean
+    /**
+     * @description 根据ID判断实体图元是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    exist(id: string): boolean
     /**
      * @description 隐藏所有椭圆
      */
@@ -2838,6 +3028,16 @@ declare module "@anstec/earth" {
      */
     show(id: string): void
     /**
+     * @description 判断所有椭圆是否显示
+     */
+    shown(): boolean
+    /**
+     * @description 根据ID判断椭圆是否显示
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    shown(id: string): boolean
+    /**
      * @description 移除所有椭圆
      */
     remove(): void
@@ -2847,7 +3047,7 @@ declare module "@anstec/earth" {
      */
     remove(id: string): void
     /**
-     * @description 销毁图层
+     * @description 销毁
      * @returns 返回`boolean`值
      */
     destroy(): boolean
@@ -2861,11 +3061,13 @@ declare module "@anstec/earth" {
       | "outlineWidth"
       | "stackPartitions"
       | "slicePartitions"
-
     export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
     export type LabelSetParam<T> = Omit<LabelLayer.SetParam<T>, "position">
-
+    /**
+     * @property primitive 图元
+     * @property data 附加数据
+     */
+    export type Cache<T> = { primitive: Primitive; data: Data<T> }
     /**
      * @extends Layer.Data {@link Layer.Data}
      * @property center {@link Cartesian3} 中心点
@@ -2877,14 +3079,13 @@ declare module "@anstec/earth" {
       radii: Cartesian3
       hpr: HeadingPitchRoll
     }
-
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property center {@link Cartesian3} 中心点
      * @property radii {@link Cartesian3} 球体三轴半径
      * @property [hpr] {@link HeadingPitchRoll} 欧拉角
      * @property [material] {@link Material} 材质
-     * @property [outlineColor = {@link Color.AQUAMARINE}]  边框颜色
+     * @property [outlineColor = {@link Czm_Color.AQUAMARINE}]  边框颜色
      * @property [outlineWidth = 1] 边框宽度
      * @property [stackPartitions = 16] 纵向切片数
      * @property [slicePartitions = 8] 径向切片数
@@ -2895,54 +3096,72 @@ declare module "@anstec/earth" {
       radii: Cartesian3
       hpr?: HeadingPitchRoll
       material?: Material
-      outlineColor?: Color
+      outlineColor?: Czm_Color
       outlineWidth?: number
       stackPartitions?: number
       slicePartitions?: number
       label?: LabelAddParam<T>
     }
-
     /**
      * @property [center] {@link Cartesian3} 中心点
      * @property [hpr] {@link HeadingPitchRoll} 欧拉角
      * @property [label] {@link LabelSetParam} 对应标签
      */
-    export type SetParam<T> = {
-      center?: Cartesian3
-      hpr?: HeadingPitchRoll
-      label?: LabelSetParam<T>
-    }
+    export type SetParam<T> = { center?: Cartesian3; hpr?: HeadingPitchRoll; label?: LabelSetParam<T> }
   }
 
   /**
    * @description 球、椭球、模型包络
-   * @extends Layer {@link Layer} 图层基类
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const ellipsoidLayer = new EllipsoidLayer(earth)
    * ```
    */
-  export class EllipsoidLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive, EllipsoidLayer.Data<T>> {
-    labelLayer: LabelLayer<T>
+  export class EllipsoidLayer<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 标签图层
+     */
+    readonly labelLayer: LabelLayer<T>
+    /**
+     * @description 集合
+     */
+    readonly collection: PrimitiveCollection
+    /**
+     * @description 对象实体缓存
+     */
+    readonly cache: Map<string, EllipsoidLayer.Cache<T>>
     /**
      * @description 当前球体集合的二维投影包络计算
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const envelope = new EllipsoidLayer(earth)
      * envelope.calcEnvProjection()
      * ```
      */
     calcEnvProjection(): void
     /**
+     * @description 设置是否可被销毁
+     * @param status
+     */
+    setAllowDestroy(status: boolean): void
+    /**
      * @description 新增椭球 / 包络
      * @param param {@link EllipsoidLayer.AddParam} 新增参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const ellipsoidLayer = new EllipsoidLayer(earth)
      * ellipsoidLayer.add({
      *  center: Cartesian3.fromDegrees(104, 31, 5000),
@@ -2965,7 +3184,7 @@ declare module "@anstec/earth" {
      * @param param {@link EllipsoidLayer.SetParam} 包络参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const ellipsoidLayer = new EllipsoidLayer(earth)
      * ellipsoidLayer.set("some_id", {
      *  center: Cartesian3.fromDegrees(104, 31, 8000),
@@ -2974,6 +3193,36 @@ declare module "@anstec/earth" {
      * ```
      */
     set(id: string, param: EllipsoidLayer.SetParam<T>): void
+    /**
+     * @description 根据ID获取缓存的对象
+     * @param id ID
+     * @returns 缓存对象
+     */
+    getEntity(id: string): EllipsoidLayer.Cache<T> | undefined
+    /**
+     * @description 根据ID获取实体的数据
+     * @param id ID
+     * @returns 实体数据
+     */
+    getData(id: string): EllipsoidLayer.Data<T> | undefined
+    /**
+     * @description 根据ID获取图元
+     * @param id ID
+     * @returns 图元
+     */
+    getPrimitive(id: string): Primitive | undefined
+    /**
+     * @description 根据ID测试实体条目是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    has(id: string): boolean
+    /**
+     * @description 根据ID判断实体图元是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    exist(id: string): boolean
     /**
      * @description 隐藏所有包络
      */
@@ -2993,6 +3242,16 @@ declare module "@anstec/earth" {
      */
     show(id: string): void
     /**
+     * @description 判断所有包络是否显示
+     */
+    shown(): boolean
+    /**
+     * @description 根据ID判断包络是否显示
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    shown(id: string): boolean
+    /**
      * @description 移除所有包络
      */
     remove(): void
@@ -3002,7 +3261,7 @@ declare module "@anstec/earth" {
      */
     remove(id: string): void
     /**
-     * @description 销毁图层
+     * @description 销毁
      * @returns 返回`boolean`值
      */
     destroy(): boolean
@@ -3010,16 +3269,15 @@ declare module "@anstec/earth" {
 
   export namespace LabelLayer {
     export type Attributes = "id" | "module" | "position"
-
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property position {@link Cartesian3} 位置
      * @property text 文本
-     * @property [font = ”14px sans-serif] 字体
-     * @property [fillColor = {@link Color.RED}] 字体色
-     * @property [outlineColor = {@link Color.RED}] 字体描边色
+     * @property [font = "14px sans-serif"] 字体
+     * @property [fillColor = {@link Czm_Color.RED}] 字体色
+     * @property [outlineColor = {@link Czm_Color.RED}] 字体描边色
      * @property [outlineWidth = 1] 字体描边宽度
-     * @property [backgroundColor = new {@link Color}(0.165, 0.165, 0.165, 0.8)] 背景色
+     * @property [backgroundColor = new {@link Czm_Color}(0.165, 0.165, 0.165, 0.8)] 背景色
      * @property [showBackground = false] 是否渲染背景
      * @property [backgroundPadding = new {@link Cartesian2}(7, 5)] 背景边距
      * @property [style = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
@@ -3039,10 +3297,10 @@ declare module "@anstec/earth" {
       position: Cartesian3
       text: string
       font?: string
-      fillColor?: Color
-      outlineColor?: Color
+      fillColor?: Czm_Color
+      outlineColor?: Czm_Color
       outlineWidth?: number
-      backgroundColor?: Color
+      backgroundColor?: Czm_Color
       showBackground?: boolean
       backgroundPadding?: Cartesian2
       style?: LabelStyle
@@ -3058,28 +3316,47 @@ declare module "@anstec/earth" {
       distanceDisplayCondition?: DistanceDisplayCondition
       disableDepthTestDistance?: number
     }
-
     export type SetParam<T> = Partial<Omit<AddParam<T>, "id" | "module" | "data">>
   }
 
   /**
    * @description 标签图层
-   * @extends Layer {@link Layer} 图层基类
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const labelLayer = new LabelLayer(earth)
    * ```
    */
-  export class LabelLayer<T = unknown> extends Layer<LabelCollection, Label, Layer.Data<T>> {
+  export class LabelLayer<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 集合
+     */
+    readonly collection: LabelCollection
+    /**
+     * @description 对象实体缓存
+     */
+    readonly cache: Map<string, Layer.Cache<Label, T>>
+    /**
+     * @description 设置是否可被销毁
+     * @param status
+     */
+    setAllowDestroy(status: boolean): void
     /**
      * @description 新增标签
      * @param param {@link LabelLayer.AddParam} 标签参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const labelLayer = new LabelLayer(earth)
      * labelLayer.add({
      *  text: "This is a label.",
@@ -3110,7 +3387,7 @@ declare module "@anstec/earth" {
      * @param param {@link LabelLayer.SetParam} 标签参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const labelLayer = new LabelLayer(earth)
      * labelLayer.set("some_id", {
      *  text: "This is a label.",
@@ -3119,117 +3396,24 @@ declare module "@anstec/earth" {
      * ```
      */
     set(id: string, param: LabelLayer.SetParam<T>): void
-  }
-
-  export namespace Layer {
     /**
-     * @description 图元类型
-     */
-    export type Primitives =
-      | Billboard
-      | CumulusCloud
-      | Label
-      | Model
-      | ParticleSystem
-      | PointPrimitive
-      | Primitive
-      | GroundPrimitive
-      | GroundPolylinePrimitive
-
-    /**
-     * @description 附加数据
-     * @property [module] 模块名称
-     * @property [data] 附加数据
-     */
-    export type Data<T> = {
-      module?: string
-      data?: T
-    }
-
-    /**
-     * @description 新增元素的基础参数
-     * @extends Data {@link Data}
-     * @property [id] 唯一ID
-     * @property [show] 是否展示
-     */
-    export type AddParam<T> = Data<T> & {
-      id?: string
-      show?: boolean
-    }
-
-    /**
-     * @description 缓存数据
-     * @property primitive 图元
-     * @property data 缓存的额外数据
-     */
-    export type Cache<P, D> = {
-      primitive: P
-      data: D
-    }
-
-    /**
-     * @description `cesium` 中合法的集合对象
-     */
-    export type Collections =
-      | BillboardCollection
-      | CloudCollection
-      | LabelCollection
-      | PointPrimitiveCollection
-      | PrimitiveCollection
-  }
-
-  /**
-   * @description 图层基类
-   * @param earth {@link Earth} 地球实例
-   * @param collection {@link Layer.Collections} 集合
-   */
-  export abstract class Layer<C extends Layer.Collections, P extends Layer.Primitives, D> {
-    /**
-     * @description 图元的集合
-     */
-    collection: C
-    protected earth: Earth
-    /**
-     * @description 对象实体缓存
-     */
-    protected cache: Map<string, Layer.Cache<P, D>>
-    protected scene: Scene
-    protected viewer: Viewer
-    protected camera: Camera
-    constructor(earth: Earth, collection: C)
-    /**
-     * @description 设置是否可被销毁
-     * @param status
-     */
-    setAllowDestroy(status: boolean): void
-    /**
-     * @description 获取是否可被销毁的属性
-     */
-    getAllowDestroy(): boolean
-    /**
-     * @description 绘制并缓存新增对象
+     * @description 根据ID获取缓存的对象
      * @param id ID
-     * @param param {@link Layer.Cache} 缓存的数据
-     * @returns `primitive`图元实例
+     * @returns 缓存对象
      */
-    protected save(id: string, param: Layer.Cache<P, D>): P
-    /**
-     * @description 抽象新增方法
-     * @param param 参数
-     */
-    abstract add(param: any): void
-    /**
-     * @description 根据ID获取实体
-     * @param id ID
-     * @returns 实体
-     */
-    getEntity(id: string): Layer.Cache<P, D> | undefined
+    getEntity(id: string): Layer.Cache<Label, T> | undefined
     /**
      * @description 根据ID获取实体的数据
      * @param id ID
      * @returns 实体数据
      */
-    getData(id: string): D | undefined
+    getData(id: string): Layer.Data<T> | undefined
+    /**
+     * @description 根据ID获取图元
+     * @param id ID
+     * @returns 图元
+     */
+    getPrimitive(id: string): Label | undefined
     /**
      * @description 根据ID测试实体条目是否存在
      * @param id ID
@@ -3243,73 +3427,86 @@ declare module "@anstec/earth" {
      */
     exist(id: string): boolean
     /**
-     * @description 显示所有已缓存的实体
+     * @description 显示所有标签
      */
     show(): void
     /**
-     * @description 根据ID显示实体
+     * @description 根据ID显示标签
      * @param id ID
      */
     show(id: string): void
     /**
-     * @description 隐藏所有已缓存的实体
+     * @description 隐藏所有标签
      */
     hide(): void
     /**
-     * @description 根据ID隐藏实体
+     * @description 根据ID隐藏标签
      * @param id ID
      */
     hide(id: string): void
     /**
-     * @description 判断所有实体是否显示
+     * @description 判断所有标签是否显示
      */
     shown(): boolean
     /**
-     * @description 根据ID判断实体是否显示
+     * @description 根据ID判断标签是否显示
      * @param id ID
      * @returns 返回`boolean`值
      */
     shown(id: string): boolean
     /**
-     * @description 移除图层中的所有实体
+     * @description 移除所有标签
      */
     remove(): void
     /**
-     * @description 根据ID移除实体
+     * @description 根据ID移除标签
      * @param id ID
      */
     remove(id: string): void
     /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
-    /**
-     * @description 销毁图层
+     * @description 销毁
      * @returns 返回`boolean`值
      */
     destroy(): boolean
   }
 
+  export namespace Layer {
+    /**
+     * @description 附加数据
+     * @property [module] 模块名称
+     * @property [data] 附加数据
+     */
+    export type Data<T> = { module?: string; data?: T }
+    /**
+     * @description 新增元素的基础参数
+     * @extends Data {@link Data}
+     * @property [id] 唯一ID
+     * @property [show] 是否展示
+     */
+    export type AddParam<T> = Data<T> & { id?: string; show?: boolean }
+    /**
+     * @description 缓存数据
+     * @property primitive 图元
+     * @property data 缓存的额外数据
+     */
+    export type Cache<P, T> = { primitive: P; data: Data<T> }
+  }
+
   export namespace ModelLayer {
-    export type StopViewFunc = () => void
-
     export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
     export type LabelSetParam<T> = Omit<LabelLayer.SetParam<T>, "position">
-
     export type EnvelopeAddParam<T> = Pick<EllipsoidLayer.AddParam<T>, EllipsoidLayer.Attributes>
-
     export type EnvelopeSetParam<T> = Pick<EllipsoidLayer.SetParam<T>, "hpr">
-
+    /**
+     * @property primitive 图元
+     * @property data 附加数据
+     */
+    export type Cache<T> = { primitive: Model; data: Data<T> }
     /**
      * @property position {@link Cartesian3} 位置
      * @property hpr {@link HeadingPitchRoll} 欧拉角
      */
-    export type Data<T> = Layer.Data<T> & {
-      position: Cartesian3
-      hpr: HeadingPitchRoll
-    }
-
+    export type Data<T> = Layer.Data<T> & { position: Cartesian3; hpr: HeadingPitchRoll }
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property url 模型url
@@ -3318,10 +3515,10 @@ declare module "@anstec/earth" {
      * @property [asynchronous = true] 异步加载
      * @property [hpr] {@link HeadingPitchRoll} 欧拉角
      * @property [minimumPixelSize = 24] 模型近似最小像素
-     * @property [color] {@link Color} 颜色
+     * @property [color] {@link Czm_Color} 颜色
      * @property [colorBlendMode = {@link ColorBlendMode.MIX}] 颜色混合模式
      * @property [colorBlendAmount = 0.5] 混合程度，在`colorBlendMode`值为`MIX`时生效
-     * @property [silhouetteColor = {@link Color.LIGHTYELLOW}] 轮廓颜色
+     * @property [silhouetteColor = {@link Czm_Color.LIGHTYELLOW}] 轮廓颜色
      * @property [silhouetteSize = 1] 轮廓大小
      * @property [animationLoop = {@link ModelAnimationLoop.REPEAT}] 动画方式
      * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
@@ -3336,10 +3533,10 @@ declare module "@anstec/earth" {
       asynchronous?: boolean
       hpr?: HeadingPitchRoll
       minimumPixelSize?: number
-      color?: Color
+      color?: Czm_Color
       colorBlendMode?: ColorBlendMode
       colorBlendAmount?: number
-      silhouetteColor?: Color
+      silhouetteColor?: Czm_Color
       silhouetteSize?: number
       animationLoop?: ModelAnimationLoop
       distanceDisplayCondition?: DistanceDisplayCondition
@@ -3347,13 +3544,12 @@ declare module "@anstec/earth" {
       label?: LabelAddParam<T>
       envelope?: EnvelopeAddParam<T>
     }
-
     /**
      * @property [position] {@link Cartesian3} 位置
      * @property [hpr] {@link HeadingPitchRoll} 欧拉角
      * @property [minimumPixelSize = 24] 模型近似最小像素
-     * @property [color] {@link Color} 颜色
-     * @property [silhouetteColor = {@link Color.LIGHTYELLOW}] 轮廓颜色
+     * @property [color] {@link Czm_Color} 颜色
+     * @property [silhouetteColor = {@link Czm_Color.LIGHTYELLOW}] 轮廓颜色
      * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 按距离设置可见性
      * @property [label] {@link LabelSetParam} 对应标签
      * @property [envelope] {@link EnvelopeSetParam} 对应包络
@@ -3361,25 +3557,19 @@ declare module "@anstec/earth" {
     export type SetParam<T> = {
       position?: Cartesian3
       hpr?: HeadingPitchRoll
-      color?: Color
-      silhouetteColor?: Color
+      color?: Czm_Color
+      silhouetteColor?: Czm_Color
       distanceDisplayCondition?: DistanceDisplayCondition
       label?: LabelSetParam<T>
       envelope?: EnvelopeSetParam<T>
     }
-
     /**
      * @property [view = {@link ViewAngle.THIRD}] 视角
      * @property [offset = new {@link Cartesian3}(50, 0, 20)] 视角偏移
      * @property [sensitivity = 0.1] 鼠标调整视角的灵敏度 `[0,1]`
      *
      */
-    export type ViewOptions = {
-      view?: ViewAngle
-      offset?: Cartesian3
-      sensitivity?: number
-    }
-
+    export type ViewOptions = { view?: ViewAngle; offset?: Cartesian3; sensitivity?: number }
     /**
      * @property id ID
      * @property path {@link Cartesian3} 移动路径
@@ -3400,29 +3590,54 @@ declare module "@anstec/earth" {
 
   /**
    * @description 模型图层
-   * @extends Layer {@link Layer} 图层基类
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const modelLayer = new ModelLayer(earth)
-   * //or
-   * const modelLayer = earth.useDefaultLayers().model
    * ```
    */
-  export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, ModelLayer.Data<T>> {
-    labelLayer: LabelLayer<T>
+  export class ModelLayer<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 标签图层
+     */
+    readonly labelLayer: LabelLayer<T>
+    /**
+     * @description 包络图层
+     */
+    readonly envelope: EllipsoidLayer<T>
+    /**
+     * @description 集合
+     */
+    readonly collection: PrimitiveCollection
+    /**
+     * @description 对象实体缓存
+     */
+    readonly cache: Map<string, ModelLayer.Cache<T>>
     /**
      * @description 当前模型包络集合的二维投影计算
      */
     calcEnvProjection(): void
     /**
+     * @description 设置是否可被销毁
+     * @param status
+     */
+    setAllowDestroy(status: boolean): void
+    /**
      * @description 新增模型
      * @param param {@link ModelLayer.AddParam} 模型参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const modelLayer = new ModelLayer(earth)
      * modelLayer.add({
      *  url: "/Plane.glb",
@@ -3449,7 +3664,7 @@ declare module "@anstec/earth" {
      * @param id ID
      * @param param {@link ModelLayer.SetParam} 模型参数
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const modelLayer = new ModelLayer(earth)
      * modelLayer.set("some_id", {
      *  position: Cartesian3.fromDegrees(104, 31, 5000),
@@ -3464,7 +3679,7 @@ declare module "@anstec/earth" {
      * @returns 结束行动的函数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const modelLayer = new ModelLayer(earth)
      * const stop: Function = modelLayer.useAction({
      *  id: "some_id",
@@ -3486,7 +3701,7 @@ declare module "@anstec/earth" {
      * @returns 关闭视角跟踪的函数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const modelLayer = new ModelLayer(earth)
      *
      * //first person view
@@ -3500,6 +3715,36 @@ declare module "@anstec/earth" {
      * ```
      */
     usePersonView(id: string, option?: ModelLayer.ViewOptions): () => void
+    /**
+     * @description 根据ID获取缓存的对象
+     * @param id ID
+     * @returns 缓存对象
+     */
+    getEntity(id: string): ModelLayer.Cache<T> | undefined
+    /**
+     * @description 根据ID获取实体的数据
+     * @param id ID
+     * @returns 实体数据
+     */
+    getData(id: string): ModelLayer.Data<T> | undefined
+    /**
+     * @description 根据ID获取图元
+     * @param id ID
+     * @returns 图元
+     */
+    getPrimitive(id: string): Model | undefined
+    /**
+     * @description 根据ID测试实体条目是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    has(id: string): boolean
+    /**
+     * @description 根据ID判断实体图元是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    exist(id: string): boolean
     /**
      * @description 隐藏所有模型
      */
@@ -3519,6 +3764,16 @@ declare module "@anstec/earth" {
      */
     show(id: string): void
     /**
+     * @description 判断所有模型是否显示
+     */
+    shown(): boolean
+    /**
+     * @description 根据ID判断模型是否显示
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    shown(id: string): boolean
+    /**
      * @description 移除所有模型
      */
     remove(): void
@@ -3528,7 +3783,7 @@ declare module "@anstec/earth" {
      */
     remove(id: string): void
     /**
-     * @description 销毁图层
+     * @description 销毁
      * @returns 返回`boolean`值
      */
     destroy(): boolean
@@ -3541,7 +3796,6 @@ declare module "@anstec/earth" {
      * @param currentTime 当前时间
      */
     export type UpdateCallback = (particle: Particle, currentTime: number) => void
-
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property position {@link Cartesian3} 位置
@@ -3549,9 +3803,9 @@ declare module "@anstec/earth" {
      * @property [startScale] 开始时缩放
      * @property [endScale] 结束时缩放
      * @property [scale = 1] 粒子图像比例，覆盖`startScale`和`endScale`
-     * @property [startColor] {@link Color} 开始时颜色
-     * @property [endColor] {@link Color} 结束时颜色
-     * @property [color = {@link Color.WHITE}] 粒子颜色，覆盖`startColor`和`endColor`
+     * @property [startColor] {@link Czm_Color} 开始时颜色
+     * @property [endColor] {@link Czm_Color} 结束时颜色
+     * @property [color = {@link Czm_Color.WHITE}] 粒子颜色，覆盖`startColor`和`endColor`
      * @property [image] 粒子图片源
      * @property [minimumImageSize] {@link Cartesian2} 粒子图片最小值
      * @property [maximumImageSize] {@link Cartesian2} 粒子图片最大值
@@ -3580,9 +3834,9 @@ declare module "@anstec/earth" {
       startScale?: number
       endScale?: number
       scale?: number
-      startColor?: Color
-      endColor?: Color
-      color?: Color
+      startColor?: Czm_Color
+      endColor?: Czm_Color
+      color?: Czm_Color
       image?: string
       minimumImageSize?: Cartesian2
       maximumImageSize?: Cartesian2
@@ -3605,7 +3859,6 @@ declare module "@anstec/earth" {
       emitterModelMatrix?: Matrix4
       updateCallback?: UpdateCallback
     }
-
     /**
      * @property [position] {@link Cartesian3} 位置
      * @property [hpr] {@link HeadingPitchRoll} 欧拉角
@@ -3638,13 +3891,12 @@ declare module "@anstec/earth" {
       maximumSpeed?: number
       minimumSpeed?: number
     }
-
     /**
      * @description 自定义粒子系统
      * @property position {@link Cartesian3} 位置
      * @property [id] ID
-     * @property [startColor] {@link Color} 开始时颜色
-     * @property [endColor] {@link Color} 结束时颜色
+     * @property [startColor] {@link Czm_Color} 开始时颜色
+     * @property [endColor] {@link Czm_Color} 结束时颜色
      * @property [startScale] 开始时缩放
      * @property [endScale] 结束时缩放
      * @property [minimumSpeed] 粒子最小速度
@@ -3657,8 +3909,8 @@ declare module "@anstec/earth" {
     export type Custom = {
       position: Cartesian3
       id?: string
-      startColor?: Color
-      endColor?: Color
+      startColor?: Czm_Color
+      endColor?: Czm_Color
       startScale?: number
       endScale?: number
       minimumSpeed?: number
@@ -3668,28 +3920,24 @@ declare module "@anstec/earth" {
       hpr?: HeadingPitchRoll
       translation?: Cartesian3
     }
-
     /**
      * @description 火焰
      * @extends Custom {@link Custom}
      * @property [smoke = true] 是否开启烟雾效果
      */
     export type Fire = Custom & { smoke?: boolean }
-
     /**
      * @description 烟雾
      * @extends Custom {@link Custom}
      * @property [duration] `lifetime`属性会覆盖该属性
      */
     export type Smoke = Custom & { duration?: "fast" | "normal" | "enduring" }
-
     /**
      * @description 爆炸
      * @extends Custom {@link Custom}
      * @property [fire = true] 是否开启火焰效果
      */
     export type Blast = Omit<Custom, "lifetime"> & { fire?: boolean }
-
     /**
      * @description 发动机、导弹、飞机尾焰
      * @extends Custom {@link Custom}
@@ -3704,18 +3952,39 @@ declare module "@anstec/earth" {
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const particleLayer = new ParticleLayer(earth)
    * ```
    */
-  export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, ParticleSystem, Layer.Data<T>> {
+  export class ParticleLayer<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 集合
+     */
+    readonly collection: PrimitiveCollection
+    /**
+     * @description 对象实体缓存
+     */
+    readonly cache: Map<string, Layer.Cache<ParticleSystem, T>>
+    /**
+     * @description 设置是否可被销毁
+     * @param status
+     */
+    setAllowDestroy(status: boolean): void
     /**
      * @description 新增粒子效果
      * @param param {@link ParticleLayer.AddParam} 粒子参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const particleLayer = new ParticleLayer(earth)
      * particleLayer.add({
      *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -3750,7 +4019,7 @@ declare module "@anstec/earth" {
      * @param param {@link ParticleLayer.SetParam} 粒子参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const particleLayer = new ParticleLayer(earth)
      * particleLayer.set("some_id", {
      *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -3766,7 +4035,7 @@ declare module "@anstec/earth" {
      * @param param {@link ParticleLayer.Fire} 火焰参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const particleLayer = new ParticleLayer(earth)
      * particleLayer.addFire({
      *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -3781,7 +4050,7 @@ declare module "@anstec/earth" {
      * @param param {@link ParticleLayer.Smoke} 烟雾参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const particleLayer = new ParticleLayer(earth)
      * particleLayer.addSmoke({
      *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -3796,7 +4065,7 @@ declare module "@anstec/earth" {
      * @param param {@link ParticleLayer.Blast} 爆炸参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const particleLayer = new ParticleLayer(earth)
      * particleLayer.addBlast({
      *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -3812,7 +4081,7 @@ declare module "@anstec/earth" {
      * @param param {@link ParticleLayer.Flame} 喷焰参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const particleLayer = new ParticleLayer(earth)
      * particleLayer.addFlame({
      *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -3822,6 +4091,64 @@ declare module "@anstec/earth" {
      * ```
      */
     addFlame(param: ParticleLayer.Flame): void
+    /**
+     * @description 根据ID获取缓存的对象
+     * @param id ID
+     * @returns 缓存对象
+     */
+    getEntity(id: string): Layer.Cache<ParticleSystem, T> | undefined
+    /**
+     * @description 根据ID获取实体的数据
+     * @param id ID
+     * @returns 实体数据
+     */
+    getData(id: string): Layer.Data<T> | undefined
+    /**
+     * @description 根据ID获取图元
+     * @param id ID
+     * @returns 图元
+     */
+    getPrimitive(id: string): ParticleSystem | undefined
+    /**
+     * @description 根据ID测试实体条目是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    has(id: string): boolean
+    /**
+     * @description 根据ID判断实体图元是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    exist(id: string): boolean
+    /**
+     * @description 显示所有已缓存的粒子系统
+     */
+    show(): void
+    /**
+     * @description 根据ID显示粒子系统
+     * @param id ID
+     */
+    show(id: string): void
+    /**
+     * @description 隐藏所有已缓存的粒子系统
+     */
+    hide(): void
+    /**
+     * @description 根据ID隐藏粒子系统
+     * @param id ID
+     */
+    hide(id: string): void
+    /**
+     * @description 判断所有粒子系统是否显示
+     */
+    shown(): boolean
+    /**
+     * @description 根据ID判断粒子系统是否显示
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    shown(id: string): boolean
     /**
      * @description 清除所有粒子效果
      */
@@ -3839,15 +4166,13 @@ declare module "@anstec/earth" {
 
   export namespace PointLayer {
     export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
     export type LabelSetParam<T> = Omit<LabelLayer.SetParam<T>, "position">
-
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property position {@link Cartesian3} 位置
-     * @property [color = {@link Color.RED}] 填充色
+     * @property [color = {@link Czm_Color.RED}] 填充色
      * @property [pixelSize = 5] 像素大小
-     * @property [outlineColor = {@link Color.RED}] 边框色
+     * @property [outlineColor = {@link Czm_Color.RED}] 边框色
      * @property [outlineWidth = 1] 边框宽度
      * @property [scaleByDistance] {@link NearFarScalar} 按距离设置缩放
      * @property [disableDepthTestDistance] 按距离禁用地形深度检测
@@ -3856,16 +4181,15 @@ declare module "@anstec/earth" {
      */
     export type AddParam<T> = Layer.AddParam<T> & {
       position: Cartesian3
-      color?: Color
+      color?: Czm_Color
       pixelSize?: number
-      outlineColor?: Color
+      outlineColor?: Czm_Color
       outlineWidth?: number
       scaleByDistance?: NearFarScalar
       disableDepthTestDistance?: number
       distanceDisplayCondition?: DistanceDisplayCondition
       label?: LabelAddParam<T>
     }
-
     export type SetParam<T> = Partial<Omit<AddParam<T>, "id" | "module" | "data" | "label">> & {
       label?: LabelSetParam<T>
     }
@@ -3873,24 +4197,48 @@ declare module "@anstec/earth" {
 
   /**
    * @description 点图层
-   * @extends Layer {@link Layer} 图层基类
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const pointLayer = new PointLayer(earth)
    * //or
-   * const pointLayer = earth.useDefaultLayers().point
+   * const pointLayer = earth.layers.point
    * ```
    */
-  export class PointLayer<T = unknown> extends Layer<PointPrimitiveCollection, PointPrimitive, Layer.Data<T>> {
+  export class PointLayer<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 标签图层
+     */
+    readonly labelLayer: LabelLayer<T>
+    /**
+     * @description 集合
+     */
+    readonly collection: PointPrimitiveCollection
+    /**
+     * @description 对象实体缓存
+     */
+    readonly cache: Map<string, Layer.Cache<PointPrimitive, T>>
+    /**
+     * @description 设置是否可被销毁
+     * @param status
+     */
+    setAllowDestroy(status: boolean): void
     /**
      * @description 新增点
      * @param param {@link PointLayer.AddParam} 点参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const pointLayer = new PointLayer(earth)
      * pointLayer.add({
      *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -3908,7 +4256,7 @@ declare module "@anstec/earth" {
      * @param param {@link PointLayer.SetParam} 点参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const pointLayer = new PointLayer(earth)
      * pointLayer.set("some_id", {
      *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -3921,18 +4269,88 @@ declare module "@anstec/earth" {
      * ```
      */
     set(id: string, param: PointLayer.SetParam<T>): void
+    /**
+     * @description 根据ID获取缓存的对象
+     * @param id ID
+     * @returns 缓存对象
+     */
+    getEntity(id: string): Layer.Cache<PointPrimitive, T> | undefined
+    /**
+     * @description 根据ID获取实体的数据
+     * @param id ID
+     * @returns 实体数据
+     */
+    getData(id: string): Layer.Data<T> | undefined
+    /**
+     * @description 根据ID获取图元
+     * @param id ID
+     * @returns 图元
+     */
+    getPrimitive(id: string): PointPrimitive | undefined
+    /**
+     * @description 根据ID测试实体条目是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    has(id: string): boolean
+    /**
+     * @description 根据ID判断实体图元是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    exist(id: string): boolean
+    /**
+     * @description 显示所有点
+     */
+    show(): void
+    /**
+     * @description 根据ID显示点
+     * @param id ID
+     */
+    show(id: string): void
+    /**
+     * @description 隐藏所有点
+     */
+    hide(): void
+    /**
+     * @description 根据ID隐藏点
+     * @param id ID
+     */
+    hide(id: string): void
+    /**
+     * @description 判断所有点是否显示
+     */
+    shown(): boolean
+    /**
+     * @description 根据ID判断点是否显示
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    shown(id: string): boolean
+    /**
+     * @description 移除所有点
+     */
+    remove(): void
+    /**
+     * @description 根据ID移除点
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     * @returns 返回`boolean`值
+     */
+    destroy(): boolean
   }
 
   export namespace PolygonLayer {
     export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
     export type OutlineAddParam<T> = Pick<PolylineLayer.AddParam<T>, "materialType" | "materialUniforms" | "width">
-
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property positions {@link Cartesian3} 位置
      * @property [height] 高度
-     * @property [color = {@link Color.RED}] 填充色
+     * @property [color = {@link Czm_Color.RED}] 填充色
      * @property [usePointHeight = false] 多边形顶点使用其自身高度
      * @property [ground = false] 是否贴地
      * @property [arcType = {@link ArcType.GEODESIC}] 线段弧度类型，贴地时无效
@@ -3942,7 +4360,7 @@ declare module "@anstec/earth" {
     export type AddParam<T> = Layer.AddParam<T> & {
       positions: Cartesian3[]
       height?: number
-      color?: Color
+      color?: Czm_Color
       usePointHeight?: boolean
       ground?: boolean
       arcType?: ArcType
@@ -3953,29 +4371,52 @@ declare module "@anstec/earth" {
 
   /**
    * @description 多边形图层
-   * @extends Layer {@link Layer} 图层基类
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const polygonLayer = new PolygonLayer(earth)
    * //or
-   * const polygonLayer = earth.useDefaultLayers().polygon
+   * const polygonLayer = earth.layers.polygon
    * ```
    */
-  export class PolygonLayer<T = unknown> extends Layer<
-    PrimitiveCollection,
-    Primitive | GroundPrimitive,
-    Layer.Data<T>
-  > {
-    labelLayer: LabelLayer<T>
+  export class PolygonLayer<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 标签图层
+     */
+    readonly labelLayer: LabelLayer<T>
+    /**
+     * @description 边框图层
+     */
+    readonly outlineLayer: PolylineLayer<T>
+    /**
+     * @description 集合
+     */
+    readonly collection: PrimitiveCollection
+    /**
+     * @description 对象实体缓存
+     */
+    readonly cache: Map<string, Layer.Cache<Primitive | GroundPrimitive, T>>
+    /**
+     * @description 设置是否可被销毁
+     * @param status
+     */
+    setAllowDestroy(status: boolean): void
     /**
      * @description 新增多边形
      * @param param {@link PolygonLayer.AddParam} 多边形参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const polygonLayer = new PolygonLayer(earth)
      * polygonLayer.add({
      *  points: [
@@ -3991,11 +4432,41 @@ declare module "@anstec/earth" {
      */
     add(param: PolygonLayer.AddParam<T>): void
     /**
-     * @description 根据ID获取多边形外边框实体
+     * @description 根据ID获取多边形外边框缓存的对象
      * @param id ID
-     * @returns 外边框实体
+     * @returns 外边框缓存对象
      */
-    getOutlineEntity(id: string): GroundPolylinePrimitive | Primitive | undefined
+    getOutlineEntity(id: string): Layer.Cache<Primitive | GroundPolylinePrimitive, T> | undefined
+    /**
+     * @description 根据ID获取缓存的对象
+     * @param id ID
+     * @returns 缓存对象
+     */
+    getEntity(id: string): Layer.Cache<Primitive | GroundPrimitive, T> | undefined
+    /**
+     * @description 根据ID获取实体的数据
+     * @param id ID
+     * @returns 实体数据
+     */
+    getData(id: string): Layer.Data<T> | undefined
+    /**
+     * @description 根据ID获取图元
+     * @param id ID
+     * @returns 图元
+     */
+    getPrimitive(id: string): Primitive | GroundPrimitive | undefined
+    /**
+     * @description 根据ID测试实体条目是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    has(id: string): boolean
+    /**
+     * @description 根据ID判断实体图元是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    exist(id: string): boolean
     /**
      * @description 隐藏所有多边形
      */
@@ -4014,6 +4485,16 @@ declare module "@anstec/earth" {
      * @param id ID
      */
     show(id: string): void
+    /**
+     * @description 判断所有多边形是否显示
+     */
+    shown(): boolean
+    /**
+     * @description 根据ID判断多边形是否显示
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    shown(id: string): boolean
     /**
      * @description 移除所有多边形
      */
@@ -4043,20 +4524,19 @@ declare module "@anstec/earth" {
       | "PolylineFlowingDash"
       | "PolylineFlowingWave"
       | "PolylineTrailing"
-
     /**
      * @description 材质类型对应的 `uniforms` 参数
      */
     export type MaterialUniforms = { [key: string]: any }
-
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property lines {@link Cartesian3} 位置
      * @property [asynchronous = true] 是否异步渲染
      * @property [width = 2] 线宽
-     * @property [arcType = {@link ArcType.RHUMB}] 线段弧度类型
+     * @property [arcType = {@link ArcType.GEODESIC}] 线段弧度类型
      * @property [materialType = "Color"] {@link MaterialType} 材质类型
-     * @property [materialUniforms = { color: {@link Color.RED} }] {@link MaterialUniforms} 材质参数
+     * @property [materialUniforms = { color: {@link Czm_Color.RED} }] {@link MaterialUniforms} 材质参数
+     * @property [perLineVertextColors] 各线段或其顶点使用单独的颜色，将忽略材质相关配置
      * @property [ground = false] 是否贴地
      * @property [loop = false] 是否首尾相接
      */
@@ -4067,6 +4547,7 @@ declare module "@anstec/earth" {
       arcType?: ArcType
       materialType?: MaterialType
       materialUniforms?: MaterialUniforms
+      perLineVertextColors?: Czm_Color[] | Czm_Color[][]
       ground?: boolean
       loop?: boolean
     }
@@ -4078,24 +4559,41 @@ declare module "@anstec/earth" {
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const polylineLayer = new PolylineLayer(earth)
    * //or
-   * const polylineLayer = earth.useDefaultLayers().polyline
+   * const polylineLayer = earth.layers.polyline
    * ```
    */
-  export class PolylineLayer<T = unknown> extends Layer<
-    PrimitiveCollection,
-    Primitive | GroundPolylinePrimitive,
-    Layer.Data<T>
-  > {
+  export class PolylineLayer<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 集合
+     */
+    readonly collection: PrimitiveCollection
+    /**
+     * @description 对象实体缓存
+     */
+    readonly cache: Map<string, Layer.Cache<Primitive | GroundPolylinePrimitive, T>>
+    /**
+     * @description 设置是否可被销毁
+     * @param status
+     */
+    setAllowDestroy(status: boolean): void
     /**
      * @description 新增折线段
      * @param param {@link PolylineLayer.AddParam} 折线段参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const polylineLayer = new PolylineLayer(earth)
      * polylineLayer.add({
      *  lines: [[
@@ -4114,37 +4612,101 @@ declare module "@anstec/earth" {
      */
     add(param: PolylineLayer.AddParam<T>): void
     /**
-     * @deprecated 已废弃，请使用`add`
-     * @deleted 已删除
-     */
-    addFlowingDash(param: any): void
-    /**
-     * @deprecated 已废弃，请使用`add`
-     * @deleted 已删除
-     */
-    addFlowingWave(param: any): void
-    /**
      * @description 检测给定地球是否支持贴地线绘制
      * @param earth 指定地球
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const isSupported = PolylineLayer.isGroundSupported(earth)
      * ```
+     */
+    /**
+     * @description 根据ID获取缓存的对象
+     * @param id ID
+     * @returns 缓存对象
+     */
+    getEntity(id: string): Layer.Cache<Primitive | GroundPolylinePrimitive, T> | undefined
+    /**
+     * @description 根据ID获取实体的数据
+     * @param id ID
+     * @returns 实体数据
+     */
+    getData(id: string): Layer.Data<T> | undefined
+    /**
+     * @description 根据ID获取图元
+     * @param id ID
+     * @returns 图元
+     */
+    getPrimitive(id: string): Primitive | GroundPolylinePrimitive | undefined
+    /**
+     * @description 根据ID测试实体条目是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    has(id: string): boolean
+    /**
+     * @description 根据ID判断实体图元是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    exist(id: string): boolean
+    /**
+     * @description 显示所有线段
+     */
+    show(): void
+    /**
+     * @description 根据ID显示线段
+     * @param id ID
+     */
+    show(id: string): void
+    /**
+     * @description 隐藏所有线段
+     */
+    hide(): void
+    /**
+     * @description 根据ID隐藏线段
+     * @param id ID
+     */
+    hide(id: string): void
+    /**
+     * @description 判断所有线段是否显示
+     */
+    shown(): boolean
+    /**
+     * @description 根据ID判断线段是否显示
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    shown(id: string): boolean
+    /**
+     * @description 移除所有线段
+     */
+    remove(): void
+    /**
+     * @description 根据ID移除线段
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     * @returns 返回`boolean`值
+     */
+    destroy(): boolean
+    /**
+     * @description 指定地球实例是否支持贴地线
+     * @param earth 地球实例
      */
     static isGroundSupported(earth: Earth): boolean
   }
 
   export namespace RectangleLayer {
     export type LabelAddParam<T> = Omit<LabelLayer.AddParam<T>, LabelLayer.Attributes>
-
     export type OutlineAddParam<T> = Pick<PolylineLayer.AddParam<T>, "materialType" | "materialUniforms" | "width">
-
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property rectangle {@link Rectangle} 矩形
      * @property [height] 高度
-     * @property [color = {@link Color.BLUE}] 填充色
+     * @property [color = {@link Czm_Color.BLUE}] 填充色
      * @property [ground = false] 是否贴地
      * @property [outline] {@link OutlineAddParam} 轮廓线
      * @property [label] {@link LabelAddParam} 对应标签
@@ -4152,7 +4714,7 @@ declare module "@anstec/earth" {
     export type AddParam<T> = Layer.AddParam<T> & {
       rectangle: Rectangle
       height?: number
-      color?: Color
+      color?: Czm_Color
       ground?: boolean
       outline?: OutlineAddParam<T>
       label?: LabelAddParam<T>
@@ -4163,25 +4725,44 @@ declare module "@anstec/earth" {
    * @description 矩形图层
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const rectLayer = new RectangleLayer(earth)
    * //or
-   * const rectLayer = earth.useDefaultLayers().rectangle
+   * const rectLayer = earth.layers.rectangle
    * ```
    */
-  export class RectangleLayer<T = unknown> extends Layer<
-    PrimitiveCollection,
-    Primitive | GroundPrimitive,
-    Layer.Data<T>
-  > {
-    labelLayer: LabelLayer<T>
+  export class RectangleLayer<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 标签图层
+     */
+    readonly labelLayer: LabelLayer<T>
+    /**
+     * @description 标签图层
+     */
+    readonly outlineLayer: PolylineLayer<T>
+    /**
+     * @description 集合
+     */
+    readonly collection: PrimitiveCollection
+    /**
+     * @description 对象实体缓存
+     */
+    readonly cache: Map<string, Layer.Cache<Primitive | GroundPrimitive, T>>
     /**
      * @description 新增矩形
      * @param param {@link RectangleLayer.AddParam} 矩形参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const rectLayer = new RectangleLayer(earth)
      * rectLayer.add({
      *  rectangle: Rectangle.fromDegrees(104, 31, 105, 32),
@@ -4192,11 +4773,41 @@ declare module "@anstec/earth" {
      */
     add(param: RectangleLayer.AddParam<T>): void
     /**
-     * @description 根据ID获取矩形外边框实体
+     * @description 根据ID获取多边形外边框缓存的对象
      * @param id ID
-     * @returns 外边框实体
+     * @returns 外边框缓存对象
      */
-    getOutlineEntity(id: string): GroundPolylinePrimitive | Primitive | undefined
+    getOutlineEntity(id: string): Layer.Cache<Primitive | GroundPolylinePrimitive, T> | undefined
+    /**
+     * @description 根据ID获取缓存的对象
+     * @param id ID
+     * @returns 缓存对象
+     */
+    getEntity(id: string): Layer.Cache<Primitive | GroundPrimitive, T> | undefined
+    /**
+     * @description 根据ID获取实体的数据
+     * @param id ID
+     * @returns 实体数据
+     */
+    getData(id: string): Layer.Data<T> | undefined
+    /**
+     * @description 根据ID获取图元
+     * @param id ID
+     * @returns 图元
+     */
+    getPrimitive(id: string): Primitive | GroundPrimitive | undefined
+    /**
+     * @description 根据ID测试实体条目是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    has(id: string): boolean
+    /**
+     * @description 根据ID判断实体图元是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    exist(id: string): boolean
     /**
      * @description 隐藏所有矩形
      */
@@ -4216,6 +4827,16 @@ declare module "@anstec/earth" {
      */
     show(id: string): void
     /**
+     * @description 判断所有矩形是否显示
+     */
+    shown(): boolean
+    /**
+     * @description 根据ID判断矩形是否显示
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    shown(id: string): boolean
+    /**
      * @description 移除所有矩形
      */
     remove(): void
@@ -4225,7 +4846,7 @@ declare module "@anstec/earth" {
      */
     remove(id: string): void
     /**
-     * @description 销毁图层
+     * @description 销毁
      * @returns 返回`boolean`值
      */
     destroy(): boolean
@@ -4237,42 +4858,60 @@ declare module "@anstec/earth" {
      * @property positions {@link Cartesian3} 位置
      * @property [maximumHeights = 5000] 最大高度
      * @property [minimumHeights = 0] 最小高度
-     * @property [color = {@link Color.LAWNGREEN}] 填充色
+     * @property [color = {@link Czm_Color.LAWNGREEN}] 填充色
      * @property [outline = true] 是否渲染边框
-     * @property [outlineColor = {@link Color.WHITESMOKE}] 边框色
+     * @property [outlineColor = {@link Czm_Color.WHITESMOKE}] 边框色
      * @property [outlineWidth = 1] 边框宽度
      */
     export type AddParam<T> = Layer.AddParam<T> & {
       positions: Cartesian3[]
       maximumHeights?: number[]
       minimumHeights?: number[]
-      color?: Color
+      color?: Czm_Color
       outline?: boolean
-      outlineColor?: Color
+      outlineColor?: Czm_Color
       outlineWidth?: number
     }
   }
 
   /**
    * @description 墙体图层
-   * @extends Layer {@link Layer} 图层基类
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const wallLayer = new WallLayer(earth)
-   * //or
-   * const wallLayer = earth.useDefaultLayers().wall
    * ```
    */
-  export class WallLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive, Layer.Data<T>> {
+  export class WallLayer<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 是否允许销毁
+     */
+    readonly allowDestroy: boolean
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 集合
+     */
+    readonly collection: PrimitiveCollection
+    /**
+     * @description 对象实体缓存
+     */
+    readonly cache: Map<string, Layer.Cache<Primitive, T>>
+    /**
+     * @description 设置是否可被销毁
+     * @param status
+     */
+    setAllowDestroy(status: boolean): void
     /**
      * @description 新增墙体
      * @param param {@link WallLayer.AddParam} 墙体参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const wallLayer = new WallLayer(earth)
      * wallLayer.add({
      *  positions: [
@@ -4288,6 +4927,36 @@ declare module "@anstec/earth" {
      * ```
      */
     add(param: WallLayer.AddParam<T>): void
+    /**
+     * @description 根据ID获取缓存的对象
+     * @param id ID
+     * @returns 缓存对象
+     */
+    getEntity(id: string): Layer.Cache<Primitive, T> | undefined
+    /**
+     * @description 根据ID获取实体的数据
+     * @param id ID
+     * @returns 实体数据
+     */
+    getData(id: string): Layer.Data<T> | undefined
+    /**
+     * @description 根据ID获取图元
+     * @param id ID
+     * @returns 图元
+     */
+    getPrimitive(id: string): Primitive | undefined
+    /**
+     * @description 根据ID测试实体条目是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    has(id: string): boolean
+    /**
+     * @description 根据ID判断实体图元是否存在
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    exist(id: string): boolean
     /**
      * @description 隐藏所有墙体
      */
@@ -4307,6 +4976,16 @@ declare module "@anstec/earth" {
      */
     show(id: string): void
     /**
+     * @description 判断所有墙体是否显示
+     */
+    shown(): boolean
+    /**
+     * @description 根据ID判断墙体是否显示
+     * @param id ID
+     * @returns 返回`boolean`值
+     */
+    shown(id: string): boolean
+    /**
      * @description 移除所有墙体
      */
     remove(): void
@@ -4315,6 +4994,11 @@ declare module "@anstec/earth" {
      * @param id ID
      */
     remove(id: string): void
+    /**
+     * @description 销毁
+     * @returns 返回`boolean`值
+     */
+    destroy(): boolean
   }
 
   /**
@@ -4328,7 +5012,6 @@ declare module "@anstec/earth" {
       magnificationFilter?: TextureMagnificationFilter
       fabric: { [key: string]: any }
     }
-
     const getMaterialByType: (type: string) => Material
   }
 
@@ -4361,11 +5044,7 @@ declare module "@anstec/earth" {
      * @property [id] ID
      * @property [module] 模块
      */
-    export type Base = {
-      id?: string
-      module?: string
-    }
-
+    export type Base = { id?: string; module?: string }
     /**
      * @property id ID
      * @property startPosition {@link Cartesian3} 起始位置
@@ -4382,45 +5061,39 @@ declare module "@anstec/earth" {
       rhumbDistance: number
       heightDifference: number
     }
-
     /**
      * @property id ID
      * @property positions {@link Geographic} 点集
      */
-    export type SectionReturn = {
-      id: string
-      positions: Geographic[]
-    }
-
+    export type SectionReturn = { id: string; positions: Geographic[] }
     /**
      * @extends Base {@link Base}
-     * @property [color = {@link Color.ORANGE}] 测量线颜色
+     * @property [color = {@link Czm_Color.ORANGE}] 测量线颜色
      * @property [width = 1] 测量线宽度
-     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
+     * @property [labelOutlineColor = {@link Czm_Color.RED}] 标签轮廓色
      * @property [labelOutlineWidth = 1] 标签轮廓线宽度
-     * @property [labelFillColor = {@link Color.RED}] 标签字体色
+     * @property [labelFillColor = {@link Czm_Color.RED}] 标签字体色
      * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
      * @property [labelText] 标签文字自定义函数
      */
     export type Triangle = Base & {
-      color?: Color
+      color?: Czm_Color
       width?: number
-      labelOutlineColor?: Color
+      labelOutlineColor?: Czm_Color
       labelOutlineWidth?: number
-      labelFillColor?: Color
+      labelFillColor?: Czm_Color
       labelStyle?: LabelStyle
       labelText?: (params: { spaceDistance: number; rhumbDistance: number; heightDifference: number }) => string
     }
-
     /**
      * @extends Base {@link Base}
      * @property [split = true] 是否为分段方位测量，否则为首点方位测量
      * @property [width = 2] 测量线宽度
      * @property [materialType = "PolylineDash"] {@link PolylineLayer.MaterialType} 测量线材质
      * @property [materialUniforms = { color: Color.ORANGE }] {@link PolylineLayer.MaterialUniforms} 测量线材质参数
-     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
+     * @property [labelOutlineColor = {@link Czm_Color.RED}] 标签轮廓色
      * @property [labelOutlineWidth = 1] 标签轮廓线宽度
-     * @property [labelFillColor = {@link Color.RED}] 标签字体色
+     * @property [labelFillColor = {@link Czm_Color.RED}] 标签字体色
      * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
      * @property [headLabelText] 起始节点文本
      * @property [nodeLabelText] 过程节点文本
@@ -4430,42 +5103,40 @@ declare module "@anstec/earth" {
       width?: number
       materialType?: PolylineLayer.MaterialType
       materialUniforms?: PolylineLayer.MaterialUniforms
-      labelOutlineColor?: Color
+      labelOutlineColor?: Czm_Color
       labelOutlineWidth?: number
-      labelFillColor?: Color
+      labelFillColor?: Czm_Color
       labelStyle?: LabelStyle
       headLabelText?: string | ((position: Geographic) => string)
       nodeLabelText?: (bearing: number) => string
     }
-
     /**
      * @extends Base {@link Base}
      * @property [pointPixelSize = 10] 坐标点像素大小
-     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
+     * @property [labelOutlineColor = {@link Czm_Color.RED}] 标签轮廓色
      * @property [labelOutlineWidth = 1] 标签轮廓线宽度
-     * @property [labelFillColor = {@link Color.RED}] 标签字体色
+     * @property [labelFillColor = {@link Czm_Color.RED}] 标签字体色
      * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
      * @property [labelText] 标签文字自定义函数
      */
     export type Coordinate = Base & {
-      color?: Color
+      color?: Czm_Color
       pointPixelSize?: number
-      labelOutlineColor?: Color
+      labelOutlineColor?: Czm_Color
       labelOutlineWidth?: number
-      labelFillColor?: Color
+      labelFillColor?: Czm_Color
       labelStyle?: LabelStyle
       labelText?: (position: Geographic) => string
     }
-
     /**
      * @extends Base {@link Base}
      * @property [split = true] 是否为分段方距测量，否则为首点方距测量
      * @property [width = 2] 测量线宽度
      * @property [materialType = "PolylineDash"] {@link PolylineLayer.MaterialType} 测量线材质
      * @property [materialUniforms = { color: Color.ORANGE }] {@link PolylineLayer.MaterialUniforms} 测量线材质参数
-     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
+     * @property [labelOutlineColor = {@link Czm_Color.RED}] 标签轮廓色
      * @property [labelOutlineWidth = 1] 标签轮廓线宽度
-     * @property [labelFillColor = {@link Color.RED}] 标签字体色
+     * @property [labelFillColor = {@link Czm_Color.RED}] 标签字体色
      * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
      * @property [headLabelText] 起始节点文本
      * @property [nodeLabelText] 过程节点文本
@@ -4475,22 +5146,21 @@ declare module "@anstec/earth" {
       width?: number
       materialType?: PolylineLayer.MaterialType
       materialUniforms?: PolylineLayer.MaterialUniforms
-      labelOutlineColor?: Color
+      labelOutlineColor?: Czm_Color
       labelOutlineWidth?: number
-      labelFillColor?: Color
+      labelFillColor?: Czm_Color
       labelStyle?: LabelStyle
       headLabelText?: string | ((total: number) => string)
       nodeLabelText?: (distance: number) => string
     }
-
     /**
      * @extends Base {@link Base}
      * @property [width = 2] 测量线宽度
      * @property [materialType = "PolylineDash"] {@link PolylineLayer.MaterialType} 测量线材质
      * @property [materialUniforms = { color: Color.ORANGE }] {@link PolylineLayer.MaterialUniforms} 测量线材质参数
-     * @property [labelOutlineColor = {@link Color.RED}] 标签轮廓色
+     * @property [labelOutlineColor = {@link Czm_Color.RED}] 标签轮廓色
      * @property [labelOutlineWidth = 1] 标签轮廓线宽度
-     * @property [labelFillColor = {@link Color.RED}] 标签字体色
+     * @property [labelFillColor = {@link Czm_Color.RED}] 标签字体色
      * @property [labelStyle = {@link LabelStyle.FILL_AND_OUTLINE}] 标签样式
      * @property [headLabelText] 起始节点文本
      * @property [nodeLabelText] 过程节点文本
@@ -4499,28 +5169,26 @@ declare module "@anstec/earth" {
       width?: number
       materialType?: PolylineLayer.MaterialType
       materialUniforms?: PolylineLayer.MaterialUniforms
-      labelOutlineColor?: Color
+      labelOutlineColor?: Czm_Color
       labelOutlineWidth?: number
-      labelFillColor?: Color
+      labelFillColor?: Czm_Color
       labelStyle?: LabelStyle
       headLabelText?: string | ((position: Geographic) => string)
       nodeLabelText?: (bearing: number) => string
     }
-
     /**
      * @extends Base {@link Base}
-     * @property [color = {@link Color.YELLOW}] 填充色
-     * @property [outlineColor = {@link Color.RED}] 轮廓颜色
+     * @property [color = {@link Czm_Color.YELLOW}] 填充色
+     * @property [outlineColor = {@link Czm_Color.RED}] 轮廓颜色
      * @property [outlineWidth = 1] 轮廓线宽度
      * @property [labelText] 标签文字自定义函数
      */
     export type Area = Base & {
-      color?: Color
-      outlineColor?: Color
+      color?: Czm_Color
+      outlineColor?: Czm_Color
       outlineWidth?: number
       labelText?: (total: number) => string
     }
-
     /**
      * @extends Base {@link Base}
      * @property [splits = 50] 剖面取点个数
@@ -4541,21 +5209,23 @@ declare module "@anstec/earth" {
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const measure = new Measure(earth)
-   * //or
-   * const measure = earth.useMeasure()
    * ```
    */
   export class Measure {
     constructor(earth: Earth)
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
     /**
      * @description 三角测量
      * @param param {@link Measure.Triangle} 参数
      * @returns {ITriangleReturn} 测量结果
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const measure = new Measure(earth)
      * const result = await measure.calcTriangle()
      * ```
@@ -4567,7 +5237,7 @@ declare module "@anstec/earth" {
      * @returns 测量点
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const measure = new Measure(earth)
      * const result = await measure.calcBearing()
      * ```
@@ -4579,7 +5249,7 @@ declare module "@anstec/earth" {
      * @returns 测量结果
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const measure = new Measure(earth)
      * const result = await measure.calcCoordinate()
      * ```
@@ -4591,7 +5261,7 @@ declare module "@anstec/earth" {
      * @returns 测量点
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const measure = new Measure(earth)
      * const result = await measure.groundDistance()
      * ```
@@ -4603,7 +5273,7 @@ declare module "@anstec/earth" {
      * @returns 测量点
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const measure = new Measure(earth)
      * const result = await measure.spaceDistance()
      * ```
@@ -4615,7 +5285,7 @@ declare module "@anstec/earth" {
      * @returns 测量点
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const measure = new Measure(earth)
      * const result = await measure.heightDifference()
      * ```
@@ -4627,7 +5297,7 @@ declare module "@anstec/earth" {
      * @returns 测量点
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const measure = new Measure(earth)
      * const result = await measure.spaceArea()
      * ```
@@ -4641,7 +5311,7 @@ declare module "@anstec/earth" {
      * @exception A certain material type is required.
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const measure = new Measure(earth)
      * const result = await measure.sectionAnalyse()
      * ```
@@ -4656,6 +5326,10 @@ declare module "@anstec/earth" {
      * @param id ID
      */
     remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   export namespace ContextMenu {
@@ -4671,18 +5345,26 @@ declare module "@anstec/earth" {
       key?: string
       type: MenuEventType
     }
-
     export type Callback = (param: CallbackParam) => void
-
     /**
      * @property belong 归属
      * @property [default] 默认是否激活当前项
      */
-    export type ToggleOptions = {
+    export type ToggleOptions = { belong: string; default?: boolean }
+    /**
+     * @property module 模块
+     * @property belong 归属
+     * @property key 键值
+     * @property [id] ID
+     * @property [status] 状态
+     */
+    export type ToggleStatusOptions = {
+      module: string
       belong: string
-      default?: boolean
+      key: string
+      id?: string
+      status?: boolean
     }
-
     /**
      * @property [separator = true] 分隔符
      * @property [icon] 图标
@@ -4691,7 +5373,7 @@ declare module "@anstec/earth" {
      * @property [label] 菜单显示名称
      * @property [toggle] {@link ToggleOptions} 是否为切换/开关型
      * @property [children] 子菜单
-     * @property [callback] 回调
+     * @property [callback] 事件回调
      */
     export type Item = {
       separator?: boolean
@@ -4703,6 +5385,14 @@ declare module "@anstec/earth" {
       children?: Item[]
       callback?: Callback
     }
+    /**
+     * @property menus {@link Item} 菜单项
+     * @property [callback] {@link Callback} 事件回调
+     */
+    export type MenuCache = {
+      menus: Item[]
+      callback?: Callback
+    }
   }
 
   /**
@@ -4710,23 +5400,39 @@ declare module "@anstec/earth" {
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const contextMenu = new ContextMenu(earth)
-   * //or
-   * const contextMenu = earth.useContextMenu()
    * ```
    */
   export class ContextMenu {
-    animationClassName: string
-    classList: Set<string>
     constructor(earth: Earth)
+    /**
+     * @description 菜单显示时触发动画的类名
+     */
+    animationClassName: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 菜单类名列表
+     */
+    readonly classList: Set<string>
+    /**
+     * @description 隐藏的菜单键
+     */
+    readonly hideKeys: Set<string>
+    /**
+     * @description 菜单缓存项
+     */
+    readonly cache: Map<string, ContextMenu.MenuCache>
     /**
      * @description 设置默认菜单
      * @param menus {@link ContextMenu.Item} 默认菜单项
      * @param [callback] {@link ContextMenu.Callback} 右键回调
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const ctxMenu = new ContextMenu(earth)
      * ctxMenu.setDefaultMenu({
      *  menus: [
@@ -4759,10 +5465,9 @@ declare module "@anstec/earth" {
      * @param module 模块名称
      * @param menus {@link ContextMenu.Item} 菜单项
      * @param [callback] {@link ContextMenu.Callback} 右键回调
-     * @exception Argument param 'module' cannot be '' or 'default'.
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const ctxMenu = new ContextMenu(earth)
      * ctxMenu.add("billboard", [
      *  {
@@ -4786,7 +5491,7 @@ declare module "@anstec/earth" {
      * @param param 参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const ctxMenu = new ContextMenu(earth)
      * ctxMenu.toggleMenuStatus({
      *  module: "default",
@@ -4795,13 +5500,13 @@ declare module "@anstec/earth" {
      * })
      * ```
      */
-    toggleMenuStatus(param: { module: string; belong: string; key: string; id?: string; status?: boolean }): void
+    toggleMenuStatus(param: ContextMenu.ToggleStatusOptions): void
     /**
      * @description 隐藏具名菜单
      * @param keys
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const ctxMenu = new ContextMenu(earth)
      * ctxMenu.hide([
      *  DefaultContextMenuItem.EnableDepth,
@@ -4815,7 +5520,7 @@ declare module "@anstec/earth" {
      * @param keys
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const ctxMenu = new ContextMenu(earth)
      * ctxMenu.unhide([
      *  DefaultContextMenuItem.EnableDepth,
@@ -4824,10 +5529,6 @@ declare module "@anstec/earth" {
      * ```
      */
     unhide(keys: string[]): void
-    /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -4839,10 +5540,7 @@ declare module "@anstec/earth" {
      * @property [id] ID
      * @property [option] {@link EChartsOption} Echarts设置
      */
-    export type ConstructorOptions = {
-      id?: string
-      option?: EChartsOption
-    }
+    export type ConstructorOptions = { id?: string; option?: EChartsOption }
   }
 
   /**
@@ -4851,13 +5549,21 @@ declare module "@anstec/earth" {
    * @param options {@link EChartsOverlay.ConstructorOptions} 参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const overlay = EchartsOverlay(earth, { id: "echarts-map" })
    * overlay.updateOverlay(echartsOption)
    * ```
    */
   export class EChartsOverlay {
     constructor(earth: Earth, options?: EChartsOverlay.ConstructorOptions)
+    /**
+     * @description ID
+     */
+    readonly id: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
     /**
      * @description 加载Echarts设置
      * @param option {@link EChartsOption} Echarts设置
@@ -4883,16 +5589,6 @@ declare module "@anstec/earth" {
     hide(): void
     /**
      * @description 销毁
-     * @deprecated Please use `destroy`
-     * @deleted 已删除
-     */
-    dispose(): void
-    /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
-    /**
-     * @description 销毁
      */
     destroy(): void
   }
@@ -4903,7 +5599,7 @@ declare module "@anstec/earth" {
      * @property center {@link Cartesian3} 扫描的中心/光源坐标
      * @property radius 扫描半径，在锥形扫描中单位为度数
      * @property [duration] 扫描间隔`ms`
-     * @property [color = {@link Color.LAWNGREEN}] 颜色
+     * @property [color = {@link Czm_Color.LAWNGREEN}] 颜色
      * @property [data] 附加数据
      */
     type Base<T = unknown> = {
@@ -4911,41 +5607,31 @@ declare module "@anstec/earth" {
       center: Cartesian3
       radius: number
       duration?: number
-      color?: Color
+      color?: Czm_Color
       data?: T
     }
-
     /**
      * @extends Base {@link Base}
      * @property [border = 0] 范围边框宽度
      * @property [width = 3] 指针的透明部分宽度
      */
-    export type Scan<T> = Base<T> & {
-      border?: number
-      width?: number
-    }
-
+    export type Scan<T> = Base<T> & { border?: number; width?: number }
     /**
      * @extends Base {@link Base}
      * @property [border = 4] 扩散透明度
      */
     export type Diffuse<T> = Base<T> & { border?: number }
-
     /**
      * @extends Base {@link Base}
-     * @property [shadeColor = {@link Color.LAWNGREEN}] 球形范围遮罩颜色
+     * @property [shadeColor = {@link Czm_Color.LAWNGREEN}] 球形范围遮罩颜色
      */
-    export type Fanshaped<T> = Base<T> & { shadeColor?: Color }
-
+    export type Fanshaped<T> = Base<T> & { shadeColor?: Czm_Color }
     /**
      * @extends Base {@link Base}
      * @property path {@link Cartesian3} 扫描路径
      * @property [split = 30] 光锥斜面分割数，分割数过多会影响渲染性能
      */
-    export type Cone<T> = Base<T> & {
-      path: Cartesian3[]
-      split?: number
-    }
+    export type Cone<T> = Base<T> & { path: Cartesian3[]; split?: number }
   }
 
   /**
@@ -4953,18 +5639,22 @@ declare module "@anstec/earth" {
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const radar = new Radar(earth)
    * ```
    */
   export class Radar<T = unknown> {
     constructor(earth: Earth)
     /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
      * @description 新增指针扫描
      * @param param {@link Radar.Scan} 雷达参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const radar = new Radar(earth)
      * radar.addScan({
      *  center: Cartesian3.fromDegrees(104, 31),
@@ -4982,7 +5672,7 @@ declare module "@anstec/earth" {
      * @param param {@link Radar.Diffuse} 雷达参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const radar = new Radar(earth)
      * radar.addDiffuse({
      *  center: Cartesian3.fromDegrees(104, 31),
@@ -4999,7 +5689,7 @@ declare module "@anstec/earth" {
      * @param param {@link Radar.Fanshaped} 雷达参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const radar = new Radar(earth)
      * radar.addFanshaped({
      *  center: Cartesian3.fromDegrees(104, 31),
@@ -5016,7 +5706,7 @@ declare module "@anstec/earth" {
      * @beta
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const radar = new Radar(earth)
      * radar.addConic({
      *  center: Cartesian3.fromDegrees(104, 31, 5000),
@@ -5051,10 +5741,6 @@ declare module "@anstec/earth" {
      */
     remove(id: string): void
     /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
-    /**
      * @description 销毁
      */
     destroy(): void
@@ -5073,7 +5759,6 @@ declare module "@anstec/earth" {
       data?: T
       callback?: () => void
     }
-
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property position {@link Cartesian3} 位置
@@ -5081,17 +5766,17 @@ declare module "@anstec/earth" {
      * @property [hpr] {@link HeadingPitchRoll} 欧拉角
      * @property [xHalfAngle = PI / 3] 横向切面角度 <弧度制>
      * @property [yHalfAngle = PI / 3] 纵向切面角度 <弧度制>
-     * @property [color = {@link Color.LAWNGREEN}] 颜色
-     * @property [lineColor = {@link Color.LAWNGREEN}] 线条颜色
+     * @property [color = {@link Czm_Color.LAWNGREEN}] 颜色
+     * @property [lineColor = {@link Czm_Color.LAWNGREEN}] 线条颜色
      * @property [scanPlane = true] 是否启用扫描面
-     * @property [scanPlaneColor = {@link Color.LAWNGREEN}] 扫描面颜色
+     * @property [scanPlaneColor = {@link Czm_Color.LAWNGREEN}] 扫描面颜色
      * @property [scanPlaneRate = 1] 扫描速率
      * @property [scanMode = {@link ScanMode.HORIZONTAL}] 扫描模式
      * @property [gradientScan = true] 扫描面是否启用渐变色
-     * @property [gradientScanColors = [{@link Color.WHITESMOKE}, {@link Color.LIGHTYELLOW}, {@link Color.YELLOW}, {@link Color.ORANGE}, {@link Color.RED}]] 扫描有序渐变色组
+     * @property [gradientScanColors] 扫描有序渐变色组
      * @property [gradientScanSteps = [0.2, 0.45, 0.65]] 扫描渐变占比
      * @property [intersection = true] 是否显示与地球的相交线
-     * @property [intersectionColor = {@link Color.LAWNGREEN}.withAlpha(0.5)] 相交线颜色
+     * @property [intersectionColor = {@link Czm_Color.LAWNGREEN}.withAlpha(0.5)] 相交线颜色
      * @property [intersectionWidth = 1] 相交线宽度
      * @property [radarWave = true] 是否启用雷达波
      */
@@ -5101,28 +5786,27 @@ declare module "@anstec/earth" {
       hpr?: HeadingPitchRoll
       xHalfAngle?: number
       yHalfAngle?: number
-      color?: Color
-      lineColor?: Color
+      color?: Czm_Color
+      lineColor?: Czm_Color
       scanPlane?: boolean
-      scanPlaneColor?: Color
+      scanPlaneColor?: Czm_Color
       scanPlaneRate?: number
       scanMode?: ScanMode
       gradientScan?: boolean
-      gradientScanColors?: [Color, Color, Color, Color, Color]
+      gradientScanColors?: [Czm_Color, Czm_Color, Czm_Color, Czm_Color, Czm_Color]
       gradientScanSteps?: [number, number, number]
       intersection?: boolean
-      intersectionColor?: Color
+      intersectionColor?: Czm_Color
       intersectionWidth?: number
       radarWave?: boolean
     }
-
     /**
      * @extends Layer.AddParam {@link Layer.AddParam}
      * @property position {@link Cartesian3} 位置
      * @property radius 切面半径，视觉发射长度`m`
      * @property height 高度`m`
      * @property [hpr] {@link HeadingPitchRoll} 欧拉角
-     * @property [color = {@link Color.LAWNGREEN}] 颜色
+     * @property [color = {@link Czm_Color.LAWNGREEN}] 颜色
      * @property [speed = 50] 波纹速度
      * @property [thin = 0.25] 波纹厚度 `[0, 1]`
      * @property [slices = 120] 圆锥侧面切片数
@@ -5133,7 +5817,7 @@ declare module "@anstec/earth" {
       radius: number
       height: number
       hpr?: HeadingPitchRoll
-      color?: Color
+      color?: Czm_Color
       speed?: number
       thin?: number
       slices?: number
@@ -5146,18 +5830,22 @@ declare module "@anstec/earth" {
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const sensor = new Sensor(earth)
    * ```
    */
   export class Sensor<T> {
     constructor(earth: Earth)
     /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
      * @description 新增伞形相控阵传感器
      * @param param {@link Sensor.Phased} 相控阵参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const sensor = new Sensor(earth)
      * sensor.addPhased({
      *  position: Cartesian3.fromDegrees(104, 31, 45000),
@@ -5173,11 +5861,11 @@ declare module "@anstec/earth" {
      *  scanMode: ScanMode.HORIZONTAL,
      *  gradientScan: true,
      *  gradientScanColors: [
-     *    Color.fromAlpha(Color.WHITESMOKE, 0.3),
-     *    Color.fromAlpha(Color.LIGHTYELLOW, 0.3),
-     *    Color.fromAlpha(Color.YELLOW, 0.3),
-     *    Color.fromAlpha(Color.ORANGE, 0.3),
-     *    Color.fromAlpha(Color.RED, 0.0),
+     *    Color.WHITESMOKE.withAlpha(0.3),
+     *    Color.LIGHTYELLOW.withAlpha(0.3),
+     *    Color.YELLOW.withAlpha(0.3),
+     *    Color.ORANGE.withAlpha(0.3),
+     *    Color.RED.withAlpha(0.0),
      *  ],
      *  gradientScanSteps: [0.2, 0.45, 0.65],
      *  intersection: true,
@@ -5193,7 +5881,7 @@ declare module "@anstec/earth" {
      * @param param {@link Sensor.Radar} 雷达波参数
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const sensor = new Sensor(earth)
      * sensor.addRadar({
      *  position: Cartesian3.fromDegrees(104, 31, 500000),
@@ -5231,10 +5919,6 @@ declare module "@anstec/earth" {
      */
     remove(id: string): void
     /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
-    /**
      * @description 销毁
      */
     destroy(): void
@@ -5242,7 +5926,6 @@ declare module "@anstec/earth" {
 
   export namespace Weather {
     export type WeatherType = "rain" | "snow" | "fog"
-
     /**
      * @property [id] ID
      * @property [data] 附加数据
@@ -5266,15 +5949,20 @@ declare module "@anstec/earth" {
    * @param earth {@link Earth} 地球实例
    * @example
    * ```
-   * const earth = useEarth()
-   * const weather = earth.weather
-   *
-   * //or
+   * const earth = createEarth()
    * const weather = new Weather(earth)
    * ```
    */
   export class Weather<T = unknown> {
-    scene: Scene
+    constructor(earth: Earth)
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 场景
+     */
+    readonly scene: Scene
     /**
      * @description 大气/照明恢复的距离，仅当启用自然光照或大气层效果时生效
      */
@@ -5283,7 +5971,6 @@ declare module "@anstec/earth" {
      * @description 一切都被点亮的距离，仅当启用自然光照或大气层效果时生效
      */
     fadeOutDistance: number
-    constructor(earth: Earth)
     /**
      * @description 启用太阳光源的自然光照
      * @param value 是否启用
@@ -5324,10 +6011,6 @@ declare module "@anstec/earth" {
      */
     remove(id: string): void
     /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
-    /**
      * @description 销毁
      */
     destroy(): void
@@ -5340,24 +6023,14 @@ declare module "@anstec/earth" {
      * @property lat 纬度
      * @property lev 高度
      */
-    export type Dimensions = {
-      lon: number
-      lat: number
-      lev: number
-    }
-
+    export type Dimensions = { lon: number; lat: number; lev: number }
     /**
      * @description 范围
      * @property array 数据数组
      * @property min 最小值
      * @property max 最大值
      */
-    export type Range = {
-      array: Float32Array | number[]
-      min: number
-      max: number
-    }
-
+    export type Range = { array: Float32Array | number[]; min: number; max: number }
     /**
      * @description 数据
      * @property dimensions {@link Dimensions} 维度
@@ -5375,28 +6048,18 @@ declare module "@anstec/earth" {
       U: Range
       V: Range
     }
-
     /**
      * @property data {@link Data} 数据
      * @property [params] {@link Param} 参数
      */
-    export type ConstructorOptions = {
-      data: Data
-      params?: Param
-    }
-
+    export type ConstructorOptions = { data: Data; params?: Param }
     /**
      * @description 视图参数
      * @property lonRange {@link Cartesian2} 经度范围
      * @property latRange {@link Cartesian2} 纬度范围
      * @property pixelSize 像素大小
      */
-    export type ViewerParam = {
-      lonRange: Cartesian2
-      latRange: Cartesian2
-      pixelSize: number
-    }
-
+    export type ViewerParam = { lonRange: Cartesian2; latRange: Cartesian2; pixelSize: number }
     /**
      * @property [maxParticles = 4096] 最大粒子数`[0, 65536]`
      * @property [particleHeight = 100] 粒子高度`[0, 10000]`
@@ -5417,7 +6080,6 @@ declare module "@anstec/earth" {
       lineWidth?: number
       particlesTextureSize?: number
     }
-
     /**
      * @description 纹理选项
      * @property context 上下文
@@ -5439,7 +6101,6 @@ declare module "@anstec/earth" {
       sampler?: Sampler
       source?: { arrayBufferView?: Float32Array }
     }
-
     /**
      * @description 渲染状态
      * @property depthTest 深度测试
@@ -5463,12 +6124,16 @@ declare module "@anstec/earth" {
    * @param options {@link WindField.ConstructorOptions} 选项
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const windField = new WindField(earth)
    * ```
    */
   export class WindField {
     constructor(earth: Earth, options: WindField.ConstructorOptions)
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
     /**
      * @description 更新
      * @param params {@link WindField.Param} 参数
@@ -5482,10 +6147,6 @@ declare module "@anstec/earth" {
      * @description 显示
      */
     show(): void
-    /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -5501,7 +6162,7 @@ declare module "@anstec/earth" {
      * @property [radius = {@link Number.POSITIVE_INFINITY}] 扫描半径
      * @property [xHalfAngle = 0] 左右扫描半角，与行进方向垂直向上
      * @property [yHalfAngle = 0] 前后扫描半角，与行进方向垂直向上
-     * @property [lineColor = {@link Color.WHITE}] 线条颜色
+     * @property [lineColor = {@link Czm_Color.WHITE}] 线条颜色
      * @property [material] {@link Material} 统一材质
      * @property [showSectorLines = true] 是否显示扇面的线
      * @property [showSectorSegmentLines = true] 是否显示扇面和圆顶面连接的线
@@ -5511,31 +6172,31 @@ declare module "@anstec/earth" {
      * @property [domeSurfaceMaterial] {@link Material} 圆顶表面材质
      * @property [showDomeLines = true] 是否显示圆顶面线
      * @property [showIntersection = true] 是否显示与地球相交的线
-     * @property [intersectionColor = {@link Color.WHITE}] 与地球相交的线的颜色
+     * @property [intersectionColor = {@link Czm_Color.WHITE}] 与地球相交的线的颜色
      * @property [intersectionWidth = 5] 与地球相交的线的宽度`px`
      * @property [showThroughEllipsoid = false] 是否穿过地球
      * @property [showWaves = false] 是否显示雷达波
      * @property [showScanPlane = true] 是否显示扫描面
-     * @property [scanPlaneColor = {@link Color.WHITE}] 扫描面颜色
+     * @property [scanPlaneColor = {@link Czm_Color.WHITE}] 扫描面颜色
      * @property [scanPlaneMode = {@link ScanMode.HORIZONTAL}] 扫描面模式
      * @property [scanPlaneRate = 10] 扫描速率
      * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 可视范围设置
      * @property [showGradient = false] 是否启用渐变色
      * @property [gradientColors] 有序渐变色组，固定5个
-     * @property [gradientSteps] 渐变色占比，取值`[0,1]`，固定3个
-     * @property [showGradientScan = false] 是否启用渐变色(扫描面)
-     * @property [gradientColorsScan] 有序渐变色组(扫描面)，固定5个
-     * @property [gradientStepsScan] 渐变色占比(扫描面)，取值(0,1)，固定3个
+     * @property [gradientSteps] 渐变色占比，取值`[0, 1]`，固定3个
+     * @property [showGradientScan = false] 是否启用扫描面渐变色
+     * @property [gradientColorsScan] 扫描面有序渐变色组，固定5个
+     * @property [gradientStepsScan] 扫描面渐变色占比，取值`[0, 1]`，固定3个
      */
     export type ConstructorOptions = {
-      id?: Object
+      id?: object
       show?: boolean
       slice?: number
       modelMatrix?: Matrix4
       radius?: number
       xHalfAngle?: number
       yHalfAngle?: number
-      lineColor?: Color
+      lineColor?: Czm_Color
       material?: Material
       showSectorLines?: boolean
       showSectorSegmentLines?: boolean
@@ -5545,20 +6206,20 @@ declare module "@anstec/earth" {
       domeSurfaceMaterial?: Material
       showDomeLines?: boolean
       showIntersection?: boolean
-      intersectionColor?: Color
+      intersectionColor?: Czm_Color
       intersectionWidth?: number
       showThroughEllipsoid?: boolean
       showWaves?: boolean
       showScanPlane?: boolean
-      scanPlaneColor?: Color
+      scanPlaneColor?: Czm_Color
       scanPlaneMode?: ScanMode
       scanPlaneRate?: number
       distanceDisplayCondition?: DistanceDisplayCondition
       showGradient?: boolean
-      gradientColors?: Color[]
+      gradientColors?: Czm_Color[]
       gradientSteps?: number[]
       showGradientScan?: boolean
-      gradientColorsScan?: Color[]
+      gradientColorsScan?: Czm_Color[]
       gradientStepsScan?: number[]
     }
   }
@@ -5568,14 +6229,15 @@ declare module "@anstec/earth" {
    * @param [options] {@link PhasedSensorPrimitive.ConstructorOptions} 参数
    */
   export class PhasedSensorPrimitive {
-    readonly id: Object | undefined
+    constructor(options?: PhasedSensorPrimitive.ConstructorOptions)
+    readonly id: object | undefined
     readonly show: boolean
     readonly slice: number
     readonly modelMatrix: Matrix4
     readonly radius: number
     readonly xHalfAngle: number
     readonly yHalfAngle: number
-    readonly lineColor: Color
+    readonly lineColor: Czm_Color
     readonly material: Material
     readonly showSectorLines: boolean
     readonly showSectorSegmentLines: boolean
@@ -5585,22 +6247,21 @@ declare module "@anstec/earth" {
     readonly domeSurfaceMaterial: Material
     readonly showDomeLines: boolean
     readonly showIntersection: boolean
-    readonly intersectionColor: Color
+    readonly intersectionColor: Czm_Color
     readonly intersectionWidth: number
     readonly showThroughEllipsoid: boolean
     readonly showWaves: boolean
     readonly showScanPlane: boolean
-    readonly scanPlaneColor: Color
+    readonly scanPlaneColor: Czm_Color
     readonly scanPlaneMode: ScanMode
     readonly scanPlaneRate: number
     readonly distanceDisplayCondition?: DistanceDisplayCondition
     readonly showGradient: boolean
-    readonly gradientColors: Color[]
+    readonly gradientColors: Czm_Color[]
     readonly gradientSteps: number[]
     readonly showGradientScan: boolean
-    readonly gradientColorsScan: Color[]
+    readonly gradientColorsScan: Czm_Color[]
     readonly gradientStepsScan: number[]
-    constructor(options?: PhasedSensorPrimitive.ConstructorOptions)
     update(frameState: FrameState): void
     isDestroyed(): boolean
     destroy(): void
@@ -5625,29 +6286,23 @@ declare module "@anstec/earth" {
      * @param rect 锁定矩形区域范围
      * @param [height] 锁定高度
      */
-    const LockCameraInRectangle: (camera: Camera, rect: Rectangle, height?: number) => void
+    const lockCameraInRectangle: (camera: Camera, rect: Rectangle, height?: number) => void
     /**
      * @description 根据屏幕坐标选取在地球上的笛卡尔三系坐标点
      * @param point 屏幕坐标
      * @param scene 当前场景
      * @param camera 当前相机
-     * @returns 对应的笛卡尔三系坐标点或选取失败返回`undefined`
+     * @returns 对应的笛卡尔三系坐标点或选取失败返回 `undefined`
      */
-    const PickPointOnEllipsoid: (point: Cartesian2, scene: Scene, camera: Camera) => Cartesian3 | undefined
+    const pickPointOnEllipsoid: (point: Cartesian2, scene: Scene, camera: Camera) => Cartesian3 | undefined
     /**
      * @description 生成视图矩形范围
      * @param [viewRectangle] 相机区域
      * @returns 范围
      */
     const viewRectangleToLonLatRange: (viewRectangle?: Rectangle) => {
-      lon: {
-        min: number
-        max: number
-      }
-      lat: {
-        min: number
-        max: number
-      }
+      lon: { min: number; max: number }
+      lat: { min: number; max: number }
     }
   }
 
@@ -5661,8 +6316,6 @@ declare module "@anstec/earth" {
    * 6. 地形测量
    */
   export namespace Figure {
-    export type Coordinate = Cartographic | Geographic
-    export type GeoTurple = [number, number]
     export type Units =
       | "meters"
       | "millimeters"
@@ -5690,7 +6343,7 @@ declare module "@anstec/earth" {
      * 2. 返回值大于`0`则表示向量ac在ab的顺时针方向
      * 3. 返回值等于`0`则表示向量ab与ac共线
      */
-    const CrossProduct: (a: GeoTurple, b: GeoTurple, c: GeoTurple) => number
+    const CrossProduct: (a: number[], b: number[], c: number[]) => number
     /**
      * @description 计算球体上两点的最近距离
      * @param from 坐标点
@@ -5698,7 +6351,7 @@ declare module "@anstec/earth" {
      * @param [units = "meters"] 单位
      * @returns 距离
      */
-    const CalcDistance: <T extends Coordinate>(from: T, to: T, units?: Units) => number
+    const CalcDistance: <T extends Geographic>(from: T, to: T, units?: Units) => number
     /**
      * @description 计算球体上两点的恒向线距离
      * @param from 坐标点
@@ -5706,7 +6359,7 @@ declare module "@anstec/earth" {
      * @param [units = "meters"] 单位
      * @returns 距离
      */
-    const CalcRhumbDistance: <T extends Coordinate>(from: T, to: T, units?: Units) => number
+    const CalcRhumbDistance: <T extends Geographic>(from: T, to: T, units?: Units) => number
     /**
      * @description 计算球体上两点的贴地距离
      * @param from 坐标点
@@ -5715,7 +6368,7 @@ declare module "@anstec/earth" {
      * @param terrainProvider 地形图层
      * @returns 距离 `m`
      */
-    const CalcGroundDistance: <T extends Coordinate>(
+    const CalcGroundDistance: <T extends Geographic>(
       from: T,
       to: T,
       scene: Scene,
@@ -5741,7 +6394,7 @@ declare module "@anstec/earth" {
      * @param rectangle 矩形
      * @returns `boolean`值
      */
-    const PointInRectangle: (point: Cartographic, rectangle: Rectangle) => boolean
+    const PointInRectangle: (point: Geographic, rectangle: Rectangle) => boolean
     /**
      * @description 计算点是否在圆内
      * @param point 坐标点
@@ -5750,78 +6403,76 @@ declare module "@anstec/earth" {
      * @param [units = "meters"] 单位
      * @returns `boolean`值
      */
-    const PointInCircle: <T extends Coordinate>(point: T, center: T, radius: number, units?: Units) => boolean
+    const PointInCircle: <T extends Geographic>(point: T, center: T, radius: number, units?: Units) => boolean
     /**
      * @description 计算点是否在多边形内
      * @param point 坐标点
      * @param polygon 多边形点坐标
      * @returns `boolean`值
      */
-    const PointInPolygon: <T extends Coordinate>(point: T, polygon: T[]) => boolean
+    const PointInPolygon: <T extends Geographic>(point: T, polygon: T[]) => boolean
     /**
      * @description 计算两条线段是否相交
      * @param line1 线段1
      * @param line2 线段2
      * @returns `boolean`值
      */
-    const PolylineIntersectPolyline: <T extends Coordinate>(line1: [T, T], line2: [T, T]) => boolean
+    const PolylineIntersectPolyline: <T extends Geographic>(line1: T[], line2: T[]) => boolean
     /**
      * @description 计算折线段是否与矩形相交
      * @param polyline 折线段
      * @param rectangle 矩形
      * @returns `boolean`值
      */
-    const PolylineIntersectRectangle: (polyline: Cartographic[], rectangle: Rectangle) => boolean
+    const PolylineIntersectRectangle: (polyline: Geographic[], rectangle: Rectangle) => boolean
     /**
      * @description 计算测地线角度，以正北方向为基准
      * @param from 基准原点
      * @param to 参考点
-     * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
+     * @returns  角度 <角度制>
      */
-    const CalcBearing: <T extends Coordinate>(from: T, to: T) => number
+    const CalcBearing: <T extends Geographic>(from: T, to: T) => number
     /**
      * @description 计算恒向线角度，以正北方向为基准
      * @param from 基准原点
      * @param to 参考点
-     * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
+     * @returns 角度 <角度制>
      */
-    const CalcRhumbBearing: <T extends Coordinate>(from: T, to: T) => number
+    const CalcRhumbBearing: <T extends Geographic>(from: T, to: T) => number
     /**
      * @description 计算三点夹角
      * @param a 夹角点
      * @param b 边缘点
      * @param c 边缘点
-     * @returns `[-180，180]`或`[-PI，PI]` 由输入值决定 <角度制> 或 <弧度制>
+     * @returns 角度 <角度制>
      */
-    const CalcAngle: <T extends Coordinate>(a: T, b: T, c: T) => number
+    const CalcAngle: <T extends Geographic>(a: T, b: T, c: T) => number
     /**
      * @description 计算两点中心点
      * @param point1
      * @param point2
      * @returns 中心点
      */
-    const CalcMidPoint: <T extends Coordinate>(point1: T, point2: T) => Coordinate
+    const CalcMidPoint: <T extends Geographic>(point1: T, point2: T) => Coordinate
     /**
      * @description 计算多边形 / 多点的平面质心
      * @param points 多边形或平面的顶点
      * @param [withHeight = false] 是否计算时考虑高度
      * @returns 质心
-     * @exception Polygon needs at least 4 vertexes.
      */
-    const CalcMassCenter: (points: Coordinate[], withHeight?: boolean) => Coordinate
+    const CalcMassCenter: (points: Geographic[], withHeight?: boolean) => Coordinate
     /**
      * @description 计算一个一定位于多边形上的点
      * @param polygon 多边形
      * @returns 任意多边形上的点
-     * @exception Polygon needs at least 4 vertexes.
      */
-    const CalcPointOnPolygon: (polygon: Coordinate[]) => Coordinate
+    const CalcPointOnPolygon: (polygon: Geographic[]) => Coordinate
     /**
      * @descript 计算多边形面积
      * @param polygon 多边形坐标
      * @returns 面积 `㎡`
      */
-    const CalcPolygonArea: (polygon: Coordinate[]) => number
+    const CalcPolygonArea: (polygon: Geographic[]) => number
     /**
      * @description 根据经纬度、椭圆半径及其旋转，生成对地投影椭圆 / 包络
      * @param x 经度 <角度制>
@@ -5844,7 +6495,7 @@ declare module "@anstec/earth" {
      * @param positions 坐标
      * @returns 距离
      */
-    const CalcMathDistance: (positions: GeoTurple[]) => number
+    const CalcMathDistance: (positions: number[][]) => number
     /**
      * @description 根基两点构成的直线及夹角、半径计算第三点
      * @param target 基准点
@@ -5855,27 +6506,27 @@ declare module "@anstec/earth" {
      * @returns 第三点
      */
     const CalcThirdPoint: (
-      target: GeoTurple,
-      origin: GeoTurple,
+      target: number[],
+      origin: number[],
       angle: number,
       radius: number,
       revert?: boolean
-    ) => GeoTurple
+    ) => number[]
     /**
      * @description 计算两点构成的数学角度、以正北方向为基准
      * @param target 点1
      * @param origin 点2
      * @returns 角度 <弧度制>
      */
-    const CalcAzimuth: (target: GeoTurple, origin: GeoTurple) => number
+    const CalcAzimuth: (target: number[], origin: number[]) => number
     /**
      * @description 计算三点的数学夹角
      * @param a 边缘点
      * @param b 夹角点
      * @param c 边缘点
-     * @returns 数学角度值 <弧度制>
+     * @returns 角度 <弧度制>
      */
-    const CalcMathAngle: (a: GeoTurple, b: GeoTurple, c: GeoTurple) => number
+    const CalcMathAngle: (a: number[], b: number[], c: number[]) => number
   }
 
   export namespace Utils {
@@ -5884,20 +6535,40 @@ declare module "@anstec/earth" {
      * @param [symbol = "-"] 连接符
      * @returns 随机ID
      */
-    const RandomUUID: (symbol?: UidFormat) => string
+    const uuid: (symbol?: string) => string
     /**
      * @description ID编码
      * @param id ID
      * @param [module] 模块
      * @returns 编码结果
-     * @exception Invaid type of id, id must be string.
-     * @exception Invaid id string 'Ω'.
+     */
+    const encode: (id: string, module?: string) => string
+    /**
+     * @description ID解码
+     * @param id 已编码ID
+     * @returns ID 模块
+     */
+    const decode: (id: string) => { id: string; module?: string }
+    /**
+     * @description 获取随机ID
+     * @param [symbol = "-"] 连接符
+     * @returns 随机ID
+     * @deprecated use `Utils.uuid`, this will be deleted at next minor version
+     */
+    const RandomUUID: (symbol?: string) => string
+    /**
+     * @description ID编码
+     * @param id ID
+     * @param [module] 模块
+     * @returns 编码结果
+     * @deprecated use `Utils.encode`, this will be deleted at next minor version
      */
     const EncodeId: (id: string, module?: string) => string
     /**
      * @description ID解码
      * @param id 已编码ID
      * @returns ID 模块
+     * @deprecated use `Utils.decode`, this will be deleted at next minor version
      */
     const DecodeId: (id: string) => { id: string; module?: string }
     /**
@@ -5928,9 +6599,28 @@ declare module "@anstec/earth" {
      * @param [width = 48] 宽度
      * @param [height = 48] 高度
      * @returns Canvas结果
-     * @exception Invaid picture, only 'jpg', 'jpeg' or 'png' is accepted.
      */
     const ConvertPic2Canvas: (pic: string, width?: number, height?: number) => HTMLCanvasElement
+    /**
+     * @description 防抖
+     * @param func 需要防抖的函数
+     * @param [delay = 300] 延迟`ms`
+     * @returns 防抖的函数
+     */
+    const debounce: <T extends (...args: any) => any>(func: T, delay?: number) => (...args: Parameters<T>) => void
+    /**
+     * @description 节流
+     * @param func 需要节流的函数
+     * @param [limit = 300] 区间`ms`
+     * @returns 节流的函数
+     */
+    const throttle: <T extends (...args: any[]) => any>(func: T, limit?: number) => (...args: Parameters<T>) => void
+    /**
+     * @description 单例注册器
+     * @param target 目标构造器
+     * @returns 目标类单例构造器
+     */
+    const singleton: <T extends object, P extends any[]>(target: new (...args: P) => T) => new (...args: P) => T
   }
 
   /**
@@ -5945,9 +6635,20 @@ declare module "@anstec/earth" {
   /**
    * @description 动态笔触
    */
-  export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
-    type: string
+  export class StrokeDynamic<T = unknown> {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: PolylineLayer<T>
     /**
      * @description 笔触不支持编辑，添加对象仅增加图形
      * @param param 笔触参数
@@ -5963,14 +6664,60 @@ declare module "@anstec/earth" {
      * @description 笔触不支持编辑，编辑对象将恒返回 `reject` 状态
      */
     edit(id: string): Promise<unknown>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): Layer.Cache<Primitive | GroundPolylinePrimitive, T> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 动态绘制攻击箭头
    */
-  export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow>> {
-    type: string
+  export class AttackArrowDynamic {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: PolygonLayer<Dynamic.AttackArrow>
     /**
      * @description 添加可编辑对象
      * @param param 新增参数以及可编辑附加数据
@@ -5985,17 +6732,63 @@ declare module "@anstec/earth" {
     /**
      * @description 编辑
      * @param id 目标ID
-     * @returns
+     * @returns 攻击发起点和沿途选点的坐标
      */
     edit(id: string): Promise<Draw.AttackArrowReturn>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.AttackArrow> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 动态绘制广告牌
    */
-  export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>> {
-    type: string
+  export class BillboardDynamic {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: BillboardLayer<Dynamic.Billboard>
     /**
      * @description 添加可编辑对象
      * @param param 新增参数以及可编辑附加数据
@@ -6010,17 +6803,63 @@ declare module "@anstec/earth" {
     /**
      * @description 编辑
      * @param id 目标ID
-     * @returns
+     * @returns 点的坐标
      */
     edit(id: string): Promise<Draw.BillboardReturn>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): Layer.Cache<Billboard, Dynamic.Billboard> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 动态绘制圆
    */
-  export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
-    type: string
+  export class CircleDynamic {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: EllipseLayer<Dynamic.Circle>
     /**
      * @description 添加可编辑对象
      * @param param 新增参数以及可编辑附加数据
@@ -6035,17 +6874,63 @@ declare module "@anstec/earth" {
     /**
      * @description 编辑
      * @param id 目标ID
-     * @returns
+     * @returns 圆心坐标和半径
      */
-    edit(id: string): Promise<unknown>
+    edit(id: string): Promise<Draw.CircleReturn>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.Circle> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 动态绘制标签
    */
-  export class LabelDynamic extends Dynamic<LabelLayer<Dynamic.Label>> {
-    type: string
+  export class LabelDynamic {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: LabelLayer<Dynamic.Label>
     /**
      * @description 添加可编辑对象
      * @param param 新增参数以及可编辑附加数据
@@ -6060,17 +6945,63 @@ declare module "@anstec/earth" {
     /**
      * @description 编辑
      * @param id 目标ID
-     * @returns
+     * @returns 标签的坐标
      */
     edit(id: string): Promise<Draw.LabelReturn>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): Layer.Cache<Label, Dynamic.Label> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 动态绘制模型
    */
-  export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
-    type: string
+  export class ModelDynamic {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: ModelLayer<Dynamic.Model>
     /**
      * @description 添加可编辑对象
      * @param param 新增参数以及可编辑附加数据
@@ -6085,17 +7016,63 @@ declare module "@anstec/earth" {
     /**
      * @description 编辑
      * @param id 目标ID
-     * @returns
+     * @returns 点的坐标
      */
     edit(id: string): Promise<Draw.ModelReturn>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): ModelLayer.Cache<Dynamic.Model> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 动态绘制嵌击箭头
    */
-  export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow>> {
-    type: string
+  export class PincerArrowDynamic {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: PolygonLayer<Dynamic.PincerArrow>
     /**
      * @description 添加可编辑对象
      * @param param 新增参数以及可编辑附加数据
@@ -6110,17 +7087,63 @@ declare module "@anstec/earth" {
     /**
      * @description 编辑
      * @param id 目标ID
-     * @returns
+     * @returns 沿途选点的坐标
      */
-    edit(id: string): Promise<unknown>
+    edit(id: string): Promise<Draw.PincerArrowReturn>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.PincerArrow> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 动态绘制点
    */
-  export class PointDynamic extends Dynamic<PointLayer<Dynamic.Point>> {
-    type: string
+  export class PointDynamic {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: PointLayer<Dynamic.Point>
     /**
      * @description 添加可编辑对象
      * @param param 新增参数以及可编辑附加数据
@@ -6135,17 +7158,63 @@ declare module "@anstec/earth" {
     /**
      * @description 编辑
      * @param id 目标ID
-     * @returns
+     * @returns 点的坐标
      */
     edit(id: string): Promise<Draw.PointReturn>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): Layer.Cache<PointPrimitive, Dynamic.Point> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 动态绘制多边形
    */
-  export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
-    type: string
+  export class PolygonDynamic {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: PolygonLayer<Dynamic.Polygon>
     /**
      * @description 添加可编辑对象
      * @param param 新增参数以及可编辑附加数据
@@ -6160,17 +7229,63 @@ declare module "@anstec/earth" {
     /**
      * @description 编辑
      * @param id 目标ID
-     * @returns
+     * @returns 多边形点的坐标
      */
     edit(id: string): Promise<Draw.PolygonReturn>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.Polygon> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 动态绘制折线段
    */
-  export class PolylineDynamic extends Dynamic<PolylineLayer<Dynamic.Polyline>> {
-    type: string
+  export class PolylineDynamic {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: PolylineLayer<Dynamic.Polyline>
     /**
      * @description 添加可编辑对象
      * @param param 新增参数以及可编辑附加数据
@@ -6186,17 +7301,63 @@ declare module "@anstec/earth" {
     /**
      * @description 编辑
      * @param id 目标ID
-     * @returns
+     * @returns 线段点的坐标
      */
     edit(id: string): Promise<Draw.PolylineReturn>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.Polyline> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 动态绘制矩形
    */
-  export class RectangleDynamic extends Dynamic<RectangleLayer<Dynamic.Rectangle>> {
-    type: string
+  export class RectangleDynamic {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: RectangleLayer<Dynamic.Rectangle>
     /**
      * @description 添加可编辑对象
      * @param param 新增参数以及可编辑附加数据
@@ -6211,17 +7372,63 @@ declare module "@anstec/earth" {
     /**
      * @description 编辑
      * @param id 目标ID
-     * @returns
+     * @returns 矩形
      */
     edit(id: string): Promise<Draw.RectangleReturn>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.Rectangle> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 动态绘制直线箭头
    */
-  export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightArrow>> {
-    type: string
+  export class StraightArrowDynamic {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: PolygonLayer<Dynamic.StraightArrow>
     /**
      * @description 添加可编辑对象
      * @param param 新增参数以及可编辑附加数据
@@ -6236,17 +7443,63 @@ declare module "@anstec/earth" {
     /**
      * @description 编辑
      * @param id 目标ID
-     * @returns
+     * @returns 起始和结束点的坐标
      */
-    edit(id: string): Promise<unknown>
+    edit(id: string): Promise<Draw.StraightArrowReturn>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): Layer.Cache<Primitive | GroundPolylinePrimitive, Dynamic.StraightArrow> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 动态绘制墙体
    */
-  export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
-    type: string
+  export class WallDynamic {
     constructor(earth: Earth)
+    /**
+     * @description 绘制类型名
+     */
+    type: string
+    /**
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 图层
+     */
+    readonly layer: WallLayer<Dynamic.Wall>
     /**
      * @description 添加可编辑对象
      * @param param 新增参数以及可编辑附加数据
@@ -6261,65 +7514,96 @@ declare module "@anstec/earth" {
     /**
      * @description 编辑
      * @param id 目标ID
-     * @returns
+     * @returns 墙体点的坐标
      */
     edit(id: string): Promise<Draw.WallReturn>
+    /**
+     * @description 订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    subscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 取消订阅绘制或编辑事件
+     * @param event 事件类型
+     * @param callback 回调
+     */
+    unsubscribe(event: SubEventType, callback: (...args: any[]) => void): void
+    /**
+     * @description 根据ID获取动态绘制实体
+     * @param id ID
+     * @returns 实体
+     */
+    getEntity(id: string): Layer.Cache<Primitive, Dynamic.Wall> | undefined
+    /**
+     * @description 强制终断，仅终断绘制，不终断编辑
+     */
+    interrupt(): void
+    /**
+     * @description 清除所有动态绘制对象
+     */
+    remove(): void
+    /**
+     * @description 按ID清除动态绘制对象
+     * @param id ID
+     */
+    remove(id: string): void
+    /**
+     * @description 销毁
+     */
+    destroy(): void
   }
 
   /**
    * @description 默认提供图形类
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const layers = new GraphicsLayer(earth)
    * //or
-   * const layers = earth.useDefaultLayers()
+   * const layers = earth.layers
    * ```
    */
   export class GraphicsLayer {
-    /**
-     * @deprecated 现不再限制销毁
-     * @deprecated 已废弃
-     */
-    readonly allowDestroy: boolean
-    billboard: BillboardLayer
-    ellipse: EllipseLayer
-    point: PointLayer
-    polygon: PolygonLayer
-    polyline: PolylineLayer
-    rectangle: RectangleLayer
-    /**
-     * @deprecated 已废弃，请使用 `WallLayer` 手动初始化
-     * @deleted 已删除
-     */
-    wall: WallLayer
     constructor(earth: Earth)
     /**
-     * @description 重置图层
+     * @description 销毁状态
+     */
+    readonly isDestroyed: boolean
+    /**
+     * @description 广告牌图层
+     */
+    readonly billboard: BillboardLayer
+    /**
+     * @description 椭圆图层
+     */
+    readonly ellipse: EllipseLayer
+    /**
+     * @description 点图层
+     */
+    readonly point: PointLayer
+    /**
+     * @description 多边形图层
+     */
+    readonly polygon: PolygonLayer
+    /**
+     * @description 线段图层
+     */
+    readonly polyline: PolylineLayer
+    /**
+     * @description 矩形图层
+     */
+    readonly rectangle: RectangleLayer
+    /**
+     * @description 重置所有图层
      * @example
      * ```
-     * const earth = useEarth()
+     * const earth = createEarth()
      * const layers = new GraphicsLayer(earth)
      * layers.reset()
      * ```
      */
     reset(): void
-    /**
-     * @description 强制销毁
-     * @deprecated Please use `destroy`
-     * @deleted 已删除
-     * @example
-     * ```
-     * const earth = useEarth()
-     * const layers = new GraphicsLayer(earth)
-     * layers.forceDestroy()
-     * ```
-     */
-    forceDestroy(): void
-    /**
-     * @description 获取销毁状态
-     */
-    isDestroyed(): boolean
     /**
      * @description 销毁
      */
@@ -6368,6 +7652,11 @@ declare module "@anstec/earth" {
      * @returns 是否包含
      */
     contains(element: T): boolean
+    /**
+     * @description 删除具体元素
+     * @param element 元素
+     */
+    delete(element: T): void
     /**
      * @description 排队元素
      * @param elements 元素
@@ -6446,6 +7735,11 @@ declare module "@anstec/earth" {
      */
     contains(element: T): boolean
     /**
+     * @description 删除具体元素
+     * @param element 元素
+     */
+    delete(element: T): void
+    /**
      * @description 压入元素
      * @param elements 元素
      * @returns 当前栈的长度
@@ -6481,12 +7775,919 @@ declare module "@anstec/earth" {
   }
 
   /**
+   * @description 异步任务调度器
+   */
+  export class Runner {
+    constructor(threads?: number)
+    /**
+     * @description 模拟执行的线程数
+     */
+    readonly threads: number
+    /**
+     * @description 在进行中的任务数量
+     */
+    readonly inProcessing: number
+    /**
+     * @description 缓存任务栈的长度 / 待执行的任务数量
+     */
+    readonly length: number
+    /**
+     * @description 是否暂停状态
+     */
+    readonly isPaused: boolean
+    /**
+     * @description 向调度队列中添加一个异步任务
+     * @param task 要添加的异步任务
+     * @returns 任务ID
+     */
+    add<T extends any[], R>(task: (...args: T) => Promise<R>): string
+    /**
+     * @description 向调度队列中直接添加一个同步任务
+     * @param task 要添加的同步任务
+     * @returns 任务ID
+     */
+    addSync<T extends any[], R>(task: (...args: T) => R): string
+    /**
+     * @description 取消任务ID标识的任务
+     * @param id 任务ID
+     */
+    cancel(id: string): void
+    /**
+     * @description 取消所有未执行的任务并清空任务栈
+     */
+    clear(): void
+    /**
+     * @description 暂停执行还未执行的任务
+     */
+    pause(): void
+    /**
+     * @description 恢复执行
+     */
+    resume(): void
+    /**
+     * @description 将同步任务转换为异步任务
+     * @param task 原任务
+     * @returns 转换后的异步任务
+     */
+    static toAsync<T extends any[], R>(task: (...args: T) => R): (...args: T) => Promise<R>
+  }
+
+  /**
+   * @description 颜色，十六进制数据
+   * @param [red = 0x0] Red `[0x0, 0xff]`
+   * @param [green = 0x0] Green `[0, 0xff]`
+   * @param [blue = 0x0] Blue `[0x0, 0xff]`
+   * @param [alpha = 0xff] Alpha `[0x0, 0xff]`
+   */
+  export class Color {
+    constructor(red?: number, green?: number, blue?: number, alpha?: number)
+    red: number
+    green: number
+    blue: number
+    alpha: number
+    /**
+     * @description #F0F8FF
+     */
+    static readonly ALICEBLUE: Color
+    /**
+     * @description #FAEBD7
+     */
+    static readonly ANTIQUEWHITE: Color
+    /**
+     * @description #00FFFF
+     */
+    static readonly AQUA: Color
+    /**
+     * @description #7FFFD4
+     */
+    static readonly AQUAMARINE: Color
+    /**
+     * @description #F0FFFF
+     */
+    static readonly AZURE: Color
+    /**
+     * @description #F5F5DC
+     */
+    static readonly BEIGE: Color
+    /**
+     * @description #FFE4C4
+     */
+    static readonly BISQUE: Color
+    /**
+     * @description #000000
+     */
+    static readonly BLACK: Color
+    /**
+     * @description #FFEBCD
+     */
+    static readonly BLANCHEDALMOND: Color
+    /**
+     * @description #0000FF
+     */
+    static readonly BLUE: Color
+    /**
+     * @description #8A2BE2
+     */
+    static readonly BLUEVIOLET: Color
+    /**
+     * @description #A52A2A
+     */
+    static readonly BROWN: Color
+    /**
+     * @description #DEB887
+     */
+    static readonly BURLYWOOD: Color
+    /**
+     * @description #5F9EA0
+     */
+    static readonly CADETBLUE: Color
+    /**
+     * @description #7FFF00
+     */
+    static readonly CHARTREUSE: Color
+    /**
+     * @description #D2691E
+     */
+    static readonly CHOCOLATE: Color
+    /**
+     * @description #FF7F50
+     */
+    static readonly CORAL: Color
+    /**
+     * @description #6495ED
+     */
+    static readonly CORNFLOWERBLUE: Color
+    /**
+     * @description #FFF8DC
+     */
+    static readonly CORNSILK: Color
+    /**
+     * @description #DC143C
+     */
+    static readonly CRIMSON: Color
+    /**
+     * @description #00FFFF
+     */
+    static readonly CYAN: Color
+    /**
+     * @description #00008B
+     */
+    static readonly DARKBLUE: Color
+    /**
+     * @description #008B8B
+     */
+    static readonly DARKCYAN: Color
+    /**
+     * @description #B8860B
+     */
+    static readonly DARKGOLDENROD: Color
+    /**
+     * @description #A9A9A9
+     */
+    static readonly DARKGRAY: Color
+    /**
+     * @description #006400
+     */
+    static readonly DARKGREEN: Color
+    /**
+     * @description #A9A9A9
+     */
+    static readonly DARKGREY: Color
+    /**
+     * @description #BDB76B
+     */
+    static readonly DARKKHAKI: Color
+    /**
+     * @description #8B008B
+     */
+    static readonly DARKMAGENTA: Color
+    /**
+     * @description #556B2F
+     */
+    static readonly DARKOLIVEGREEN: Color
+    /**
+     * @description #FF8C00
+     */
+    static readonly DARKORANGE: Color
+    /**
+     * @description #9932CC
+     */
+    static readonly DARKORCHID: Color
+    /**
+     * @description #8B0000
+     */
+    static readonly DARKRED: Color
+    /**
+     * @description #E9967A
+     */
+    static readonly DARKSALMON: Color
+    /**
+     * @description #8FBC8F
+     */
+    static readonly DARKSEAGREEN: Color
+    /**
+     * @description #483D8B
+     */
+    static readonly DARKSLATEBLUE: Color
+    /**
+     * @description #2F4F4F
+     */
+    static readonly DARKSLATEGRAY: Color
+    /**
+     * @description #2F4F4F
+     */
+    static readonly DARKSLATEGREY: Color
+    /**
+     * @description #00CED1
+     */
+    static readonly DARKTURQUOISE: Color
+    /**
+     * @description #9400D3
+     */
+    static readonly DARKVIOLET: Color
+    /**
+     * @description #FF1493
+     */
+    static readonly DEEPPINK: Color
+    /**
+     * @description #00BFFF
+     */
+    static readonly DEEPSKYBLUE: Color
+    /**
+     * @description #696969
+     */
+    static readonly DIMGRAY: Color
+    /**
+     * @description #696969
+     */
+    static readonly DIMGREY: Color
+    /**
+     * @description #1E90FF
+     */
+    static readonly DODGERBLUE: Color
+    /**
+     * @description #B22222
+     */
+    static readonly FIREBRICK: Color
+    /**
+     * @description #FFFAF0
+     */
+    static readonly FLORALWHITE: Color
+    /**
+     * @description #228B22
+     */
+    static readonly FORESTGREEN: Color
+    /**
+     * @description #FF00FF
+     */
+    static readonly FUCHSIA: Color
+    /**
+     * @description #DCDCDC
+     */
+    static readonly GAINSBORO: Color
+    /**
+     * @description #F8F8FF
+     */
+    static readonly GHOSTWHITE: Color
+    /**
+     * @description #FFD700
+     */
+    static readonly GOLD: Color
+    /**
+     * @description #DAA520
+     */
+    static readonly GOLDENROD: Color
+    /**
+     * @description #808080
+     */
+    static readonly GRAY: Color
+    /**
+     * @description #008000
+     */
+    static readonly GREEN: Color
+    /**
+     * @description #ADFF2F
+     */
+    static readonly GREENYELLOW: Color
+    /**
+     * @description #808080
+     */
+    static readonly GREY: Color
+    /**
+     * @description #F0FFF0
+     */
+    static readonly HONEYDEW: Color
+    /**
+     * @description #FF69B4
+     */
+    static readonly HOTPINK: Color
+    /**
+     * @description #CD5C5C
+     */
+    static readonly INDIANRED: Color
+    /**
+     * @description #4B0082
+     */
+    static readonly INDIGO: Color
+    /**
+     * @description #FFFFF0
+     */
+    static readonly IVORY: Color
+    /**
+     * @description #F0E68C
+     */
+    static readonly KHAKI: Color
+    /**
+     * @description #E6E6FA
+     */
+    static readonly LAVENDER: Color
+    /**
+     * @description #FFF0F5
+     */
+    static readonly LAVENDAR_BLUSH: Color
+    /**
+     * @description #7CFC00
+     */
+    static readonly LAWNGREEN: Color
+    /**
+     * @description #FFFACD
+     */
+    static readonly LEMONCHIFFON: Color
+    /**
+     * @description #ADD8E6
+     */
+    static readonly LIGHTBLUE: Color
+    /**
+     * @description #F08080
+     */
+    static readonly LIGHTCORAL: Color
+    /**
+     * @description #E0FFFF
+     */
+    static readonly LIGHTCYAN: Color
+    /**
+     * @description #FAFAD2
+     */
+    static readonly LIGHTGOLDENRODYELLOW: Color
+    /**
+     * @description #D3D3D3
+     */
+    static readonly LIGHTGRAY: Color
+    /**
+     * @description #90EE90
+     */
+    static readonly LIGHTGREEN: Color
+    /**
+     * @description #D3D3D3
+     */
+    static readonly LIGHTGREY: Color
+    /**
+     * @description #FFB6C1
+     */
+    static readonly LIGHTPINK: Color
+    /**
+     * @description #20B2AA
+     */
+    static readonly LIGHTSEAGREEN: Color
+    /**
+     * @description #87CEFA
+     */
+    static readonly LIGHTSKYBLUE: Color
+    /**
+     * @description #778899
+     */
+    static readonly LIGHTSLATEGRAY: Color
+    /**
+     * @description #778899
+     */
+    static readonly LIGHTSLATEGREY: Color
+    /**
+     * @description #B0C4DE
+     */
+    static readonly LIGHTSTEELBLUE: Color
+    /**
+     * @description #FFFFE0
+     */
+    static readonly LIGHTYELLOW: Color
+    /**
+     * @description #00FF00
+     */
+    static readonly LIME: Color
+    /**
+     * @description #32CD32
+     */
+    static readonly LIMEGREEN: Color
+    /**
+     * @description #FAF0E6
+     */
+    static readonly LINEN: Color
+    /**
+     * @description #FF00FF
+     */
+    static readonly MAGENTA: Color
+    /**
+     * @description #800000
+     */
+    static readonly MAROON: Color
+    /**
+     * @description #66CDAA
+     */
+    static readonly MEDIUMAQUAMARINE: Color
+    /**
+     * @description #0000CD
+     */
+    static readonly MEDIUMBLUE: Color
+    /**
+     * @description #BA55D3
+     */
+    static readonly MEDIUMORCHID: Color
+    /**
+     * @description #9370DB
+     */
+    static readonly MEDIUMPURPLE: Color
+    /**
+     * @description #3CB371
+     */
+    static readonly MEDIUMSEAGREEN: Color
+    /**
+     * @description #7B68EE
+     */
+    static readonly MEDIUMSLATEBLUE: Color
+    /**
+     * @description #00FA9A
+     */
+    static readonly MEDIUMSPRINGGREEN: Color
+    /**
+     * @description #48D1CC
+     */
+    static readonly MEDIUMTURQUOISE: Color
+    /**
+     * @description #C71585
+     */
+    static readonly MEDIUMVIOLETRED: Color
+    /**
+     * @description #191970
+     */
+    static readonly MIDNIGHTBLUE: Color
+    /**
+     * @description #F5FFFA
+     */
+    static readonly MINTCREAM: Color
+    /**
+     * @description #FFE4E1
+     */
+    static readonly MISTYROSE: Color
+    /**
+     * @description #FFE4B5
+     */
+    static readonly MOCCASIN: Color
+    /**
+     * @description #FFDEAD
+     */
+    static readonly NAVAJOWHITE: Color
+    /**
+     * @description #000080
+     */
+    static readonly NAVY: Color
+    /**
+     * @description #FDF5E6
+     */
+    static readonly OLDLACE: Color
+    /**
+     * @description #808000
+     */
+    static readonly OLIVE: Color
+    /**
+     * @description #6B8E23
+     */
+    static readonly OLIVEDRAB: Color
+    /**
+     * @description #FFA500
+     */
+    static readonly ORANGE: Color
+    /**
+     * @description #FF4500
+     */
+    static readonly ORANGERED: Color
+    /**
+     * @description #DA70D6
+     */
+    static readonly ORCHID: Color
+    /**
+     * @description #EEE8AA
+     */
+    static readonly PALEGOLDENROD: Color
+    /**
+     * @description #98FB98
+     */
+    static readonly PALEGREEN: Color
+    /**
+     * @description #AFEEEE
+     */
+    static readonly PALETURQUOISE: Color
+    /**
+     * @description #DB7093
+     */
+    static readonly PALEVIOLETRED: Color
+    /**
+     * @description #FFEFD5
+     */
+    static readonly PAPAYAWHIP: Color
+    /**
+     * @description #FFDAB9
+     */
+    static readonly PEACHPUFF: Color
+    /**
+     * @description #CD853F
+     */
+    static readonly PERU: Color
+    /**
+     * @description #FFC0CB
+     */
+    static readonly PINK: Color
+    /**
+     * @description #DDA0DD
+     */
+    static readonly PLUM: Color
+    /**
+     * @description #B0E0E6
+     */
+    static readonly POWDERBLUE: Color
+    /**
+     * @description #800080
+     */
+    static readonly PURPLE: Color
+    /**
+     * @description #FF0000
+     */
+    static readonly RED: Color
+    /**
+     * @description #BC8F8F
+     */
+    static readonly ROSYBROWN: Color
+    /**
+     * @description #4169E1
+     */
+    static readonly ROYALBLUE: Color
+    /**
+     * @description #8B4513
+     */
+    static readonly SADDLEBROWN: Color
+    /**
+     * @description #FA8072
+     */
+    static readonly SALMON: Color
+    /**
+     * @description #F4A460
+     */
+    static readonly SANDYBROWN: Color
+    /**
+     * @description #2E8B57
+     */
+    static readonly SEAGREEN: Color
+    /**
+     * @description #FFF5EE
+     */
+    static readonly SEASHELL: Color
+    /**
+     * @description #A0522D
+     */
+    static readonly SIENNA: Color
+    /**
+     * @description #C0C0C0
+     */
+    static readonly SILVER: Color
+    /**
+     * @description #87CEEB
+     */
+    static readonly SKYBLUE: Color
+    /**
+     * @description #6A5ACD
+     */
+    static readonly SLATEBLUE: Color
+    /**
+     * @description #708090
+     */
+    static readonly SLATEGRAY: Color
+    /**
+     * @description #708090
+     */
+    static readonly SLATEGREY: Color
+    /**
+     * @description #FFFAFA
+     */
+    static readonly SNOW: Color
+    /**
+     * @description #00FF7F
+     */
+    static readonly SPRINGGREEN: Color
+    /**
+     * @description #4682B4
+     */
+    static readonly STEELBLUE: Color
+    /**
+     * @description #D2B48C
+     */
+    static readonly TAN: Color
+    /**
+     * @description #008080
+     */
+    static readonly TEAL: Color
+    /**
+     * @description #D8BFD8
+     */
+    static readonly THISTLE: Color
+    /**
+     * @description #FF6347
+     */
+    static readonly TOMATO: Color
+    /**
+     * @description #40E0D0
+     */
+    static readonly TURQUOISE: Color
+    /**
+     * @description #EE82EE
+     */
+    static readonly VIOLET: Color
+    /**
+     * @description #F5DEB3
+     */
+    static readonly WHEAT: Color
+    /**
+     * @description #FFFFFF
+     */
+    static readonly WHITE: Color
+    /**
+     * @description #F5F5F5
+     */
+    static readonly WHITESMOKE: Color
+    /**
+     * @description #FFFF00
+     */
+    static readonly YELLOW: Color
+    /**
+     * @description #9ACD32
+     */
+    static readonly YELLOWGREEN: Color
+    /**
+     * @description 透明
+     */
+    static readonly TRANSPARENT: Color
+    /**
+     * @description 克隆当前颜色
+     * @param [result] 存储的对象
+     * @example
+     * ```
+     * const color = new Color()
+     * const clone = color.clone()
+     * ```
+     */
+    clone(result?: Color): Color
+    /**
+     * @description 转换为16进制数
+     */
+    toHex(): number
+    /**
+     * @description 转换为cesium颜色
+     */
+    toCzmColor(): Czm_Color
+    /**
+     * @description 转换为符合css标准的颜色字符串
+     * @example
+     * ```
+     * const color = new Color(255, 255, 255, 128)
+     * const rgba = color.toCssColorString() //rgba => "rgba(255, 255, 255, 0.5)"
+     * ```
+     */
+    toCssColorString(): string
+    /**
+     * @description 转换为符合css标准的16进制颜色字符串
+     * @example
+     * ```
+     * const color = new Color(255, 255, 255, 128)
+     * const hex = color.toHexColorString() //hex => "#FFFFFF80"
+     * ```
+     */
+    toHexColorString(): string
+    /**
+     * @description 转换为模板字符串
+     * @param [template = "(%r, %g, %b, %a)"] 模板（`%r` R，`%g` G，`%b` B，`%a` A）
+     * @param [handler] 自定义数据处理函数
+     */
+    toString(template?: string, handler?: (value: number, name: keyof Color) => string): string
+    /**
+     * @description 原有颜色按归一化透明度创建新颜色
+     * @param percentage 不透明比例 `[0, 1]`
+     */
+    withAlpha(percentage: number): Color
+    /**
+     * @description 比较两个颜色是否相等
+     * @param left {@link Color} 左值
+     * @param right {@link Color} 右值
+     * @param [diff = 0] 可接受的数学误差
+     */
+    static equals(left: Color, right: Color, diff?: number): boolean
+    /**
+     * @description 从16进制数转换
+     * @param hex 16进制数
+     * @param [result] 存储的对象
+     */
+    static fromHex(hex: number, result?: Color): Color
+    /**
+     * @description 从Hsl标准转换
+     * @param [hue = 0] 色相 `[0, 360]`
+     * @param [saturation = 0] 饱和度 `[0, 100]`
+     * @param [lightness = 0] 亮度 `[0, 100]`
+     * @param [alpha = 1] `[0, 1]`
+     * @param [result] 存储的对象
+     */
+    static fromHsl(hue?: number, saturation?: number, lightness?: number, alpha?: number, result?: Color): Color
+    /**
+     * @description 从百分比 / 归一化的数据转换
+     * @param [red = 0] Red `[0, 1]`
+     * @param [green = 0] Green `[0, 1]`
+     * @param [blue = 0] Blue `[0, 1]`
+     * @param [alpha = 1] Alpha `[0, 1]`
+     * @param [result] 存储的对象
+     */
+    static fromPercentage(red?: number, green?: number, blue?: number, alpha?: number, result?: Color): Color
+    /**
+     * @description 从css颜色字符串转换
+     * @param color css颜色字符串
+     * @param [result] 存储的对象
+     * @example
+     * ```
+     * //named
+     * const color = Colo.fromCssColorString("pink")
+     *
+     * //hex string
+     * const color = Color.fromCssColorString("#FFC0CB")
+     *
+     * //rgba
+     * const color = Color.fromCssColorString("rgb(255, 192, 203)")
+     *
+     * //hsl
+     * const color = Color.fromCssColorString("hsl(350, 100%, 87.50%)")
+     * ```
+     */
+    static fromCssColorString(color: string, result?: Color): Color
+    /**
+     * @description 从cesium颜色转换
+     * @param color {@link Czm_Color} cesium颜色
+     * @param [result] 存储的对象
+     */
+    static fromCzmColor(color: Czm_Color, result?: Color): Color
+    /**
+     * @description 在两个颜色之间按比例线性插值
+     * @param start {@link Color} 起始颜色
+     * @param end {@link Color} 结束颜色
+     * @param percentage 比例 `[0, 1]`
+     * @param [result] 存储的对象
+     */
+    static lerp(start: Color, end: Color, percentage: number, result?: Color): Color
+  }
+
+  /**
+   * @description 维度描述
+   * @param [x = 0] x方向上的值
+   * @param [y = 0] y方向上的值
+   * @param [z = 0] z方向上的值
+   * @param [w = 0] w方向上的值
+   */
+  export class Dimension {
+    constructor(x?: number, y?: number, z?: number, w?: number)
+    x: number
+    y: number
+    z: number
+    w: number
+    /**
+     * @description 四个维度都为 `0` 的描述
+     */
+    static readonly ZERO: Dimension
+    /**
+     * @description 四个维度都为 `1` 的描述
+     */
+    static readonly ONE: Dimension
+    /**
+     * @description 克隆当前维度
+     * @param [result] 存储的对象
+     * @example
+     * ```
+     * const offset = new Offset()
+     * ```
+     */
+    clone(result?: Dimension): Dimension
+    /**
+     * @description 转换为数组格式
+     * @param [demensions = 2] 维度
+     */
+    toArray(demensions?: 2 | 3 | 4): number[]
+    /**
+     * @description 转换为 `Cartesian2` 坐标
+     */
+    toCartesian2(): Cartesian2
+    /**
+     * @description 转换为 `Cartesian3` 坐标
+     */
+    toCartesian3(): Cartesian3
+    /**
+     * @description 转换为 `Cartesian4` 坐标
+     */
+    toCartesian4(): Cartesian4
+    /**
+     * @description 转换为字符串
+     * @param [template = "(%x, %y, %z, %w)"] 字符串模板
+     * @example
+     * ```
+     * //default
+     * const tip = Offset.ZERO.toString() // "(0, 0, 0, 0)"
+     *
+     * //use template
+     * const tip = Offset.ZERO.toString("[%x, %y]") // "[0, 0]"
+     * ```
+     */
+    toString(template?: string): string
+    /**
+     * @description 比较两个维度量是否相等
+     * @param left {@link Dimension} 左值
+     * @param right {@link Dimension} 右值
+     * @param [diff = 0] 可接受的数学误差
+     */
+    static equals(left: Dimension, right: Dimension, diff?: number): boolean
+    /***
+     * @description 从数组转换
+     * @param arr 数组
+     */
+    static fromArray(arr: number[]): Dimension
+    /**
+     * @description 从 `Cartesian2` 坐标转换
+     * @param [cartesian] {@link Cartesian2} 坐标
+     * @param [result] 存储的对象
+     */
+    static fromCartesian2(cartesian: Cartesian2, result?: Dimension): Dimension
+    /**
+     * @description 从 `Cartesian3` 坐标转换
+     * @param [cartesian] {@link Cartesian3} 坐标
+     * @param [result] 存储的对象
+     */
+    static fromCartesian3(cartesian: Cartesian3, result?: Dimension): Dimension
+    /**
+     * @description 从 `Cartesian4` 坐标转换
+     * @param [cartesian] {@link Cartesian4} 坐标
+     * @param [result] 存储的对象
+     */
+    static fromCartesian4(cartesian: Cartesian4, result?: Dimension): Dimension
+  }
+
+  /**
+   * @description 姿态描述 <角度制>
+   * @param [heading = 0] 航向 <角度制>
+   * @param [pitch = 0] 俯仰 <角度制>
+   * @param [roll = 0] 翻滚 <角度制>
+   */
+  export class Hpr {
+    constructor(heading?: number, pitch?: number, roll?: number)
+    heading: number
+    pitch: number
+    roll: number
+    /**
+     * @description 克隆当前姿态描述
+     * @param [result] 存储的对象
+     * @example
+     * ```
+     * const hpr = new Hpr(90, 90, 90)
+     * const clone = hpr.clone()
+     * ```
+     */
+    clone(result?: Hpr): Hpr
+    /**
+     * @description 转换为`HeadingPitchRoll`
+     * @returns `HeadingPitchRoll`
+     */
+    toHeadingPitchRoll(): HeadingPitchRoll
+    /**
+     * @description 比较两个姿态描述是否相等
+     * @param left {@link Hpr} 左值
+     * @param right {@link Hpr} 右值
+     * @param [diff = 0] 可接受的数学误差
+     */
+    static equals(left: Hpr, right: Hpr, diff?: number): boolean
+    /**
+     * @description 从 `HeadingPitchRoll` 转换
+     * @param hpr {@link HeadingPitchRoll} 航向俯仰翻滚
+     * @param [result] 存储的对象
+     */
+    static fromHeadingPitchRoll(hpr: HeadingPitchRoll, result?: Hpr): Hpr
+  }
+
+  /**
    * @description 初始化地球
    * @param [id = "GisContainer"] 当前地球的ID
    * @param [ref = "GisContainer"] 容器ID / 容器实例 / Viewer实例
    * @param [cesiumOptions] Cesium设置
    * @param [options] {@link Earth.ConstructorOptions} 设置
    * @returns 地球实例
+   * @deprecated use `createEarth`, this will be deleted at next minor version
    */
   export const useEarth: (
     id?: string,
@@ -6494,26 +8695,51 @@ declare module "@anstec/earth" {
     cesiumOptions?: Viewer.ConstructorOptions,
     options?: Earth.ConstructorOptions
   ) => Earth
-
+  /**
+   * @description 初始化地球
+   * @param [id = "GisContainer"] 当前地球的ID
+   * @param [ref = "GisContainer"] 容器ID / 容器实例 / Viewer实例
+   * @param [cesiumOptions] Cesium设置
+   * @param [options] {@link Earth.ConstructorOptions} 设置
+   * @returns 地球实例
+   */
+  export const createEarth: (
+    id?: string,
+    ref?: string | HTMLDivElement | Viewer,
+    cesiumOptions?: Viewer.ConstructorOptions,
+    options?: Earth.ConstructorOptions
+  ) => Earth
   /**
    * @description 销毁指定地球并回收相关资源
    * @param [id = "GisContainer"] 指定ID的地球
-   * @returns 成功返回 `true`，未找到指定地球返回 `false`
+   * @deprecated use `recycleEarth`, this will be deleted at next minor version
    */
-  export const useEarthRecycle: (id?: string) => boolean
-
+  export const useEarthRecycle: (id?: string) => void
+  /**
+   * @description 销毁指定地球并回收相关资源
+   * @param [id = "GisContainer"] 指定ID的地球
+   */
+  export const recycleEarth: (id?: string) => void
+  /**
+   * @description 使用CesiumNavigation初始化控制摇杆
+   * @param earth 地球
+   * @param [option] 控制摇杆参数
+   * @returns 控制遥杆
+   * @deprecated use `createNavigation`, this will be deleted at next minor version
+   */
+  export const useNavigation: (earth: Earth, option?: CesiumNavigation.ConstructorOptions) => CesiumNavigation
   /**
    * @description 使用CesiumNavigation初始化控制摇杆
    * @param earth 地球
    * @param [option] 控制摇杆参数
    * @returns 控制遥杆
    */
-  export const useNavigation: (earth: Earth, option?: CesiumNavigation.ConstructorOptions) => CesiumNavigation
-
+  export const createNavigation: (earth: Earth, option?: CesiumNavigation.ConstructorOptions) => CesiumNavigation
   /**
    * @description 创建URL模板的地图瓦片图层
    * @param option {@link UrlTemplateImageryProvider.ConstructorOptions} 参数
    * @returns {UrlTemplateImageryProvider} 地图瓦片
+   * @deprecated new the `UrlTemplateImageryProvider` instance directly, this will be deleted at next minor version
    */
   export const useTileImageryProvider: (
     option: UrlTemplateImageryProvider.ConstructorOptions

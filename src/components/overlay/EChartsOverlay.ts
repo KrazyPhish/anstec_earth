@@ -1,6 +1,8 @@
+import { enumerable, generate, singleton } from "decorators"
 import { init, type EChartsOption, type ECharts } from "echarts"
 import { Utils } from "utils"
 import type { Scene, Viewer } from "cesium"
+import type { Destroyable } from "abstract"
 import type { Earth } from "components/Earth"
 
 export namespace EChartsOverlay {
@@ -14,48 +16,54 @@ export namespace EChartsOverlay {
   }
 }
 
+export interface EChartsOverlay {
+  _isDestroyed: boolean
+  _id: string
+}
+
 /**
  * @description Echarts插件图层
  * @param earth {@link Earth} 地球实例
  * @param param {@link EChartsOverlay.ConstructorOptions} 参数
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const overlay = EchartsOverlay(earth, { id: "echarts-map" })
  * overlay.updateOverlay(echartsOption)
  * ```
  */
-export class EChartsOverlay {
-  private destroyed: boolean = false
-  private id: string
-  private viewer: Viewer
-  private scene: Scene
-  private container?: HTMLElement
-  private overlay?: ECharts
+@singleton()
+export class EChartsOverlay implements Destroyable {
+  @generate(false) isDestroyed!: boolean
+  @generate() id!: string
+  @enumerable(false) _container?: HTMLElement
+  @enumerable(false) _overlay?: ECharts
 
+  #viewer: Viewer
+  #scene: Scene
   constructor(earth: Earth, options: EChartsOverlay.ConstructorOptions) {
-    this.id = options.id ?? Utils.RandomUUID()
-    this.viewer = earth.viewer
-    this.scene = earth.scene
-    this.overlay = this.createChartOverlay()
+    this._id = options.id ?? Utils.uuid()
+    this.#viewer = earth.viewer
+    this.#scene = earth.scene
+    this._overlay = this.#createChartOverlay()
     if (options.option) this.updateOverlay(options.option)
   }
 
-  private createChartOverlay() {
-    this.scene.canvas.setAttribute("tabIndex", "0")
-    const offset = this.scene.canvas.getBoundingClientRect()
+  #createChartOverlay() {
+    this.#scene.canvas.setAttribute("tabIndex", "0")
+    const offset = this.#scene.canvas.getBoundingClientRect()
     const echartDom = document.createElement("div")
     echartDom.style.position = "absolute"
     echartDom.style.top = `${offset.top}px`
     echartDom.style.left = `${offset.left}px`
-    echartDom.style.width = `${this.scene.canvas.width}px`
-    echartDom.style.height = `${this.scene.canvas.height}px`
+    echartDom.style.width = `${this.#scene.canvas.width}px`
+    echartDom.style.height = `${this.#scene.canvas.height}px`
     echartDom.style.pointerEvents = "none"
     echartDom.style.pointerEvents = "none"
-    echartDom.setAttribute("id", this.id)
+    echartDom.setAttribute("id", this._id)
     echartDom.setAttribute("class", "echarts-overlay")
-    this.viewer.container.appendChild(echartDom)
-    this.container = echartDom
+    this.#viewer.container.appendChild(echartDom)
+    this._container = echartDom
     return init(echartDom)
   }
 
@@ -63,63 +71,56 @@ export class EChartsOverlay {
    * @description 加载Echarts设置
    * @param option {@link EChartsOption} Echarts设置
    */
-  public updateOverlay(option: EChartsOption) {
-    if (!this.overlay) return
-    this.overlay.setOption(option)
+  updateOverlay(option: EChartsOption) {
+    if (!this._overlay) return
+    this._overlay.setOption(option)
   }
 
   /**
    * @description 获取视图
    * @returns 视图
    */
-  public getEarthMap() {
-    return this.viewer
+  getEarthMap() {
+    return this.#viewer
   }
 
   /**
    * @description 获取Echarts实例
    * @returns Echarts实例
    */
-  public getOverlay() {
-    return this.overlay
+  getOverlay() {
+    return this._overlay
   }
 
   /**
    * @description 显示
    */
-  public show() {
-    if (!this.container) return
-    this.container.style.visibility = "visible"
+  show() {
+    if (!this._container) return
+    this._container.style.visibility = "visible"
   }
 
   /**
    * @description 隐藏
    */
-  public hide() {
-    if (!this.container) return
-    this.container.style.visibility = "hidden"
-  }
-
-  /**
-   * @description 获取销毁状态
-   */
-  public isDestroyed(): boolean {
-    return this.destroyed
+  hide() {
+    if (!this._container) return
+    this._container.style.visibility = "hidden"
   }
 
   /**
    * @description 销毁
    */
-  public destroy() {
-    if (this.destroyed) return
-    this.destroyed = true
-    if (this.container) {
-      this.viewer.container.removeChild(this.container)
-      this.container = undefined
+  destroy() {
+    if (this._isDestroyed) return
+    this._isDestroyed = true
+    if (this._container) {
+      this.#viewer.container.removeChild(this._container)
+      this._container = undefined
     }
-    if (this.overlay) {
-      this.overlay.dispose()
-      this.overlay = undefined
+    if (this._overlay) {
+      this._overlay.dispose()
+      this._overlay = undefined
     }
   }
 }

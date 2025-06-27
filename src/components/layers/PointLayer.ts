@@ -1,14 +1,15 @@
 import {
+  Cartesian3,
   Color,
   PointPrimitiveCollection,
-  type Cartesian3,
   type DistanceDisplayCondition,
   type NearFarScalar,
   type PointPrimitive,
 } from "cesium"
 import { Utils } from "utils"
+import { Labeled, Layer } from "abstract"
 import { LabelLayer } from "./LabelLayer"
-import { Layer } from "./Layer"
+import { generate, is, validate } from "decorators"
 import type { Earth } from "components/Earth"
 
 export namespace PointLayer {
@@ -45,24 +46,31 @@ export namespace PointLayer {
   }
 }
 
+export interface PointLayer<T = unknown> {
+  _labelLayer: LabelLayer<T>
+}
+
 /**
  * @description 点图层
  * @extends Layer {@link Layer} 图层基类
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const pointLayer = new PointLayer(earth)
  * //or
- * const pointLayer = earth.useDefaultLayers().point
+ * const pointLayer = earth.layers.point
  * ```
  */
-export class PointLayer<T = unknown> extends Layer<PointPrimitiveCollection, PointPrimitive, Layer.Data<T>> {
-  public labelLayer: LabelLayer<T>
+export class PointLayer<T = unknown>
+  extends Layer<PointPrimitiveCollection, PointPrimitive, Layer.Data<T>>
+  implements Labeled<T>
+{
+  @generate() labelLayer!: LabelLayer<T>
 
   constructor(earth: Earth) {
     super(earth, new PointPrimitiveCollection())
-    this.labelLayer = new LabelLayer(earth)
+    this._labelLayer = new LabelLayer(earth)
   }
 
   /**
@@ -70,7 +78,7 @@ export class PointLayer<T = unknown> extends Layer<PointPrimitiveCollection, Poi
    * @param param {@link PointLayer.AddParam} 点参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const pointLayer = new PointLayer(earth)
    * pointLayer.add({
    *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -81,23 +89,27 @@ export class PointLayer<T = unknown> extends Layer<PointPrimitiveCollection, Poi
    * })
    * ```
    */
-  public add({
-    id = Utils.RandomUUID(),
-    module,
-    position,
-    show = true,
-    pixelSize = 5,
-    color = Color.RED,
-    outlineWidth = 1,
-    outlineColor,
-    scaleByDistance,
-    disableDepthTestDistance = Number.POSITIVE_INFINITY,
-    distanceDisplayCondition,
-    data,
-    label,
-  }: PointLayer.AddParam<T>) {
+  @validate
+  add(
+    @is(Cartesian3, "position")
+    {
+      id = Utils.uuid(),
+      module,
+      position,
+      show = true,
+      pixelSize = 5,
+      color = Color.RED,
+      outlineWidth = 1,
+      outlineColor,
+      scaleByDistance,
+      disableDepthTestDistance = Number.POSITIVE_INFINITY,
+      distanceDisplayCondition,
+      data,
+      label,
+    }: PointLayer.AddParam<T>
+  ) {
     const primitive = {
-      id: Utils.EncodeId(id, module),
+      id: Utils.encode(id, module),
       show,
       color,
       position,
@@ -110,9 +122,9 @@ export class PointLayer<T = unknown> extends Layer<PointPrimitiveCollection, Poi
     } as PointPrimitive
 
     if (label) {
-      this.labelLayer.add({ id, module, position, ...label })
+      this._labelLayer.add({ id, module, position, ...label })
     }
-    super.save(id, { primitive, data: { data, module } })
+    super._save(id, { primitive, data: { data, module } })
   }
 
   /**
@@ -121,7 +133,7 @@ export class PointLayer<T = unknown> extends Layer<PointPrimitiveCollection, Poi
    * @param param {@link PointLayer.SetParam} 点参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const pointLayer = new PointLayer(earth)
    * pointLayer.set("some_id", {
    *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -133,7 +145,7 @@ export class PointLayer<T = unknown> extends Layer<PointPrimitiveCollection, Poi
    * })
    * ```
    */
-  public set(id: string, param: PointLayer.SetParam<T>) {
+  set(id: string, param: PointLayer.SetParam<T>) {
     const pointParam = { ...param }
     delete pointParam.label
     const point = this.getEntity(id)?.primitive
@@ -141,64 +153,64 @@ export class PointLayer<T = unknown> extends Layer<PointPrimitiveCollection, Poi
       Object.assign(point, pointParam)
     }
     if (param.label) {
-      this.labelLayer.set(id, param.label)
+      this._labelLayer.set(id, param.label)
     }
   }
 
   /**
    * @description 隐藏所有点
    */
-  public hide(): void
+  hide(): void
   /**
    * @description 隐藏所有点
    * @param id 根据ID隐藏点
    */
-  public hide(id: string): void
-  public hide(id?: string) {
+  hide(id: string): void
+  hide(id?: string) {
     if (id) {
       super.hide(id)
-      this.labelLayer.hide(id)
+      this._labelLayer.hide(id)
     } else {
       super.hide()
-      this.labelLayer.hide()
+      this._labelLayer.hide()
     }
   }
 
   /**
    * @description 显示所有点
    */
-  public show(): void
+  show(): void
   /**
    * @description 根据ID显示点
    * @param id ID
    */
-  public show(id: string): void
-  public show(id?: string) {
+  show(id: string): void
+  show(id?: string) {
     if (id) {
       super.show(id)
-      this.labelLayer.show(id)
+      this._labelLayer.show(id)
     } else {
       super.show()
-      this.labelLayer.show()
+      this._labelLayer.show()
     }
   }
 
   /**
    * @description 移除所有点
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 移除所有点
    * @param id 根据ID移除点
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
       super.remove(id)
-      this.labelLayer.remove(id)
+      this._labelLayer.remove(id)
     } else {
       super.remove()
-      this.labelLayer.remove()
+      this._labelLayer.remove()
     }
   }
 
@@ -206,9 +218,9 @@ export class PointLayer<T = unknown> extends Layer<PointPrimitiveCollection, Poi
    * @description 销毁图层
    * @returns 返回`boolean`值
    */
-  public destroy(): boolean {
+  destroy(): boolean {
     if (super.destroy()) {
-      this.labelLayer.destroy()
+      this._labelLayer.destroy()
       return true
     } else return false
   }

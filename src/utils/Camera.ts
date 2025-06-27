@@ -1,17 +1,21 @@
 import { Camera, Cartesian2, Cartesian3, Cesium3DTileset, Math, Rectangle, Scene } from "cesium"
+import { is, positive, freeze, validate } from "decorators"
 
-export namespace CameraTool {
-  const levelHeihgt: number[] = [
-    0, 0, 10123000, 7123000, 6321000, 5522000, 3436000, 539000, 305000, 180000, 133000, 100000, 76500, 58200, 23500,
-    9600, 4000, 2000, 1700, 1500, 1000,
-  ]
+//TODO camera viewer manager
+const levelHeihgt: number[] = [
+  0, 0, 10123000, 7123000, 6321000, 5522000, 3436000, 539000, 305000, 180000, 133000, 100000, 76500, 58200, 23500, 9600,
+  4000, 2000, 1700, 1500, 1000,
+]
 
+@freeze
+export class CameraTool {
   /**
    * @description 根据层级获取对应的最大高度
    * @param level 层级
    * @returns 最大高度
    */
-  export const getLevelMaxHeight = (level: number) => {
+  @validate
+  static getLevelMaxHeight(@positive() @is(Number) level: number) {
     if (level < 2) return levelHeihgt[2]
     else if (level > 20) return levelHeihgt[20]
     return levelHeihgt[level]
@@ -22,10 +26,11 @@ export namespace CameraTool {
    * @param height 高度
    * @returns 层级
    */
-  export const getLevelByHeight = (height: number) => {
+  @validate
+  static getLevelByHeight(@is(Number) height: number) {
     let level = 2
     for (let i = 2; i < 20; i++) {
-      const alt = getLevelMaxHeight(i)
+      const alt = CameraTool.getLevelMaxHeight(i)
       if (alt > height) {
         level = i
       } else if (alt <= height) {
@@ -40,7 +45,12 @@ export namespace CameraTool {
    * @param rect 锁定矩形区域范围
    * @param [height] 锁定高度
    */
-  export const LockCameraInRectangle = (camera: Camera, rect: Rectangle, height?: number) => {
+  @validate
+  static lockCameraInRectangle(
+    @is(Camera) camera: Camera,
+    @is(Rectangle) rect: Rectangle,
+    @is(Number) height?: number
+  ) {
     if (!rect) return
     const cPosition = camera.positionCartographic
     let { longitude, latitude, height: cHeight } = cPosition
@@ -86,7 +96,8 @@ export namespace CameraTool {
    * @param camera 当前相机
    * @returns 对应的笛卡尔三系坐标点或选取失败返回`undefined`
    */
-  export const PickPointOnEllipsoid = (point: Cartesian2, scene: Scene, camera: Camera) => {
+  @validate
+  static pickPointOnEllipsoid(@is(Cartesian2) point: Cartesian2, @is(Scene) scene: Scene, @is(Camera) camera: Camera) {
     const pick = scene.pick(point)
     const isOn3DTile = pick && pick.primitive instanceof Cesium3DTileset
     if (isOn3DTile) {
@@ -104,19 +115,11 @@ export namespace CameraTool {
    * @param [viewRectangle] 相机区域
    * @returns 范围
    */
-  export const viewRectangleToLonLatRange = (viewRectangle?: Rectangle) => {
-    const range: {
-      lon: { min: number; max: number }
-      lat: { min: number; max: number }
-    } = {
-      lon: {
-        min: 0,
-        max: 0,
-      },
-      lat: {
-        min: 0,
-        max: 0,
-      },
+  @validate
+  static viewRectangleToLonLatRange(@is(Rectangle) viewRectangle?: Rectangle) {
+    const range: { lon: { min: number; max: number }; lat: { min: number; max: number } } = {
+      lon: { min: 0, max: 0 },
+      lat: { min: 0, max: 0 },
     }
     if (viewRectangle) {
       const postiveWest = Math.mod(viewRectangle.west, Math.TWO_PI)

@@ -8,14 +8,18 @@ import {
   type Entity,
 } from "cesium"
 import { DefaultModuleName, SubEventType, DrawType } from "enum"
-import { Dynamic } from "./Dynamic"
+import { Dynamic } from "abstract"
 import { ModelLayer } from "components/layers"
 import { Utils, State } from "utils"
 import type { Earth } from "components/Earth"
 import type { Draw } from "./Draw"
 
+/**
+ * @description 动态绘制模型
+ * @extends Dynamic {@link Dynamic} 动态绘制基类
+ */
 export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
-  public type: string = "Model"
+  type: string = "Model"
   constructor(earth: Earth) {
     super(earth, new ModelLayer(earth))
   }
@@ -24,7 +28,7 @@ export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
    * @description 添加可编辑对象
    * @param option 新增参数以及可编辑附加数据
    */
-  public add(option: ModelLayer.AddParam<Dynamic.Model>) {
+  add(option: ModelLayer.AddParam<Dynamic.Model>) {
     this.layer.add(option)
   }
 
@@ -33,8 +37,8 @@ export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
    * @param param {@link Draw.Model} 画模型参数
    * @returns 点的坐标
    */
-  public draw({
-    id = Utils.RandomUUID(),
+  draw({
+    id = Utils.uuid(),
     module = DefaultModuleName.MODEL,
     url,
     scale = 1,
@@ -55,19 +59,19 @@ export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
 
     return new Promise<Draw.ModelReturn[]>((resolve) => {
       let index = -1
-      const handler = super.startEvent()
+      const handler = super._startEvent()
 
-      this.cacheHandler = handler
+      this._cacheHandler = handler
 
       const finish = () => {
-        super.endEvent(handler)
+        super._endEvent(handler)
         if (!keep) {
           models.forEach(({ id }: Draw.PointReturn) => {
             this.layer.remove(id)
           })
         }
         onFinish?.(models.map((v) => v.position))
-        this.eventBus.emit(SubEventType.DRAW_FINISH, {
+        this._eventBus.emit(SubEventType.DRAW_FINISH, {
           type: this.type,
           event: SubEventType.DRAW_FINISH,
           data: { models },
@@ -77,7 +81,7 @@ export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
 
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
         index++
-        const cartesian = super.getPointOnEllipsoid(position)
+        const cartesian = super._getPointOnEllipsoid(position)
         if (!cartesian) return
         const _id = `${id}_${index}`
         const model = { id: _id, position: cartesian }
@@ -106,7 +110,7 @@ export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
           },
         })
         onEvery?.(cartesian, index)
-        this.eventBus.emit(SubEventType.DRAW_CERTAIN, {
+        this._eventBus.emit(SubEventType.DRAW_CERTAIN, {
           type: this.type,
           event: SubEventType.DRAW_CERTAIN,
           data: { ...model },
@@ -125,7 +129,7 @@ export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
    * @param id 目标ID
    * @returns
    */
-  public edit(id: string): Promise<Draw.ModelReturn> {
+  edit(id: string): Promise<Draw.ModelReturn> {
     const data: Dynamic.Model | undefined = this.layer.getEntity(id)?.data.data
     if (!data) {
       return new Promise((_, reject) => reject(`Object ${id} does not exist.`))
@@ -134,13 +138,13 @@ export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
         reject("Another drawing or editing is in progress, end it first.")
       })
     }
-    const handler = super.startEvent()
+    const handler = super._startEvent()
     const point = data.positions[0]
     let ent: Entity
     let currentPoint: Entity | undefined
     let lastPos: Cartesian3 = point.clone()
 
-    ent = this.viewer.entities.add({
+    ent = this._viewer.entities.add({
       position: point,
       // model: { ...data.attr, heightReference: HeightReference.CLAMP_TO_GROUND },
       point: {
@@ -153,11 +157,11 @@ export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
       if (!currentPoint) return
-      const position = super.getPointOnEllipsoid(endPosition)
+      const position = super._getPointOnEllipsoid(endPosition)
       if (position) {
         ;(ent.position as ConstantPositionProperty).setValue(position)
         lastPos = position
-        this.eventBus.emit(SubEventType.EDIT_MOVE, {
+        this._eventBus.emit(SubEventType.EDIT_MOVE, {
           type: this.type,
           event: SubEventType.EDIT_MOVE,
           data: { id, position },
@@ -171,9 +175,9 @@ export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
 
     return new Promise((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const pick = this.scene.pick(position)
+        const pick = this._scene.pick(position)
         if (!pick || pick.id.id !== ent.id) {
-          super.endEvent(handler)
+          super._endEvent(handler)
           this.layer.add({
             id,
             position: lastPos,
@@ -184,17 +188,17 @@ export class ModelDynamic extends Dynamic<ModelLayer<Dynamic.Model>> {
               attr: data.attr,
             },
           })
-          ent && this.viewer.entities.remove(ent)
-          this.eventBus.emit(SubEventType.EDIT_FINISH, {
+          ent && this._viewer.entities.remove(ent)
+          this._eventBus.emit(SubEventType.EDIT_FINISH, {
             type: this.type,
             event: SubEventType.EDIT_FINISH,
             data: { id, position: lastPos },
           })
           resolve({ id, position: lastPos })
         } else {
-          super.setViewControl(false)
+          super._setViewControl(false)
           currentPoint = ent
-          this.eventBus.emit(SubEventType.EDIT_CERTAIN, {
+          this._eventBus.emit(SubEventType.EDIT_CERTAIN, {
             type: this.type,
             event: SubEventType.EDIT_CERTAIN,
             data: { id, position: lastPos },

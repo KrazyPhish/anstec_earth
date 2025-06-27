@@ -8,7 +8,7 @@ import {
   type Entity,
 } from "cesium"
 import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Dynamic } from "./Dynamic"
+import { Dynamic } from "abstract"
 import { Utils, State } from "utils"
 import { WallLayer } from "components/layers"
 import type { Draw } from "./Draw"
@@ -16,9 +16,10 @@ import type { Earth } from "components/Earth"
 
 /**
  * @description 动态绘制墙体
+ * @extends Dynamic {@link Dynamic} 动态绘制基类
  */
 export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
-  public type: string = "Wall"
+  type: string = "Wall"
   constructor(earth: Earth) {
     super(earth, new WallLayer(earth))
   }
@@ -27,7 +28,7 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
    * @description 添加可编辑对象
    * @param option 新增参数以及可编辑附加数据
    */
-  public add(option: WallLayer.AddParam<Dynamic.Wall>) {
+  add(option: WallLayer.AddParam<Dynamic.Wall>) {
     this.layer.add(option)
   }
 
@@ -36,8 +37,8 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
    * @param param {@link Draw.Wall} 画墙体参数
    * @returns 墙体点的坐标
    */
-  public draw({
-    id = Utils.RandomUUID(),
+  draw({
+    id = Utils.uuid(),
     module = DefaultModuleName.WALL,
     color = Color.ORANGE.withAlpha(0.7),
     height = 2000,
@@ -58,41 +59,41 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
     let ent: Entity
     let index = -1
 
-    const handler = super.startEvent()
+    const handler = super._startEvent()
 
-    this.cacheHandler = handler
+    this._cacheHandler = handler
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const point = super.getPointOnEllipsoid(endPosition)
+      const point = super._getPointOnEllipsoid(endPosition)
       if (!point) return
       points.pop()
       points.push(point)
       onMove?.(point, index)
-      this.eventBus.emit(SubEventType.DRAW_MOVE, {
+      this._eventBus.emit(SubEventType.DRAW_MOVE, {
         type: this.type,
         event: SubEventType.DRAW_MOVE,
         data: { id, index, position: point },
       })
     }, ScreenSpaceEventType.MOUSE_MOVE)
 
-    return new Promise<Draw.PolylineReturn>((resolve, reject) => {
+    return new Promise<Draw.WallReturn>((resolve, reject) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const point = super.getPointOnEllipsoid(position)
+        const point = super._getPointOnEllipsoid(position)
         if (point) {
           index++
           points.push(point)
           onEvery?.(point, index)
-          this.eventBus.emit(SubEventType.DRAW_CERTAIN, {
+          this._eventBus.emit(SubEventType.DRAW_CERTAIN, {
             type: this.type,
             event: SubEventType.DRAW_CERTAIN,
             data: { id, index, position: point },
           })
         } else {
-          super.endEvent(handler)
+          super._endEvent(handler)
           reject("Please choose a point from earth.")
         }
         if (!ent && points.length >= 2) {
-          this.cacheEntity = ent = this.viewer.entities.add({
+          this._cacheEntity = ent = this._viewer.entities.add({
             wall: {
               positions: new CallbackProperty(() => {
                 return points
@@ -115,8 +116,8 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
       handler.setInputAction(() => {
         points.pop()
         if (points.length < 2) {
-          ent && this.viewer.entities.remove(ent)
-          super.endEvent(handler)
+          ent && this._viewer.entities.remove(ent)
+          super._endEvent(handler)
           reject("Polyline needs at least two vertexes.")
         } else {
           const polyline = { id, positions: points }
@@ -148,10 +149,10 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
               },
             })
           }
-          ent && this.viewer.entities.remove(ent)
-          super.endEvent(handler)
+          ent && this._viewer.entities.remove(ent)
+          super._endEvent(handler)
           onFinish?.(points)
-          this.eventBus.emit(SubEventType.DRAW_FINISH, {
+          this._eventBus.emit(SubEventType.DRAW_FINISH, {
             type: this.type,
             event: SubEventType.DRAW_FINISH,
             data: { ...polyline },
@@ -167,7 +168,7 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
    * @param id 目标ID
    * @returns
    */
-  public edit(id: string): Promise<Draw.WallReturn> {
+  edit(id: string): Promise<Draw.WallReturn> {
     const data: Dynamic.Wall | undefined = this.layer.getEntity(id)?.data.data
     if (!data) {
       return new Promise((_, reject) => reject(`Object ${id} does not exist.`))
@@ -176,7 +177,7 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
         reject("Another drawing or editing is in progress, end it first.")
       })
     }
-    const handler = super.startEvent()
+    const handler = super._startEvent()
     const tempPoints: Entity[] = []
     const positions: Cartesian3[] = [...data.positions]
     let ent: Entity
@@ -188,7 +189,7 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
 
     data.positions.forEach((value, index) => {
       tempPoints.push(
-        this.viewer.entities.add({
+        this._viewer.entities.add({
           id: `ModifyPoint_${index}`,
           position: value,
           point: {
@@ -200,7 +201,7 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
       )
     })
 
-    ent = this.viewer.entities.add({
+    ent = this._viewer.entities.add({
       wall: {
         positions: new CallbackProperty(() => {
           return positions
@@ -217,7 +218,7 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
 
     handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
       if (!currentPoint) return
-      const _position = super.getPointOnEllipsoid(position) ?? lastPos
+      const _position = super._getPointOnEllipsoid(position) ?? lastPos
       ;(currentPoint.position as ConstantPositionProperty).setValue(_position)
       positions.splice(currentIndex, 1, _position)
       if (currentIndex === 0 && data.attr.closed) {
@@ -227,7 +228,7 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
     }, ScreenSpaceEventType.LEFT_UP)
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const position = super.getPointOnEllipsoid(endPosition)
+      const position = super._getPointOnEllipsoid(endPosition)
       if (!position || !currentPoint) return
       ;(currentPoint.position as ConstantPositionProperty).setValue(position)
       positions.splice(currentIndex, 1, position)
@@ -239,11 +240,11 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
 
     return new Promise((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const _position = super.getPointOnEllipsoid(position)
-        const pick = this.scene.pick(position)
+        const _position = super._getPointOnEllipsoid(position)
+        const pick = this._scene.pick(position)
         if (!_position) return
         if (!pick || !tempPoints.some((entity) => entity.id === pick.id.id)) {
-          super.endEvent(handler)
+          super._endEvent(handler)
           this.layer.add({
             id,
             positions,
@@ -256,11 +257,11 @@ export class WallDynamic extends Dynamic<WallLayer<Dynamic.Wall>> {
               attr: data.attr,
             },
           })
-          ent && this.viewer.entities.remove(ent)
-          tempPoints.forEach((entity) => this.viewer.entities.remove(entity))
+          ent && this._viewer.entities.remove(ent)
+          tempPoints.forEach((entity) => this._viewer.entities.remove(entity))
           resolve({ id, positions })
         } else {
-          super.setViewControl(false)
+          super._setViewControl(false)
           currentIndex = Number(pick.id.id.split("_")[1])
           currentPoint = tempPoints[currentIndex]
         }

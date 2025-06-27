@@ -54,44 +54,44 @@ export namespace PrimitiveCluster {
  * @description 图元聚合类
  */
 export class PrimitiveCluster {
-  private _scene?: Scene
+  show: boolean
+  
+  _scene?: Scene
+  _enabled: boolean
+  _pixelRange: number
+  _minimumClusterSize: number
+  _clusterBillboards: boolean
+  _clusterLabels: boolean
+  _clusterPoints: boolean
 
-  public show: boolean
-  private _enabled: boolean
-  private _pixelRange: number
-  private _minimumClusterSize: number
-  private _clusterBillboards: boolean
-  private _clusterLabels: boolean
-  private _clusterPoints: boolean
+  _labelCollection = new LabelCollection()
+  _billboardCollection = new BillboardCollection()
+  _pointCollection = new PointPrimitiveCollection()
 
-  private _labelCollection = new LabelCollection()
-  private _billboardCollection = new BillboardCollection()
-  private _pointCollection = new PointPrimitiveCollection()
+  _clusterLabelCollection?: LabelCollection
+  _clusterBillboardCollection?: BillboardCollection
+  _clusterPointCollection?: PointPrimitiveCollection
 
-  private _clusterLabelCollection?: LabelCollection
-  private _clusterBillboardCollection?: BillboardCollection
-  private _clusterPointCollection?: PointPrimitiveCollection
+  _collectionIndicesByEntity: any = {}
 
-  private _collectionIndicesByEntity: any = {}
+  _unusedLabelIndices: any[] = []
+  _unusedBillboardIndices: any[] = []
+  _unusedPointIndices: any[] = []
 
-  private _unusedLabelIndices: any[] = []
-  private _unusedBillboardIndices: any[] = []
-  private _unusedPointIndices: any[] = []
+  _previousClusters: any = []
+  _previousHeight?: any
 
-  private _previousClusters: any = []
-  private _previousHeight?: any
+  _enabledDirty: boolean = false
+  _clusterDirty: boolean = false
 
-  private _enabledDirty: boolean = false
-  private _clusterDirty: boolean = false
+  _cluster?: ClusterCallback
+  _removeEventListener?: Event.RemoveCallback
+  _clusterEvent = new Event()
 
-  private _cluster?: ClusterCallback
-  private _removeEventListener?: Event.RemoveCallback
-  private _clusterEvent = new Event()
-
-  private labelBoundingBoxScratch = new BoundingRectangle()
-  private pointBoundinRectangleScratch = new BoundingRectangle()
-  private totalBoundingRectangleScratch = new BoundingRectangle()
-  private neighborBoundingRectangleScratch = new BoundingRectangle()
+  labelBoundingBoxScratch = new BoundingRectangle()
+  pointBoundinRectangleScratch = new BoundingRectangle()
+  totalBoundingRectangleScratch = new BoundingRectangle()
+  neighborBoundingRectangleScratch = new BoundingRectangle()
 
   get billboardCollection() {
     return this._billboardCollection
@@ -187,22 +187,22 @@ export class PrimitiveCluster {
     this.show = option?.show ?? true
   }
 
-  private getX(point: any) {
+  getX(point: any) {
     return point.coord.x
   }
 
-  private getY(point: any) {
+  getY(point: any) {
     return point.coord.y
   }
 
-  private expandBoundingBox(bbox: BoundingRectangle, pixelRange: number) {
+  expandBoundingBox(bbox: BoundingRectangle, pixelRange: number) {
     bbox.x -= pixelRange
     bbox.y -= pixelRange
     bbox.width += pixelRange * 2.0
     bbox.height += pixelRange * 2.0
   }
 
-  private getBoundingBox(
+  getBoundingBox(
     item: Billboard | Label | PointPrimitive,
     coord: Cartesian2,
     pixelRange: number,
@@ -240,7 +240,7 @@ export class PrimitiveCluster {
     return result
   }
 
-  private addNonClusteredItem(item: Billboard | Label | PointPrimitive, entityCluster: PrimitiveCluster) {
+  addNonClusteredItem(item: Billboard | Label | PointPrimitive, entityCluster: PrimitiveCluster) {
     ;(item as any).clusterShow = true
     if (
       !defined((item as any)._labelCollection) &&
@@ -254,7 +254,7 @@ export class PrimitiveCluster {
     }
   }
 
-  private addCluster(position: Cartesian3, numPoints: number, ids: string[], entityCluster: PrimitiveCluster) {
+  addCluster(position: Cartesian3, numPoints: number, ids: string[], entityCluster: PrimitiveCluster) {
     const cluster = {
       billboard: entityCluster._clusterBillboardCollection!.add(),
       label: entityCluster._clusterLabelCollection!.add(),
@@ -273,7 +273,7 @@ export class PrimitiveCluster {
     entityCluster._clusterEvent.raiseEvent(ids, cluster)
   }
 
-  private hasLabelIndex(entityCluster: PrimitiveCluster, entityId: string) {
+  hasLabelIndex(entityCluster: PrimitiveCluster, entityId: string) {
     return (
       defined(entityCluster) &&
       defined(entityCluster._collectionIndicesByEntity[entityId]) &&
@@ -281,7 +281,7 @@ export class PrimitiveCluster {
     )
   }
 
-  private getScreenSpacePositions(
+  getScreenSpacePositions(
     collection: BillboardCollection | LabelCollection | PointPrimitiveCollection,
     points: ClusterPoint[],
     scene: Scene,
@@ -325,7 +325,7 @@ export class PrimitiveCluster {
     }
   }
 
-  private createDeclutterCallback(entityCluster: PrimitiveCluster): ClusterCallback {
+  createDeclutterCallback(entityCluster: PrimitiveCluster): ClusterCallback {
     return (amount: number) => {
       if ((defined(amount) && amount < 0.05) || !entityCluster.enabled) {
         return
@@ -559,7 +559,7 @@ export class PrimitiveCluster {
     }
   }
 
-  private createGetEntity(
+  createGetEntity(
     collectionProperty: string,
     CollectionConstructor: Function,
     unusedIndicesProperty: string,
@@ -618,7 +618,7 @@ export class PrimitiveCluster {
     }
   }
 
-  private removeEntityIndicesIfUnused(entityCluster: PrimitiveCluster, entityId: string) {
+  removeEntityIndicesIfUnused(entityCluster: PrimitiveCluster, entityId: string) {
     const indices = entityCluster._collectionIndicesByEntity[entityId]
 
     if (!defined(indices.billboardIndex) && !defined(indices.labelIndex) && !defined(indices.pointIndex)) {
@@ -626,7 +626,7 @@ export class PrimitiveCluster {
     }
   }
 
-  private disableCollectionClustering(collection: BillboardCollection | LabelCollection | PointPrimitiveCollection) {
+  disableCollectionClustering(collection: BillboardCollection | LabelCollection | PointPrimitiveCollection) {
     if (!defined(collection)) {
       return
     }
@@ -637,7 +637,7 @@ export class PrimitiveCluster {
     }
   }
 
-  private updateEnable(entityCluster: PrimitiveCluster) {
+  updateEnable(entityCluster: PrimitiveCluster) {
     if (entityCluster.enabled) {
       return
     }
@@ -661,11 +661,11 @@ export class PrimitiveCluster {
     this.disableCollectionClustering(entityCluster._pointCollection)
   }
 
-  public getLabel() {
+  getLabel() {
     this.createGetEntity("_labelCollection", LabelCollection, "_unusedLabelIndices", "labelIndex")
   }
 
-  public removeLabel(entity: Entity) {
+  removeLabel(entity: Entity) {
     const entityIndices = this._collectionIndicesByEntity && this._collectionIndicesByEntity[entity.id]
     if (!defined(this._labelCollection) || !defined(entityIndices) || !defined(entityIndices.labelIndex)) {
       return
@@ -685,11 +685,11 @@ export class PrimitiveCluster {
     this._clusterDirty = true
   }
 
-  public getBillboard() {
+  getBillboard() {
     this.createGetEntity("_billboardCollection", BillboardCollection, "_unusedBillboardIndices", "billboardIndex")
   }
 
-  public removeBillboard(entity: Entity) {
+  removeBillboard(entity: Entity) {
     const entityIndices = this._collectionIndicesByEntity && this._collectionIndicesByEntity[entity.id]
     if (!defined(this._billboardCollection) || !defined(entityIndices) || !defined(entityIndices.billboardIndex)) {
       return
@@ -709,11 +709,11 @@ export class PrimitiveCluster {
     this._clusterDirty = true
   }
 
-  public getPoint() {
+  getPoint() {
     this.createGetEntity("_pointCollection", PointPrimitiveCollection, "_unusedPointIndices", "pointIndex")
   }
 
-  public removePoint(entity: Entity) {
+  removePoint(entity: Entity) {
     const entityIndices = this._collectionIndicesByEntity && this._collectionIndicesByEntity[entity.id]
     if (!defined(this._pointCollection) || !defined(entityIndices) || !defined(entityIndices.pointIndex)) {
       return
@@ -732,7 +732,7 @@ export class PrimitiveCluster {
     this._clusterDirty = true
   }
 
-  public update(frameState: FrameState) {
+  update(frameState: FrameState) {
     if (!this.show) {
       return
     }
@@ -809,7 +809,7 @@ export class PrimitiveCluster {
    * @description 初始化场景和聚合图层
    * @param scene 场景
    */
-  public initialize(scene: Scene) {
+  initialize(scene: Scene) {
     this._scene = scene
     this._cluster = this.createDeclutterCallback(this)
     this._removeEventListener = scene.camera.changed.addEventListener(this._cluster)
@@ -818,7 +818,7 @@ export class PrimitiveCluster {
   /**
    * @description 销毁
    */
-  public destroy() {
+  destroy() {
     this._clusterLabelCollection && this._clusterLabelCollection.destroy()
     this._clusterLabelCollection = undefined
     this._clusterBillboardCollection && this._clusterBillboardCollection.destroy()

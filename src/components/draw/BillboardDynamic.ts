@@ -10,7 +10,7 @@ import {
   type Entity,
 } from "cesium"
 import { BillboardLayer } from "components/layers"
-import { Dynamic } from "./Dynamic"
+import { Dynamic } from "abstract"
 import { DefaultModuleName, SubEventType, DrawType } from "enum"
 import { Utils, State } from "utils"
 import type { Earth } from "components/Earth"
@@ -18,9 +18,10 @@ import type { Draw } from "./Draw"
 
 /**
  * @description 动态绘制广告牌
+ * @extends Dynamic {@link Dynamic} 动态绘制基类
  */
 export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>> {
-  public type: string = "Billboard"
+  type: string = "Billboard"
   constructor(earth: Earth) {
     super(earth, new BillboardLayer(earth))
   }
@@ -29,7 +30,7 @@ export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>>
    * @description 添加可编辑对象
    * @param option 新增参数以及可编辑附加数据
    */
-  public add(option: BillboardLayer.AddParam<Dynamic.Billboard>) {
+  add(option: BillboardLayer.AddParam<Dynamic.Billboard>) {
     this.layer.add(option)
   }
 
@@ -38,8 +39,8 @@ export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>>
    * @param param {@link Draw.Billboard} 画广告牌参数
    * @returns 点的坐标
    */
-  public draw({
-    id = Utils.RandomUUID(),
+  draw({
+    id = Utils.uuid(),
     module = DefaultModuleName.BILLBOARD,
     image,
     width = 48,
@@ -61,19 +62,19 @@ export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>>
 
     return new Promise<Draw.BillboardReturn[]>((resolve) => {
       let index = -1
-      const handler = super.startEvent()
+      const handler = super._startEvent()
 
-      this.cacheHandler = handler
+      this._cacheHandler = handler
 
       const finish = () => {
-        super.endEvent(handler)
+        super._endEvent(handler)
         if (!keep) {
           billboards.forEach(({ id }: Draw.PointReturn) => {
             this.layer.remove(id)
           })
         }
         onFinish?.(billboards.map((v) => v.position))
-        this.eventBus.emit(SubEventType.DRAW_FINISH, {
+        this._eventBus.emit(SubEventType.DRAW_FINISH, {
           type: this.type,
           event: SubEventType.DRAW_FINISH,
           data: { billboards },
@@ -83,7 +84,7 @@ export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>>
 
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
         index++
-        const cartesian = super.getPointOnEllipsoid(position)
+        const cartesian = super._getPointOnEllipsoid(position)
         if (!cartesian) return
         const _id = `${id}_${index}`
         const billboard = { id: _id, position: cartesian }
@@ -113,7 +114,7 @@ export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>>
           },
         })
         onEvery?.(cartesian, index)
-        this.eventBus.emit(SubEventType.DRAW_CERTAIN, {
+        this._eventBus.emit(SubEventType.DRAW_CERTAIN, {
           type: this.type,
           event: SubEventType.DRAW_CERTAIN,
           data: { ...billboard },
@@ -132,7 +133,7 @@ export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>>
    * @param id 目标ID
    * @returns
    */
-  public edit(id: string): Promise<Draw.BillboardReturn> {
+  edit(id: string): Promise<Draw.BillboardReturn> {
     const data: Dynamic.Billboard | undefined = this.layer.getEntity(id)?.data.data
     if (!data) {
       return new Promise((_, reject) => reject(`Object ${id} does not exist.`))
@@ -141,13 +142,13 @@ export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>>
         reject("Another drawing or editing is in progress, end it first.")
       })
     }
-    const handler = super.startEvent()
+    const handler = super._startEvent()
     const point = data.positions[0]
     let ent: Entity
     let currentPoint: Entity | undefined
     let lastPos: Cartesian3 = point.clone()
 
-    ent = this.viewer.entities.add({
+    ent = this._viewer.entities.add({
       position: point,
       billboard: { ...data.attr },
       point: {
@@ -160,12 +161,12 @@ export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>>
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
       if (!currentPoint) return
-      const position = super.getPointOnEllipsoid(endPosition)
+      const position = super._getPointOnEllipsoid(endPosition)
       if (position) {
         ;(ent.position as ConstantPositionProperty).setValue(position)
         lastPos = position
       }
-      this.eventBus.emit(SubEventType.EDIT_MOVE, {
+      this._eventBus.emit(SubEventType.EDIT_MOVE, {
         type: this.type,
         event: SubEventType.EDIT_MOVE,
         data: { id, position: lastPos },
@@ -178,9 +179,9 @@ export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>>
 
     return new Promise((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const pick = this.scene.pick(position)
+        const pick = this._scene.pick(position)
         if (!pick || pick.id.id !== ent.id) {
-          super.endEvent(handler)
+          super._endEvent(handler)
           this.layer.add({
             id,
             position: lastPos,
@@ -191,17 +192,17 @@ export class BillboardDynamic extends Dynamic<BillboardLayer<Dynamic.Billboard>>
               attr: data.attr,
             },
           })
-          ent && this.viewer.entities.remove(ent)
-          this.eventBus.emit(SubEventType.EDIT_FINISH, {
+          ent && this._viewer.entities.remove(ent)
+          this._eventBus.emit(SubEventType.EDIT_FINISH, {
             type: this.type,
             event: SubEventType.EDIT_FINISH,
             data: { id, position: lastPos },
           })
           resolve({ id, position: lastPos })
         } else {
-          super.setViewControl(false)
+          super._setViewControl(false)
           currentPoint = ent
-          this.eventBus.emit(SubEventType.EDIT_CERTAIN, {
+          this._eventBus.emit(SubEventType.EDIT_CERTAIN, {
             type: this.type,
             event: SubEventType.EDIT_CERTAIN,
             data: { id, position: lastPos },

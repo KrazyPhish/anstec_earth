@@ -9,11 +9,14 @@ import {
   PixelDatatype,
   PixelFormat,
   Sampler,
+  type Context,
 } from "cesium"
-import { Earth } from "components/Earth"
 import { EarthRadius } from "enum"
 import { CameraTool } from "utils"
 import { WindParticleSystem } from "./WindParticleSystem"
+import { generate, singleton } from "decorators"
+import type { Destroyable } from "abstract"
+import type { Earth } from "components/Earth"
 
 export namespace WindField {
   /**
@@ -112,7 +115,7 @@ export namespace WindField {
    * @property [source] 源
    */
   export type TextureOptions = {
-    context: any
+    context: Context
     width?: number
     height?: number
     pixelFormat: PixelFormat
@@ -141,23 +144,29 @@ export namespace WindField {
 
 const { ceil, sqrt } = window.Math
 
+export interface WindField {
+  _isDestroyed: boolean
+}
+
 /**
  * @description 风场、洋流
  * @param earth {@link Earth} 地球实例
  * @param options {@link WindField.ConstructorOptions} 选项
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const windField = new WindField(earth)
  * ```
  */
-export class WindField {
-  private destroyed: boolean = false
-  private scene: Scene
-  private camera: Camera
-  private viewerParameters: WindField.ViewerParam
-  private globeBoundingSphere: BoundingSphere
-  private windParams: WindField.Param = {
+@singleton()
+export class WindField implements Destroyable {
+  @generate(false) isDestroyed!: boolean
+
+  #scene: Scene
+  #camera: Camera
+  #viewerParameters: WindField.ViewerParam
+  #globeBoundingSphere: BoundingSphere
+  #windParams: WindField.Param = {
     maxParticles: 64 * 64,
     particleHeight: 100.0,
     fadeOpacity: 0.9,
@@ -167,52 +176,52 @@ export class WindField {
     lineWidth: 2.0,
     particlesTextureSize: 64,
   }
-  private particleSystem?: WindParticleSystem
-  private resized: boolean = false
-  private morphStartEvent?: () => void
-  private morphCompleteEvent?: () => void
-  private moveStartEvent?: () => void
-  private moveEndEvent?: () => void
-  private preRenderEvent?: () => void
-  private isShow: boolean = true
+  #particleSystem?: WindParticleSystem
+  #resized: boolean = false
+  #morphStartEvent?: () => void
+  #morphCompleteEvent?: () => void
+  #moveStartEvent?: () => void
+  #moveEndEvent?: () => void
+  #preRenderEvent?: () => void
+  #isShow: boolean = true
 
   constructor(earth: Earth, { data, params }: WindField.ConstructorOptions) {
-    this.scene = earth.viewer.scene
-    this.camera = earth.viewer.camera
-    this.viewerParameters = {
+    this.#scene = earth.viewer.scene
+    this.#camera = earth.viewer.camera
+    this.#viewerParameters = {
       lonRange: new Cartesian2(),
       latRange: new Cartesian2(),
       pixelSize: 0.0,
     }
-    this.windParams = Object.assign(this.windParams, params)
-    if (this.windParams.maxParticles) {
-      this.windParams.particlesTextureSize = ceil(sqrt(this.windParams.maxParticles))
-      this.windParams.maxParticles = this.windParams.particlesTextureSize * this.windParams.particlesTextureSize
+    this.#windParams = Object.assign(this.#windParams, params)
+    if (this.#windParams.maxParticles) {
+      this.#windParams.particlesTextureSize = ceil(sqrt(this.#windParams.maxParticles))
+      this.#windParams.maxParticles = this.#windParams.particlesTextureSize * this.#windParams.particlesTextureSize
     }
-    this.globeBoundingSphere = new BoundingSphere(Cartesian3.ZERO, 0.99 * EarthRadius.EQUATOR)
-    this.updateViewerParameters()
-    this.setData(data)
-    this.setupEventListeners()
+    this.#globeBoundingSphere = new BoundingSphere(Cartesian3.ZERO, 0.99 * EarthRadius.EQUATOR)
+    this.#updateViewerParameters()
+    this.#setData(data)
+    this.#setupEventListeners()
   }
 
-  private updateViewerParameters() {
-    const viewRectangle = this.camera.computeViewRectangle(this.scene.globe.ellipsoid)
+  #updateViewerParameters() {
+    const viewRectangle = this.#camera.computeViewRectangle(this.#scene.globe.ellipsoid)
     const lonLatRange = CameraTool.viewRectangleToLonLatRange(viewRectangle)
-    this.viewerParameters.lonRange.x = lonLatRange.lon.min
-    this.viewerParameters.lonRange.y = lonLatRange.lon.max
-    this.viewerParameters.latRange.x = lonLatRange.lat.min
-    this.viewerParameters.latRange.y = lonLatRange.lat.max
-    const pixelSize = this.camera.getPixelSize(
-      this.globeBoundingSphere,
-      this.scene.drawingBufferWidth,
-      this.scene.drawingBufferHeight
+    this.#viewerParameters.lonRange.x = lonLatRange.lon.min
+    this.#viewerParameters.lonRange.y = lonLatRange.lon.max
+    this.#viewerParameters.latRange.x = lonLatRange.lat.min
+    this.#viewerParameters.latRange.y = lonLatRange.lat.max
+    const pixelSize = this.#camera.getPixelSize(
+      this.#globeBoundingSphere,
+      this.#scene.drawingBufferWidth,
+      this.#scene.drawingBufferHeight
     )
     if (pixelSize > 0) {
-      this.viewerParameters.pixelSize = pixelSize
+      this.#viewerParameters.pixelSize = pixelSize
     }
   }
 
-  private setData(data: WindField.Data) {
+  #setData(data: WindField.Data) {
     if (data.U.array instanceof Array) {
       data.U.array = new Float32Array(data.U.array)
     }
@@ -228,80 +237,80 @@ export class WindField {
     if (data.lev.array instanceof Array) {
       data.lev.array = new Float32Array(data.lev.array)
     }
-    this.particleSystem = new WindParticleSystem(
-      (this.scene as any).context,
+    this.#particleSystem = new WindParticleSystem(
+      (this.#scene as any).context,
       data,
-      this.windParams,
-      this.viewerParameters
+      this.#windParams,
+      this.#viewerParameters
     )
-    this.addPrimitives()
+    this.#addPrimitives()
   }
 
-  private setupEventListeners() {
-    this.morphStartEvent = () => {
-      this.removePrimitives()
+  #setupEventListeners() {
+    this.#morphStartEvent = () => {
+      this.#removePrimitives()
     }
-    this.scene.morphStart.addEventListener(this.morphStartEvent)
-    this.morphCompleteEvent = () => {
-      const scene = this.scene.mode
-      if (scene === SceneMode.SCENE3D && this.isShow) {
-        this.particleSystem?.canvasResize((this.scene as any).context)
-        this.addPrimitives()
+    this.#scene.morphStart.addEventListener(this.#morphStartEvent)
+    this.#morphCompleteEvent = () => {
+      const scene = this.#scene.mode
+      if (scene === SceneMode.SCENE3D && this.#isShow) {
+        this.#particleSystem?.canvasResize((this.#scene as any).context)
+        this.#addPrimitives()
       }
     }
-    this.scene.morphComplete.addEventListener(this.morphCompleteEvent)
-    this.moveStartEvent = () => {
-      if (!this.isShow) return
-      this.updateViewerParameters()
+    this.#scene.morphComplete.addEventListener(this.#morphCompleteEvent)
+    this.#moveStartEvent = () => {
+      if (!this.#isShow) return
+      this.#updateViewerParameters()
     }
-    this.camera.moveStart.addEventListener(this.moveStartEvent)
-    this.moveEndEvent = () => {
-      if (!this.isShow) return
-      this.updateViewerParameters()
+    this.#camera.moveStart.addEventListener(this.#moveStartEvent)
+    this.#moveEndEvent = () => {
+      if (!this.#isShow) return
+      this.#updateViewerParameters()
     }
-    this.camera.moveEnd.addEventListener(this.moveEndEvent)
-    this.preRenderEvent = () => {
-      if (this.resized && this.isShow) {
-        this.particleSystem?.canvasResize((this.scene as any).context)
-        this.resized = false
-        this.addPrimitives()
+    this.#camera.moveEnd.addEventListener(this.#moveEndEvent)
+    this.#preRenderEvent = () => {
+      if (this.#resized && this.#isShow) {
+        this.#particleSystem?.canvasResize((this.#scene as any).context)
+        this.#resized = false
+        this.#addPrimitives()
       }
     }
-    this.scene.preRender.addEventListener(this.preRenderEvent)
-    window.addEventListener("resize", this.resizeEvent.bind(this))
+    this.#scene.preRender.addEventListener(this.#preRenderEvent)
+    window.addEventListener("resize", this.#resizeEvent.bind(this))
   }
 
-  private resizeEvent() {
-    if (!this.isShow) return
-    this.resized = true
-    this.removePrimitives()
+  #resizeEvent() {
+    if (!this.#isShow) return
+    this.#resized = true
+    this.#removePrimitives()
   }
 
-  private addPrimitives() {
-    const primitives = this.scene.primitives
-    if (this.particleSystem?.particlesComputing.primitives) {
-      primitives.add(this.particleSystem.particlesComputing.primitives.calculateSpeed)
-      primitives.add(this.particleSystem.particlesComputing.primitives.updatePosition)
-      primitives.add(this.particleSystem.particlesComputing.primitives.postProcessingPosition)
+  #addPrimitives() {
+    const primitives = this.#scene.primitives
+    if (this.#particleSystem?.particlesComputing.primitives) {
+      primitives.add(this.#particleSystem.particlesComputing.primitives.calculateSpeed)
+      primitives.add(this.#particleSystem.particlesComputing.primitives.updatePosition)
+      primitives.add(this.#particleSystem.particlesComputing.primitives.postProcessingPosition)
     }
-    if (this.particleSystem?.particlesRendering.primitives) {
-      primitives.add(this.particleSystem.particlesRendering.primitives.segments)
-      primitives.add(this.particleSystem.particlesRendering.primitives.trails)
-      primitives.add(this.particleSystem.particlesRendering.primitives.screen)
+    if (this.#particleSystem?.particlesRendering.primitives) {
+      primitives.add(this.#particleSystem.particlesRendering.primitives.segments)
+      primitives.add(this.#particleSystem.particlesRendering.primitives.trails)
+      primitives.add(this.#particleSystem.particlesRendering.primitives.screen)
     }
   }
 
-  private removePrimitives() {
-    const primitives = this.scene.primitives
-    if (this.particleSystem?.particlesComputing.primitives) {
-      primitives.remove(this.particleSystem.particlesComputing.primitives.calculateSpeed)
-      primitives.remove(this.particleSystem.particlesComputing.primitives.updatePosition)
-      primitives.remove(this.particleSystem.particlesComputing.primitives.postProcessingPosition)
+  #removePrimitives() {
+    const primitives = this.#scene.primitives
+    if (this.#particleSystem?.particlesComputing.primitives) {
+      primitives.remove(this.#particleSystem.particlesComputing.primitives.calculateSpeed)
+      primitives.remove(this.#particleSystem.particlesComputing.primitives.updatePosition)
+      primitives.remove(this.#particleSystem.particlesComputing.primitives.postProcessingPosition)
     }
-    if (this.particleSystem?.particlesRendering.primitives) {
-      primitives.remove(this.particleSystem.particlesRendering.primitives.segments)
-      primitives.remove(this.particleSystem.particlesRendering.primitives.trails)
-      primitives.remove(this.particleSystem.particlesRendering.primitives.screen)
+    if (this.#particleSystem?.particlesRendering.primitives) {
+      primitives.remove(this.#particleSystem.particlesRendering.primitives.segments)
+      primitives.remove(this.#particleSystem.particlesRendering.primitives.trails)
+      primitives.remove(this.#particleSystem.particlesRendering.primitives.screen)
     }
   }
 
@@ -309,21 +318,21 @@ export class WindField {
    * @description 更新
    * @param params {@link WindField.Param} 参数
    */
-  public update(params: WindField.Param) {
-    this.windParams = Object.assign(this.windParams, params)
-    if (this.windParams.maxParticles) {
-      this.windParams.particlesTextureSize = ceil(sqrt(this.windParams.maxParticles))
-      this.windParams.maxParticles = this.windParams.particlesTextureSize * this.windParams.particlesTextureSize
+  update(params: WindField.Param) {
+    this.#windParams = Object.assign(this.#windParams, params)
+    if (this.#windParams.maxParticles) {
+      this.#windParams.particlesTextureSize = ceil(sqrt(this.#windParams.maxParticles))
+      this.#windParams.maxParticles = this.#windParams.particlesTextureSize * this.#windParams.particlesTextureSize
     }
-    this.particleSystem?.applyUserInput(this.windParams)
+    this.#particleSystem?.applyUserInput(this.#windParams)
   }
 
   /**
    * @description 隐藏
    */
-  public hide() {
-    this.isShow = false
-    const primitives = this.scene.primitives
+  hide() {
+    this.#isShow = false
+    const primitives = this.#scene.primitives
     const length = primitives.length
     for (let i = 0; i < length; ++i) {
       const p = primitives.get(i)
@@ -337,9 +346,9 @@ export class WindField {
   /**
    * @description 显示
    */
-  public show() {
-    this.isShow = true
-    const primitives = this.scene.primitives
+  show() {
+    this.#isShow = true
+    const primitives = this.#scene.primitives
     const length = primitives.length
     for (let i = 0; i < length; ++i) {
       const p = primitives.get(i)
@@ -351,34 +360,27 @@ export class WindField {
   }
 
   /**
-   * @description 获取销毁状态
-   */
-  public isDestroyed(): boolean {
-    return this.destroyed
-  }
-
-  /**
    * @description 销毁
    */
-  public destroy() {
-    if (this.destroyed) return
-    this.destroyed = true
-    if (this.morphStartEvent) {
-      this.scene.morphStart.removeEventListener(this.morphStartEvent)
+  destroy() {
+    if (this._isDestroyed) return
+    this._isDestroyed = true
+    if (this.#morphStartEvent) {
+      this.#scene.morphStart.removeEventListener(this.#morphStartEvent)
     }
-    if (this.morphCompleteEvent) {
-      this.scene.morphComplete.removeEventListener(this.morphCompleteEvent)
+    if (this.#morphCompleteEvent) {
+      this.#scene.morphComplete.removeEventListener(this.#morphCompleteEvent)
     }
-    if (this.moveStartEvent) {
-      this.camera.moveStart.removeEventListener(this.moveStartEvent)
+    if (this.#moveStartEvent) {
+      this.#camera.moveStart.removeEventListener(this.#moveStartEvent)
     }
-    if (this.moveEndEvent) {
-      this.camera.moveEnd.removeEventListener(this.moveEndEvent)
+    if (this.#moveEndEvent) {
+      this.#camera.moveEnd.removeEventListener(this.#moveEndEvent)
     }
-    if (this.preRenderEvent) {
-      this.scene.preRender.removeEventListener(this.preRenderEvent)
+    if (this.#preRenderEvent) {
+      this.#scene.preRender.removeEventListener(this.#preRenderEvent)
     }
-    window.removeEventListener("resize", this.resizeEvent)
-    this.removePrimitives()
+    window.removeEventListener("resize", this.#resizeEvent)
+    this.#removePrimitives()
   }
 }

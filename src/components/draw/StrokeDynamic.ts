@@ -8,14 +8,18 @@ import {
   type Entity,
 } from "cesium"
 import { DefaultModuleName, SubEventType } from "enum"
-import { Dynamic } from "./Dynamic"
+import { Dynamic } from "abstract"
 import { PolylineLayer } from "components/layers"
 import { Utils, State } from "utils"
 import type { Draw } from "./Draw"
 import type { Earth } from "components/Earth"
 
+/**
+ * @description 动态笔触
+ * @extends Dynamic {@link Dynamic} 动态绘制基类
+ */
 export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
-  public type: string = "Stroke"
+  type: string = "Stroke"
   constructor(earth: Earth) {
     super(earth, new PolylineLayer(earth))
   }
@@ -24,7 +28,7 @@ export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
    * @description 笔触不支持编辑，添加对象仅增加图形
    * @param option 笔触参数
    */
-  public add(option: PolylineLayer.AddParam<T>): void {
+  add(option: PolylineLayer.AddParam<T>): void {
     console.warn("Stroke used for displaying, editing is nosupport, run method <add> only add a feature.")
     this.layer.add(option)
   }
@@ -34,8 +38,8 @@ export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
    * @param param {@link Draw.Stroke} 笔触参数
    * @returns 笔触沿途点
    */
-  public draw({
-    id = Utils.RandomUUID(),
+  draw({
+    id = Utils.uuid(),
     module = DefaultModuleName.STROKE,
     width = 2,
     color = Color.RED,
@@ -52,17 +56,17 @@ export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
     let ent: Entity
     let mouseDown: boolean = false
 
-    const handler = super.startEvent()
+    const handler = super._startEvent()
 
-    this.cacheHandler = handler
+    this._cacheHandler = handler
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
       if (!mouseDown) return
-      const point = super.getPointOnEllipsoid(endPosition)
+      const point = super._getPointOnEllipsoid(endPosition)
       if (!point) return
       points.push(point)
       if (!ent && points.length >= 2) {
-        this.cacheEntity = ent = this.viewer.entities.add({
+        this._cacheEntity = ent = this._viewer.entities.add({
           polyline: {
             positions: new CallbackProperty(() => {
               return points
@@ -74,7 +78,7 @@ export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
           },
         })
       }
-      this.eventBus.emit(SubEventType.DRAW_MOVE, {
+      this._eventBus.emit(SubEventType.DRAW_MOVE, {
         type: this.type,
         event: SubEventType.DRAW_MOVE,
         data: { id, position: point },
@@ -84,12 +88,12 @@ export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
     return new Promise<Draw.StrokeReturn>((resolve, reject) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
         mouseDown = true
-        super.setViewControl(false)
-        const point = super.getPointOnEllipsoid(position)
+        super._setViewControl(false)
+        const point = super._getPointOnEllipsoid(position)
         if (point) {
           points.push(point)
         } else {
-          super.endEvent(handler)
+          super._endEvent(handler)
           reject("Please choose a point from earth.")
         }
       }, ScreenSpaceEventType.LEFT_DOWN)
@@ -97,8 +101,8 @@ export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
       handler.setInputAction(() => {
         points.pop()
         if (points.length < 2) {
-          ent && this.viewer.entities.remove(ent)
-          super.endEvent(handler)
+          ent && this._viewer.entities.remove(ent)
+          super._endEvent(handler)
           reject("Stroke needs at least two vertexes.")
         } else {
           const polyline = { id, positions: points }
@@ -113,10 +117,10 @@ export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
               lines: [points],
             })
           }
-          ent && this.viewer.entities.remove(ent)
-          super.endEvent(handler)
+          ent && this._viewer.entities.remove(ent)
+          super._endEvent(handler)
           onFinish?.(points)
-          this.eventBus.emit(SubEventType.DRAW_FINISH, {
+          this._eventBus.emit(SubEventType.DRAW_FINISH, {
             type: this.type,
             event: SubEventType.DRAW_FINISH,
             data: { ...polyline },
@@ -127,7 +131,7 @@ export class StrokeDynamic<T = unknown> extends Dynamic<PolylineLayer<T>> {
     })
   }
 
-  public edit(id: string): Promise<unknown> {
+  edit(id: string): Promise<unknown> {
     return new Promise((_, reject) => {
       reject(`Stroke ${id} used for displaying, editing is nosupport.`)
     })

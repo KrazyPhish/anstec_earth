@@ -17,8 +17,9 @@ import {
   type ParticleEmitter,
 } from "cesium"
 import { fire, smoke, blast } from "images"
+import { is, validate } from "decorators"
+import { Layer } from "abstract"
 import { Utils } from "utils"
-import { Layer } from "./Layer"
 import type { Earth } from "components/Earth"
 
 export namespace ParticleLayer {
@@ -191,7 +192,7 @@ export namespace ParticleLayer {
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const particleLayer = new ParticleLayer(earth)
  * ```
  */
@@ -200,7 +201,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
     super(earth, new PrimitiveCollection())
   }
 
-  private getFireDefaultOption(param: ParticleLayer.Fire) {
+  #getFireDefaultOption(param: ParticleLayer.Fire) {
     const size = {}
     if (param.size === undefined) {
       Object.assign(size, {
@@ -235,7 +236,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
     const emitterModelMatrix = Matrix4.fromTranslationRotationScale(trs, new Matrix4())
 
     const option = {
-      id: param.id ?? Utils.RandomUUID(),
+      id: param.id ?? Utils.uuid(),
       image: fire,
       startColor: param.startColor ?? Color.RED.withAlpha(0.1),
       endColor: param.endColor ?? Color.YELLOW.withAlpha(0.5),
@@ -253,7 +254,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
     return option
   }
 
-  private getSmokeDefaultOption(param: ParticleLayer.Smoke) {
+  #getSmokeDefaultOption(param: ParticleLayer.Smoke) {
     const duration = {
       fast: 8,
       normal: 16,
@@ -293,7 +294,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
     const emitterModelMatrix = Matrix4.fromTranslationRotationScale(trs, new Matrix4())
 
     const option = {
-      id: param.id ?? Utils.RandomUUID(),
+      id: param.id ?? Utils.uuid(),
       image: smoke,
       startColor: param.startColor ?? Color.fromCssColorString("#303333").withAlpha(0.1),
       endColor: param.endColor ?? Color.fromCssColorString("#888888").withAlpha(0.5),
@@ -313,7 +314,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
     return option
   }
 
-  private getBlastDefaultOption(param: ParticleLayer.Blast) {
+  #getBlastDefaultOption(param: ParticleLayer.Blast) {
     const size = {}
     if (param.size === undefined) {
       Object.assign(size, {
@@ -344,7 +345,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
     const emitterModelMatrix = Matrix4.fromTranslationRotationScale(trs, new Matrix4())
 
     const option = {
-      id: param.id ?? Utils.RandomUUID(),
+      id: param.id ?? Utils.uuid(),
       image: blast,
       startColor: param.startColor ?? Color.fromCssColorString("#303333").withAlpha(0.1),
       endColor: param.endColor ?? Color.fromCssColorString("#888888").withAlpha(0.5),
@@ -367,7 +368,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
     return option
   }
 
-  private getFlameDefaultOption(param: ParticleLayer.Flame) {
+  #getFlameDefaultOption(param: ParticleLayer.Flame) {
     const size = {}
     if (param.size === undefined) {
       Object.assign(size, {
@@ -402,7 +403,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
     const emitterModelMatrix = Matrix4.fromTranslationRotationScale(trs, new Matrix4())
 
     const option = {
-      id: param.id ?? Utils.RandomUUID(),
+      id: param.id ?? Utils.uuid(),
       image: smoke,
       startColor: param.startColor ?? Color.ORANGERED.withAlpha(0.1),
       endColor: param.endColor ?? Color.LIGHTGOLDENRODYELLOW.withAlpha(0.7),
@@ -424,7 +425,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * @description 创建粒子发生器
    * @param param 初始化属性
    */
-  private creatParticleSystem(param: Omit<ParticleLayer.AddParam<T>, "position" | "id" | "data" | "module">) {
+  #creatParticleSystem(param: Omit<ParticleLayer.AddParam<T>, "position" | "id" | "data" | "module">) {
     return new ParticleSystem(param)
   }
 
@@ -433,7 +434,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * @param param {@link ParticleLayer.AddParam} 粒子参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const particleLayer = new ParticleLayer(earth)
    * particleLayer.add({
    *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -461,20 +462,17 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * })
    * ```
    */
-  public add(param: ParticleLayer.AddParam<T>) {
-    const id = param.id ?? Utils.RandomUUID()
+  @validate
+  add(@is(Cartesian3, "position") param: ParticleLayer.AddParam<T>) {
+    const id = param.id ?? Utils.uuid()
     const option = {
       modelMatrix: Transforms.eastNorthUpToFixedFrame(param.position),
       ...param,
-      id: Utils.EncodeId(id, param.module),
+      id: Utils.encode(id, param.module),
     }
 
-    const particleSys = this.creatParticleSystem(option)
-    const entity = this.collection.add(particleSys)
-    this.cache.set(id, {
-      primitive: entity,
-      data: { module: param.module, data: option.data },
-    })
+    const particleSys = this.#creatParticleSystem(option)
+    super._save(id, { primitive: particleSys, data: { module: param.module, data: option.data } })
 
     if (option.lifetime && option.lifetime !== Number.MAX_VALUE) {
       setTimeout(() => {
@@ -489,7 +487,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * @param param {@link ParticleLayer.SetParam} 粒子参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const particleLayer = new ParticleLayer(earth)
    * particleLayer.set("some_id", {
    *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -499,7 +497,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * })
    * ```
    */
-  public set(
+  set(
     id: string,
     {
       position,
@@ -553,7 +551,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * @param param {@link ParticleLayer.Fire} 火焰参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const particleLayer = new ParticleLayer(earth)
    * particleLayer.addFire({
    *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -562,11 +560,10 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * })
    * ```
    */
-  public addFire(param: ParticleLayer.Fire) {
-    const option = this.getFireDefaultOption(param)
-    const particleSys = this.creatParticleSystem(option)
-    const entity = this.collection.add(particleSys)
-    this.cache.set(option.id, { primitive: entity, data: {} })
+  addFire(param: ParticleLayer.Fire) {
+    const option = this.#getFireDefaultOption(param)
+    const particleSys = this.#creatParticleSystem(option)
+    super._save(option.id, { primitive: particleSys, data: {} })
 
     setTimeout(() => {
       if (param.smoke === undefined || param.smoke) {
@@ -586,7 +583,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * @param param {@link ParticleLayer.Smoke} 烟雾参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const particleLayer = new ParticleLayer(earth)
    * particleLayer.addSmoke({
    *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -595,11 +592,10 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * })
    * ```
    */
-  public addSmoke(param: ParticleLayer.Smoke) {
-    const option = this.getSmokeDefaultOption(param)
-    const particleSys = this.creatParticleSystem(option)
-    const entity = this.collection.add(particleSys)
-    this.cache.set(option.id, { primitive: entity, data: {} })
+  addSmoke(param: ParticleLayer.Smoke) {
+    const option = this.#getSmokeDefaultOption(param)
+    const particleSys = this.#creatParticleSystem(option)
+    super._save(option.id, { primitive: particleSys, data: {} })
 
     if (option.lifetime && option.lifetime !== Number.MAX_VALUE) {
       setTimeout(() => {
@@ -613,7 +609,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * @param param {@link ParticleLayer.Blast} 爆炸参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const particleLayer = new ParticleLayer(earth)
    * particleLayer.addBlast({
    *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -623,11 +619,10 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * })
    * ```
    */
-  public addBlast(param: ParticleLayer.Blast) {
-    const option = this.getBlastDefaultOption(param)
-    const particleSys = this.creatParticleSystem(option)
-    const entity = this.collection.add(particleSys)
-    this.cache.set(option.id, { primitive: entity, data: {} })
+  addBlast(param: ParticleLayer.Blast) {
+    const option = this.#getBlastDefaultOption(param)
+    const particleSys = this.#creatParticleSystem(option)
+    super._save(option.id, { primitive: particleSys, data: {} })
 
     setTimeout(() => {
       if (param.fire === undefined || param.fire) {
@@ -645,7 +640,7 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * @param param {@link ParticleLayer.Flame} 喷焰参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const particleLayer = new ParticleLayer(earth)
    * particleLayer.addFlame({
    *  position: Cartesian3.fromDegrees(104, 31, 500),
@@ -654,23 +649,22 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
    * })
    * ```
    */
-  public addFlame(param: ParticleLayer.Flame) {
-    const option = this.getFlameDefaultOption(param)
-    const particleSys = this.creatParticleSystem(option)
-    const entity = this.collection.add(particleSys)
-    this.cache.set(option.id, { primitive: entity, data: {} })
+  addFlame(param: ParticleLayer.Flame) {
+    const option = this.#getFlameDefaultOption(param)
+    const particleSys = this.#creatParticleSystem(option)
+    super._save(option.id, { primitive: particleSys, data: {} })
   }
 
   /**
    * @description 清除所有粒子效果
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 根据ID清除粒子效果
    * @param id 效果ID
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
       const ids = [id, id + "-fire", id + "-smoke"]
       ids.forEach((i) => {
@@ -683,16 +677,5 @@ export class ParticleLayer<T = unknown> extends Layer<PrimitiveCollection, Parti
     } else {
       super.remove()
     }
-  }
-
-  /**
-   * @description 销毁
-   */
-  public destroy(): boolean {
-    this.scene.primitives.remove(this.collection)
-    this.cache.clear()
-    this.collection = undefined as any
-    this.cache = undefined as any
-    return true
   }
 }

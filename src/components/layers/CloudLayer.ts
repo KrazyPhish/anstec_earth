@@ -1,6 +1,7 @@
 import { Cartesian3, CloudCollection, type Cartesian2, type Color, type CumulusCloud } from "cesium"
-import { Layer } from "./Layer"
+import { Layer } from "abstract"
 import { Utils } from "utils"
+import { is, validate } from "decorators"
 import type { Earth } from "components/Earth"
 
 export namespace CloudLayer {
@@ -50,7 +51,7 @@ export namespace CloudLayer {
  * @param [options] {@link CloudLayer.ConstructorOptions} 参数
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const cloudLayer = new CloudLayer(earth)
  * ```
  */
@@ -70,7 +71,7 @@ export class CloudLayer<T = unknown> extends Layer<CloudCollection, CumulusCloud
    * @param param {@link CloudLayer.AddParam} 新增参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const cloudLayer = new CloudLayer(earth)
    * cloudLayer.add({
    *  id: "cloud",
@@ -84,15 +85,11 @@ export class CloudLayer<T = unknown> extends Layer<CloudCollection, CumulusCloud
    * })
    * ```
    */
-  public add({
-    id = Utils.RandomUUID(),
-    data,
-    position,
-    brightness = 0,
-    scale,
-    maximumSize,
-    slice = 0.5,
-  }: CloudLayer.AddParam<T>) {
+  @validate
+  add(
+    @is(Cartesian3, "position")
+    { id = Utils.uuid(), data, position, brightness = 0, scale, maximumSize, slice = 0.5 }: CloudLayer.AddParam<T>
+  ) {
     const cloud = {
       position,
       brightness,
@@ -100,7 +97,7 @@ export class CloudLayer<T = unknown> extends Layer<CloudCollection, CumulusCloud
       maximumSize,
       slice,
     } as CumulusCloud
-    super.save(id, { primitive: cloud, data: { data } })
+    super._save(id, { primitive: cloud, data: { data } })
   }
 
   /**
@@ -108,7 +105,7 @@ export class CloudLayer<T = unknown> extends Layer<CloudCollection, CumulusCloud
    * @param id ID
    * @param param {@link CloudLayer.SetParam} 修改参数
    */
-  public set(id: string, param: CloudLayer.SetParam<T>) {
+  set(id: string, param: CloudLayer.SetParam<T>) {
     const cloud = super.getEntity(id)?.primitive
     if (!cloud) return
     if (param.brightness) cloud.brightness = param.brightness

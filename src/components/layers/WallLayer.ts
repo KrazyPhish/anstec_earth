@@ -9,7 +9,8 @@ import {
   WallOutlineGeometry,
   type Cartesian3,
 } from "cesium"
-import { Layer } from "./Layer"
+import { is, validate } from "decorators"
+import { Layer } from "abstract"
 import { Utils } from "utils"
 import type { Earth } from "components/Earth"
 
@@ -41,10 +42,8 @@ export namespace WallLayer {
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const wallLayer = new WallLayer(earth)
- * //or
- * const wallLayer = earth.useDefaultLayers().wall
  * ```
  */
 export class WallLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive, Layer.Data<T>> {
@@ -52,8 +51,8 @@ export class WallLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive
     super(earth, new PrimitiveCollection())
   }
 
-  private getDefaultOption({
-    id = Utils.RandomUUID(),
+  #getDefaultOption({
+    id = Utils.uuid(),
     color = Color.LAWNGREEN.withAlpha(0.5),
     outline = true,
     outlineColor = Color.WHITESMOKE.withAlpha(0.8),
@@ -83,7 +82,7 @@ export class WallLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive
    * @param param {@link WallLayer.AddParam} 墙体参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const wallLayer = new WallLayer(earth)
    * wallLayer.add({
    *  positions: [
@@ -98,13 +97,14 @@ export class WallLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive
    * })
    * ```
    */
-  public add(param: WallLayer.AddParam<T>) {
+  @validate
+  add(@is(Array, "positions") param: WallLayer.AddParam<T>) {
     const { data, module } = param
     const { id, color, outline, outlineColor, outlineWidth, positions, maximumHeights, minimumHeights, show } =
-      this.getDefaultOption(param)
+      this.#getDefaultOption(param)
 
     const wall = new GeometryInstance({
-      id: Utils.EncodeId(id, module),
+      id: Utils.encode(id, module),
       geometry: new WallGeometry({
         positions,
         maximumHeights,
@@ -122,7 +122,7 @@ export class WallLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive
       appearance: new PerInstanceColorAppearance(),
     })
 
-    super.save(id, { primitive, data: { data, module } })
+    super._save(id, { primitive, data: { data, module } })
 
     if (outline) {
       const out = new GeometryInstance({
@@ -147,20 +147,20 @@ export class WallLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive
         }),
       })
 
-      super.save(id + "_outline", { primitive: outPrimitive, data: { data, module } })
+      super._save(id + "_outline", { primitive: outPrimitive, data: { data, module } })
     }
   }
 
   /**
    * @description 隐藏所有墙体
    */
-  public hide(): void
+  hide(): void
   /**
    * @description 隐藏所有墙体
    * @param id 根据ID隐藏墙体
    */
-  public hide(id: string): void
-  public hide(id?: string) {
+  hide(id: string): void
+  hide(id?: string) {
     if (id) {
       super.hide(id)
       super.hide(id + "_outline")
@@ -172,13 +172,13 @@ export class WallLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive
   /**
    * @description 显示所有墙体
    */
-  public show(): void
+  show(): void
   /**
    * @description 显示所有墙体
    * @param id 根据ID显示墙体
    */
-  public show(id: string): void
-  public show(id?: string) {
+  show(id: string): void
+  show(id?: string) {
     if (id) {
       super.show(id)
       super.show(id + "_outline")
@@ -190,13 +190,13 @@ export class WallLayer<T = unknown> extends Layer<PrimitiveCollection, Primitive
   /**
    * @description 移除所有墙体
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 根据ID移除墙体
    * @param id ID
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
       super.remove(id)
       super.remove(id + "_outline")

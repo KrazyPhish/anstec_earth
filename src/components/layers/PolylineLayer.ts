@@ -5,6 +5,7 @@ import {
   GroundPolylineGeometry,
   GroundPolylinePrimitive,
   Material,
+  PolylineColorAppearance,
   PolylineGeometry,
   PolylineMaterialAppearance,
   Primitive,
@@ -12,8 +13,9 @@ import {
   type Cartesian3,
 } from "cesium"
 import { CustomMaterial } from "components/material"
-import { Layer } from "./Layer"
+import { Layer } from "abstract"
 import { Utils } from "utils"
+import { is, validate } from "decorators"
 import type { Earth } from "components/Earth"
 
 export namespace PolylineLayer {
@@ -43,6 +45,7 @@ export namespace PolylineLayer {
    * @property [arcType = {@link ArcType.GEODESIC}] 线段弧度类型
    * @property [materialType = "Color"] {@link MaterialType} 材质类型
    * @property [materialUniforms = { color: {@link Color.RED} }] {@link MaterialUniforms} 材质参数
+   * @property [perLineVertextColors] 各线段或其顶点使用单独的颜色，将忽略材质相关配置
    * @property [ground = false] 是否贴地
    * @property [loop = false] 是否首尾相接
    */
@@ -53,6 +56,7 @@ export namespace PolylineLayer {
     arcType?: ArcType
     materialType?: MaterialType
     materialUniforms?: MaterialUniforms
+    perLineVertextColors?: Color[] | Color[][]
     ground?: boolean
     loop?: boolean
   }
@@ -64,10 +68,10 @@ export namespace PolylineLayer {
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const polylineLayer = new PolylineLayer(earth)
  * //or
- * const polylineLayer = earth.useDefaultLayers().polyline
+ * const polylineLayer = earth.layers.polyline
  * ```
  */
 export class PolylineLayer<T = unknown> extends Layer<
@@ -84,7 +88,7 @@ export class PolylineLayer<T = unknown> extends Layer<
    * @param param {@link PolylineLayer.AddParam} 折线段参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const polylineLayer = new PolylineLayer(earth)
    * polylineLayer.add({
    *  lines: [[
@@ -101,22 +105,39 @@ export class PolylineLayer<T = unknown> extends Layer<
    * })
    * ```
    */
-  public add({
-    id = Utils.RandomUUID(),
-    lines,
-    asynchronous = true,
-    width = 2,
-    arcType = ArcType.GEODESIC,
-    ground = false,
-    loop = false,
-    materialType = "Color",
-    materialUniforms = { color: Color.RED },
-    show = true,
-    data,
-    module,
-  }: PolylineLayer.AddParam<T>) {
+  @validate
+  add(
+    @is(Array, "lines")
+    {
+      id = Utils.uuid(),
+      lines,
+      asynchronous = true,
+      width = 2,
+      arcType = ArcType.GEODESIC,
+      ground = false,
+      loop = false,
+      materialType = "Color",
+      materialUniforms = { color: Color.RED },
+      perLineVertextColors,
+      show = true,
+      data,
+      module,
+    }: PolylineLayer.AddParam<T>
+  ) {
+    if (perLineVertextColors?.length && perLineVertextColors.length !== lines.length) {
+      throw new Error("perLineColors.length must fit the length of lines.")
+    }
     const geometryInstances: GeometryInstance[] = []
-    for (const positions of lines) {
+    for (const key in lines) {
+      let colors: Color[] | undefined
+      const positions = lines[key]
+      const _positions = loop ? [...positions, positions[0].clone()] : positions
+      const lineColor = perLineVertextColors ? perLineVertextColors[key] : undefined
+      if (lineColor && Array.isArray(lineColor)) {
+        colors = lineColor
+      } else if (lineColor) {
+        colors = new Array(_positions.length).fill(lineColor)
+      }
       const geometry = ground
         ? new GroundPolylineGeometry({
             loop,
@@ -125,13 +146,13 @@ export class PolylineLayer<T = unknown> extends Layer<
           })
         : new PolylineGeometry({
             arcType,
-            positions: loop ? [...positions, positions[0].clone()] : positions,
-            //TODO colors per-vertex
+            colors,
+            positions: _positions,
             width,
             vertexFormat: PolylineMaterialAppearance.VERTEX_FORMAT,
           })
 
-      geometryInstances.push(new GeometryInstance({ id: Utils.EncodeId(id, module), geometry }))
+      geometryInstances.push(new GeometryInstance({ id: Utils.encode(id, module), geometry }))
     }
 
     const CMaterial = CustomMaterial.getMaterialByType(materialType) ?? Material
@@ -140,20 +161,22 @@ export class PolylineLayer<T = unknown> extends Layer<
       show,
       asynchronous,
       geometryInstances,
-      appearance: new PolylineMaterialAppearance({
-        material: new CMaterial({
-          fabric: {
-            type: materialType,
-            uniforms: {
-              ...materialUniforms,
-            },
-          },
-        }),
-      }),
+      appearance: perLineVertextColors
+        ? new PolylineColorAppearance()
+        : new PolylineMaterialAppearance({
+            material: new CMaterial({
+              fabric: {
+                type: materialType,
+                uniforms: {
+                  ...materialUniforms,
+                },
+              },
+            }),
+          }),
     }
     const primitive = ground ? new GroundPolylinePrimitive(option) : new Primitive(option)
 
-    super.save(id, { primitive, data: { data, module } })
+    super._save(id, { primitive, data: { data, module } })
   }
 
   /**
@@ -161,11 +184,11 @@ export class PolylineLayer<T = unknown> extends Layer<
    * @param earth 指定地球
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const isSupported = PolylineLayer.isGroundSupported(earth)
    * ```
    */
-  public static isGroundSupported(earth: Earth) {
+  static isGroundSupported(earth: Earth) {
     return GroundPolylinePrimitive.isSupported(earth.scene)
   }
 }

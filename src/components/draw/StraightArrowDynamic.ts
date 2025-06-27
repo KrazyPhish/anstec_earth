@@ -10,7 +10,7 @@ import {
   type Entity,
 } from "cesium"
 import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Dynamic } from "./Dynamic"
+import { Dynamic } from "abstract"
 import { Figure, Utils, State } from "utils"
 import { Geographic } from "components/coordinate"
 import { PolygonLayer } from "components/layers"
@@ -21,16 +21,17 @@ const { pow, PI } = window.Math
 
 /**
  * @description 动态绘制直线箭头
+ * @extends Dynamic {@link Dynamic} 动态绘制基类
  */
 export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightArrow>> {
-  public type: string = "Straight_Arrow"
+  type: string = "Straight_Arrow"
   constructor(earth: Earth) {
     super(earth, new PolygonLayer(earth))
   }
 
-  private computeArrow(
-    e: [number, number],
-    r: [number, number],
+  #computeArrow(
+    e: number[],
+    r: number[],
     option: {
       headAngle: number
       neckAngle: number
@@ -58,7 +59,7 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
    * @description 添加可编辑对象
    * @param option 新增参数以及可编辑附加数据
    */
-  public add(option: PolygonLayer.AddParam<Dynamic.StraightArrow>) {
+  add(option: PolygonLayer.AddParam<Dynamic.StraightArrow>) {
     this.layer.add(option)
   }
 
@@ -67,8 +68,8 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
    * @param param {@link Draw.StraightArrow} 画箭头参数
    * @returns 起始和结束点的坐标
    */
-  public draw({
-    id = Utils.RandomUUID(),
+  draw({
+    id = Utils.uuid(),
     module = DefaultModuleName.STRAIGHT_ARROW,
     headAngle = PI / 8.5,
     neckAngle = PI / 13,
@@ -98,21 +99,21 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
       neckWidthFactor,
       headWidthFactor,
     }
-    const handler = super.startEvent()
+    const handler = super._startEvent()
 
-    this.cacheHandler = handler
+    this._cacheHandler = handler
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const point = super.getPointOnEllipsoid(endPosition)
+      const point = super._getPointOnEllipsoid(endPosition)
       if (!point || !start) return
       tempEnd = point
       if (!ent && tempEnd) {
-        this.cacheEntity = ent = this.viewer.entities.add({
+        this._cacheEntity = ent = this._viewer.entities.add({
           polygon: {
             hierarchy: new CallbackProperty(() => {
-              const { latitude: lat1, longitude: lon1 } = Geographic.fromCartesian(start)
-              const { latitude: lat2, longitude: lon2 } = Geographic.fromCartesian(tempEnd)
-              return new PolygonHierarchy(this.computeArrow([lon1, lat1], [lon2, lat2], option))
+              const geo1 = Geographic.fromCartesian(start).toArray()
+              const geo2 = Geographic.fromCartesian(tempEnd).toArray()
+              return new PolygonHierarchy(this.#computeArrow(geo1, geo2, option))
             }, false),
             material: color,
             outline: true,
@@ -122,7 +123,7 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
           },
         })
       }
-      this.eventBus.emit(SubEventType.DRAW_MOVE, {
+      this._eventBus.emit(SubEventType.DRAW_MOVE, {
         type: this.type,
         event: SubEventType.DRAW_MOVE,
         data: { id, position: point },
@@ -131,14 +132,14 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
 
     return new Promise<Draw.StraightArrowReturn>((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const point = super.getPointOnEllipsoid(position)
+        const point = super._getPointOnEllipsoid(position)
         if (!point) return
         if (start && !end) end = point
         if (!start) start = point
         if (start && end) {
-          const { latitude: lat1, longitude: lon1 } = Geographic.fromCartesian(start)
-          const { latitude: lat2, longitude: lon2 } = Geographic.fromCartesian(end)
-          const points = this.computeArrow([lon1, lat1], [lon2, lat2], option)
+          const geo1 = Geographic.fromCartesian(start).toArray()
+          const geo2 = Geographic.fromCartesian(end).toArray()
+          const points = this.#computeArrow(geo1, geo2, option)
           if (keep) {
             this.layer.add({
               id,
@@ -170,10 +171,10 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
               },
             })
           }
-          super.endEvent(handler)
-          this.viewer.entities.remove(ent)
+          super._endEvent(handler)
+          this._viewer.entities.remove(ent)
           onFinish?.(points)
-          this.eventBus.emit(SubEventType.DRAW_FINISH, {
+          this._eventBus.emit(SubEventType.DRAW_FINISH, {
             type: this.type,
             event: SubEventType.DRAW_FINISH,
             data: { id, start, end },
@@ -189,7 +190,7 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
    * @param id 目标ID
    * @returns
    */
-  public edit(id: string): Promise<Draw.StraightArrowReturn> {
+  edit(id: string): Promise<Draw.StraightArrowReturn> {
     const data: Dynamic.StraightArrow | undefined = this.layer.getEntity(id)?.data.data
     if (!data) {
       return new Promise((_, reject) => reject(`Object ${id} does not exist.`))
@@ -199,7 +200,7 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
       })
     }
 
-    const handler = super.startEvent()
+    const handler = super._startEvent()
     const tempPoints: Entity[] = []
     const positions: Cartesian3[] = [...data.positions]
     const option = {
@@ -216,7 +217,7 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
 
     data.positions.forEach((value, index) => {
       tempPoints.push(
-        this.viewer.entities.add({
+        this._viewer.entities.add({
           id: `ModifyPoint_${index}`,
           position: value,
           point: {
@@ -229,12 +230,12 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
       )
     })
 
-    ent = this.viewer.entities.add({
+    ent = this._viewer.entities.add({
       polygon: {
         hierarchy: new CallbackProperty(() => {
-          const { latitude: lat1, longitude: lon1 } = Geographic.fromCartesian(positions[0])
-          const { latitude: lat2, longitude: lon2 } = Geographic.fromCartesian(positions[1])
-          const polygon = this.computeArrow([lon1, lat1], [lon2, lat2], option)
+          const geo1 = Geographic.fromCartesian(positions[0]).toArray()
+          const geo2 = Geographic.fromCartesian(positions[1]).toArray()
+          const polygon = this.#computeArrow(geo1, geo2, option)
           return new PolygonHierarchy(polygon)
         }, false),
         material: data.attr.color,
@@ -248,11 +249,11 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
 
     handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
       if (!currentPoint) return
-      const _position = super.getPointOnEllipsoid(position) ?? lastPos
+      const _position = super._getPointOnEllipsoid(position) ?? lastPos
       ;(currentPoint.position as ConstantPositionProperty).setValue(_position)
       positions.splice(currentIndex, 1, _position)
       currentPoint = undefined
-      this.eventBus.emit(SubEventType.EDIT_CERTAIN, {
+      this._eventBus.emit(SubEventType.EDIT_CERTAIN, {
         type: this.type,
         event: SubEventType.EDIT_CERTAIN,
         data: { id, index: currentIndex, position: _position },
@@ -260,12 +261,12 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
     }, ScreenSpaceEventType.LEFT_UP)
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const position = super.getPointOnEllipsoid(endPosition)
+      const position = super._getPointOnEllipsoid(endPosition)
       if (!position || !currentPoint) return
       ;(currentPoint.position as ConstantPositionProperty).setValue(position)
       positions.splice(currentIndex, 1, position)
       lastPos = position
-      this.eventBus.emit(SubEventType.EDIT_MOVE, {
+      this._eventBus.emit(SubEventType.EDIT_MOVE, {
         type: this.type,
         event: SubEventType.EDIT_MOVE,
         data: { id, index: currentIndex, position },
@@ -274,14 +275,14 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
 
     return new Promise((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const _position = super.getPointOnEllipsoid(position)
-        const pick = this.scene.pick(position)
+        const _position = super._getPointOnEllipsoid(position)
+        const pick = this._scene.pick(position)
         if (!_position) return
         if (!pick || !tempPoints.some((entity) => entity.id === pick.id.id)) {
-          super.endEvent(handler)
-          const { latitude: lat1, longitude: lon1 } = Geographic.fromCartesian(positions[0])
-          const { latitude: lat2, longitude: lon2 } = Geographic.fromCartesian(positions[1])
-          const polygon = this.computeArrow([lon1, lat1], [lon2, lat2], option)
+          super._endEvent(handler)
+          const geo1 = Geographic.fromCartesian(positions[0]).toArray()
+          const geo2 = Geographic.fromCartesian(positions[1]).toArray()
+          const polygon = this.#computeArrow(geo1, geo2, option)
           this.layer.add({
             id,
             positions: polygon,
@@ -296,16 +297,16 @@ export class StraightArrowDynamic extends Dynamic<PolygonLayer<Dynamic.StraightA
             },
             data: { type: data.type, positions, attr: data.attr },
           })
-          ent && this.viewer.entities.remove(ent)
-          tempPoints.forEach((entity) => this.viewer.entities.remove(entity))
-          this.eventBus.emit(SubEventType.EDIT_FINISH, {
+          ent && this._viewer.entities.remove(ent)
+          tempPoints.forEach((entity) => this._viewer.entities.remove(entity))
+          this._eventBus.emit(SubEventType.EDIT_FINISH, {
             type: this.type,
             event: SubEventType.EDIT_FINISH,
             data: { id, start: positions[0], end: positions[1] },
           })
           resolve({ id, start: positions[0], end: positions[1] })
         } else {
-          super.setViewControl(false)
+          super._setViewControl(false)
           currentIndex = pick.id.id.split("_")[1]
           currentPoint = tempPoints[currentIndex]
         }

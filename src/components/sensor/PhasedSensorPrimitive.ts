@@ -28,6 +28,7 @@ import {
   VertexFormat,
   combine,
   destroyObject,
+  type Context,
   type FrameState,
 } from "cesium"
 import { phasedSensorVS, phasedSensor, phasedSensorFS, phasedSensorScanFS } from "shaders"
@@ -63,13 +64,13 @@ export namespace PhasedSensorPrimitive {
    * @property [distanceDisplayCondition] {@link DistanceDisplayCondition} 可视范围设置
    * @property [showGradient = false] 是否启用渐变色
    * @property [gradientColors] 有序渐变色组，固定5个
-   * @property [gradientSteps] 渐变色占比，取值`[0,1]`，固定3个
-   * @property [showGradientScan = false] 是否启用渐变色(扫描面)
-   * @property [gradientColorsScan] 有序渐变色组(扫描面)，固定5个
-   * @property [gradientStepsScan] 渐变色占比(扫描面)，取值(0,1)，固定3个
+   * @property [gradientSteps] 渐变色占比，取值`[0, 1]`，固定3个
+   * @property [showGradientScan = false] 是否启用扫描面渐变色
+   * @property [gradientColorsScan] 扫描面有序渐变色组，固定5个
+   * @property [gradientStepsScan] 扫描面渐变色占比，取值`[0, 1]`，固定3个
    */
   export type ConstructorOptions = {
-    id?: Object
+    id?: object
     show?: boolean
     slice?: number
     modelMatrix?: Matrix4
@@ -164,38 +165,38 @@ export class PhasedSensorPrimitive {
   _scanUniforms: { [key: string]: () => any }
   _distanceDisplayCondition: DistanceDisplayCondition | undefined
 
-  public readonly id: Object | undefined
-  public readonly show: boolean
-  public readonly slice: number
-  public readonly modelMatrix: Matrix4
-  public readonly radius: number
-  public readonly xHalfAngle: number
-  public readonly yHalfAngle: number
-  public readonly lineColor: Color
-  public readonly material: Material
-  public readonly showSectorLines: boolean
-  public readonly showSectorSegmentLines: boolean
-  public readonly showLateralSurfaces: boolean
-  public readonly lateralSurfaceMaterial: Material
-  public readonly showDomeSurfaces: boolean
-  public readonly domeSurfaceMaterial: Material
-  public readonly showDomeLines: boolean
-  public readonly showIntersection: boolean
-  public readonly intersectionColor: Color
-  public readonly intersectionWidth: number
-  public readonly showThroughEllipsoid: boolean
-  public readonly showWaves: boolean
-  public readonly showScanPlane: boolean
-  public readonly scanPlaneColor: Color
-  public readonly scanPlaneMode: ScanMode
-  public readonly scanPlaneRate: number
-  public readonly distanceDisplayCondition?: DistanceDisplayCondition
-  public readonly showGradient: boolean
-  public readonly gradientColors: Color[]
-  public readonly gradientSteps: number[]
-  public readonly showGradientScan: boolean
-  public readonly gradientColorsScan: Color[]
-  public readonly gradientStepsScan: number[]
+  readonly id: object | undefined
+  readonly show: boolean
+  readonly slice: number
+  readonly modelMatrix: Matrix4
+  readonly radius: number
+  readonly xHalfAngle: number
+  readonly yHalfAngle: number
+  readonly lineColor: Color
+  readonly material: Material
+  readonly showSectorLines: boolean
+  readonly showSectorSegmentLines: boolean
+  readonly showLateralSurfaces: boolean
+  readonly lateralSurfaceMaterial: Material
+  readonly showDomeSurfaces: boolean
+  readonly domeSurfaceMaterial: Material
+  readonly showDomeLines: boolean
+  readonly showIntersection: boolean
+  readonly intersectionColor: Color
+  readonly intersectionWidth: number
+  readonly showThroughEllipsoid: boolean
+  readonly showWaves: boolean
+  readonly showScanPlane: boolean
+  readonly scanPlaneColor: Color
+  readonly scanPlaneMode: ScanMode
+  readonly scanPlaneRate: number
+  readonly distanceDisplayCondition?: DistanceDisplayCondition
+  readonly showGradient: boolean
+  readonly gradientColors: Color[]
+  readonly gradientSteps: number[]
+  readonly showGradientScan: boolean
+  readonly gradientColorsScan: Color[]
+  readonly gradientStepsScan: number[]
 
   constructor(options?: PhasedSensorPrimitive.ConstructorOptions) {
     if (options === null || options === undefined) options = Frozen.EMPTY_OBJECT
@@ -374,8 +375,8 @@ export class PhasedSensorPrimitive {
     let createRS = false
     let createSP = false
 
-    let xHalfAngle = this.xHalfAngle || 0
-    let yHalfAngle = this.yHalfAngle || 0
+    const xHalfAngle = this.xHalfAngle || 0
+    const yHalfAngle = this.yHalfAngle || 0
 
     if (xHalfAngle < 0.0 || yHalfAngle < 0.0) {
       throw new DeveloperError("halfAngle must be greater than or equal to zero.")
@@ -391,7 +392,7 @@ export class PhasedSensorPrimitive {
       createVS = true
     }
 
-    let radius = this.radius
+    const radius = this.radius
     if (radius < 0.0) {
       throw new DeveloperError("this.radius must be greater than or equal to zero.")
     }
@@ -403,49 +404,49 @@ export class PhasedSensorPrimitive {
       this._boundingSphere = new BoundingSphere(Cartesian3.ZERO, this.radius)
     }
 
-    let modelMatrixChanged = !Matrix4.equals(this.modelMatrix, this._modelMatrix)
+    const modelMatrixChanged = !Matrix4.equals(this.modelMatrix, this._modelMatrix)
     if (modelMatrixChanged || radiusChanged) {
       Matrix4.clone(this.modelMatrix, this._modelMatrix)
       Matrix4.multiplyByUniformScale(this.modelMatrix, this.radius, this._computedModelMatrix)
       BoundingSphere.transform(this._boundingSphere, this._computedModelMatrix, this._boundingSphereWC)
     }
 
-    let showThroughEllipsoid = this.showThroughEllipsoid
+    const showThroughEllipsoid = this.showThroughEllipsoid
     if (this._showThroughEllipsoid !== this.showThroughEllipsoid) {
       this._showThroughEllipsoid = showThroughEllipsoid
       createRS = true
     }
 
-    let material = this.material
+    const material = this.material
     if (this._material !== material) {
       this._material = material
       createRS = true
       createSP = true
     }
 
-    let translucent = material.isTranslucent()
+    const translucent = material.isTranslucent()
     if (this._translucent !== translucent) {
       this._translucent = translucent
       createRS = true
     }
 
     if (this.showScanPlane) {
-      let time = frameState.time
-      let timeDiff = JulianDate.secondsDifference(time, this._time)
+      const time = frameState.time
+      const timeDiff = JulianDate.secondsDifference(time, this._time)
 
       if (timeDiff < 0) {
         this._time = JulianDate.clone(time, this._time)
       }
 
-      let percentage = max((timeDiff % this.scanPlaneRate) / this.scanPlaneRate, 0)
-      let scanDirection = floor(timeDiff / this.scanPlaneRate) % 2 || -1
+      const percentage = max((timeDiff % this.scanPlaneRate) / this.scanPlaneRate, 0)
+      const scanDirection = floor(timeDiff / this.scanPlaneRate) % 2 || -1
       let angle
 
       if (this.scanPlaneMode == ScanMode.HORIZONTAL) {
         angle = 2 * yHalfAngle * percentage - yHalfAngle
-        let cosYHalfAngle = cos(angle)
-        let tanXHalfAngle = tan(xHalfAngle)
-        let maxX = atan(cosYHalfAngle * tanXHalfAngle)
+        const cosYHalfAngle = cos(angle)
+        const tanXHalfAngle = tan(xHalfAngle)
+        const maxX = atan(cosYHalfAngle * tanXHalfAngle)
         this._scanePlaneXHalfAngle = maxX
         this._scanePlaneYHalfAngle = angle
 
@@ -456,9 +457,9 @@ export class PhasedSensorPrimitive {
         }
       } else {
         angle = 2 * xHalfAngle * percentage - xHalfAngle
-        let tanYHalfAngle = tan(yHalfAngle)
-        let cosXHalfAngle = cos(angle)
-        let maxY = atan(cosXHalfAngle * tanYHalfAngle)
+        const tanYHalfAngle = tan(yHalfAngle)
+        const cosXHalfAngle = cos(angle)
+        const maxY = atan(cosXHalfAngle * tanYHalfAngle)
         this._scanePlaneXHalfAngle = angle
         this._scanePlaneYHalfAngle = maxY
 
@@ -546,16 +547,16 @@ const computeUnitPosiiton = (
   const maxX = atan(cosYHalfAngle * tanXHalfAngle)
 
   //ZOX面单位圆
-  let zox = []
+  const zox = []
   for (let i = 0; i < slice; i++) {
-    let phi = (2 * maxX * i) / (slice - 1) - maxX
+    const phi = (2 * maxX * i) / (slice - 1) - maxX
     zox.push(new Cartesian3(sin(phi), 0, cos(phi)))
   }
 
   //ZOY面单位圆
-  let zoy = []
+  const zoy = []
   for (let i = 0; i < slice; i++) {
-    let phi = (2 * maxY * i) / (slice - 1) - maxY
+    const phi = (2 * maxY * i) / (slice - 1) - maxY
     zoy.push(new Cartesian3(0, sin(phi), cos(phi)))
   }
 
@@ -573,7 +574,7 @@ const computeSectorPositions = (primitive: PhasedSensorPrimitive, unitPosition: 
     yHalfAngle = primitive.yHalfAngle,
     zoy = unitPosition.zoy,
     zox = unitPosition.zox
-  let positions = []
+  const positions = []
 
   //zox面沿x轴逆时针转yHalfAngle
   const zoxCounter = Matrix3.fromRotationX(yHalfAngle, matrix3Scratch)
@@ -600,13 +601,13 @@ const computeSectorPositions = (primitive: PhasedSensorPrimitive, unitPosition: 
  * @param positions
  * @returns
  */
-const createSectorVertexArray = (context: any, positions: Cartesian3[][]): VertexArray => {
+const createSectorVertexArray = (context: Context, positions: Cartesian3[][]): VertexArray => {
   let planeLength = Array.prototype.concat.apply([], positions).length - positions.length
-  let vertices = new Float32Array(2 * 3 * 3 * planeLength)
+  const vertices = new Float32Array(2 * 3 * 3 * planeLength)
 
   let k = 0
   for (let i = 0, len = positions.length; i < len; i++) {
-    let planePositions = positions[i]
+    const planePositions = positions[i]
     let n = Cartesian3.normalize(
       Cartesian3.cross(planePositions[0], planePositions[planePositions.length - 1], nScratch),
       nScratch
@@ -676,9 +677,9 @@ const createSectorVertexArray = (context: any, positions: Cartesian3[][]): Verte
  * @param positions
  * @returns
  */
-const createSectorLineVertexArray = (context: any, positions: Cartesian3[][]): VertexArray => {
+const createSectorLineVertexArray = (context: Context, positions: Cartesian3[][]): VertexArray => {
   const planeLength = positions.length
-  let vertices = new Float32Array(3 * 3 * planeLength)
+  const vertices = new Float32Array(3 * 3 * planeLength)
 
   let k = 0
   for (let i = 0, len = positions.length; i < len; i++) {
@@ -723,9 +724,9 @@ const createSectorLineVertexArray = (context: any, positions: Cartesian3[][]): V
  * @param positions
  * @returns
  */
-const createSectorSegmentLineVertexArray = (context: any, positions: Cartesian3[][]): VertexArray => {
+const createSectorSegmentLineVertexArray = (context: Context, positions: Cartesian3[][]): VertexArray => {
   let planeLength = Array.prototype.concat.apply([], positions).length - positions.length
-  let vertices = new Float32Array(3 * 3 * planeLength)
+  const vertices = new Float32Array(3 * 3 * planeLength)
 
   let k = 0
   for (let i = 0, len = positions.length; i < len; i++) {
@@ -773,8 +774,8 @@ const createSectorSegmentLineVertexArray = (context: any, positions: Cartesian3[
  * @param context
  * @returns
  */
-const createDomeVertexArray = (context: any): VertexArray => {
-  let geometry = EllipsoidGeometry.createGeometry(
+const createDomeVertexArray = (context: Context): VertexArray => {
+  const geometry = EllipsoidGeometry.createGeometry(
     new EllipsoidGeometry({
       vertexFormat: VertexFormat.POSITION_ONLY,
       stackPartitions: 32,
@@ -782,9 +783,9 @@ const createDomeVertexArray = (context: any): VertexArray => {
     })
   )
 
-  let vertexArray = VertexArray.fromGeometry({
-    context: context,
-    geometry: geometry,
+  const vertexArray = VertexArray.fromGeometry({
+    context,
+    geometry,
     attributeLocations: attributeLocations,
     bufferUsage: BufferUsage.STATIC_DRAW,
     interleave: false,
@@ -797,8 +798,8 @@ const createDomeVertexArray = (context: any): VertexArray => {
  * @param context
  * @returns
  */
-const createDomeLineVertexArray = (context: any): VertexArray => {
-  let geometry = EllipsoidOutlineGeometry.createGeometry(
+const createDomeLineVertexArray = (context: Context): VertexArray => {
+  const geometry = EllipsoidOutlineGeometry.createGeometry(
     new EllipsoidOutlineGeometry({
       // vertexFormat: VertexFormat.POSITION_ONLY, // 源码中没有该字段
       stackPartitions: 32,
@@ -806,9 +807,9 @@ const createDomeLineVertexArray = (context: any): VertexArray => {
     })
   )
 
-  let vertexArray = VertexArray.fromGeometry({
-    context: context,
-    geometry: geometry,
+  const vertexArray = VertexArray.fromGeometry({
+    context,
+    geometry,
     attributeLocations: attributeLocations,
     bufferUsage: BufferUsage.STATIC_DRAW,
     interleave: false,
@@ -822,7 +823,7 @@ const createDomeLineVertexArray = (context: any): VertexArray => {
  * @param positions
  * @returns
  */
-const createScanPlaneVertexArray = (context: any, positions: Cartesian3[]) => {
+const createScanPlaneVertexArray = (context: Context, positions: Cartesian3[]) => {
   const planeLength = positions.length - 1
   const vertices = new Float32Array(3 * 3 * planeLength)
 

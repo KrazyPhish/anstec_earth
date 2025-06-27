@@ -9,7 +9,7 @@ import {
   type Entity,
 } from "cesium"
 import { DefaultModuleName, SubEventType, DrawType } from "enum"
-import { Dynamic } from "./Dynamic"
+import { Dynamic } from "abstract"
 import { EllipseLayer } from "components/layers"
 import { Geographic } from "components/coordinate"
 import { Utils, State, Figure } from "utils"
@@ -18,9 +18,10 @@ import type { Earth } from "components/Earth"
 
 /**
  * @description 动态绘制圆
+ * @extends Dynamic {@link Dynamic} 动态绘制基类
  */
 export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
-  public type: string = "Circle"
+  type: string = "Circle"
   constructor(earth: Earth) {
     super(earth, new EllipseLayer(earth))
   }
@@ -29,7 +30,7 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
    * @description 添加可编辑对象
    * @param option 新增参数以及可编辑附加数据
    */
-  public add(option: EllipseLayer.AddParam<Dynamic.Circle>) {
+  add(option: EllipseLayer.AddParam<Dynamic.Circle>) {
     this.layer.add(option)
   }
 
@@ -38,8 +39,8 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
    * @param param {@link Draw.Circle} 画圆参数
    * @returns 圆心坐标和半径
    */
-  public draw({
-    id = Utils.RandomUUID(),
+  draw({
+    id = Utils.uuid(),
     module = DefaultModuleName.CIRCLE,
     color = Color.RED.withAlpha(0.4),
     keep = true,
@@ -54,17 +55,17 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
     let edge: Cartesian3
     let center: Cartesian3
     let ent: Entity
-    const handler = super.startEvent()
+    const handler = super._startEvent()
 
-    this.cacheHandler = handler
+    this._cacheHandler = handler
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
       if (!center) return
-      const point = super.getPointOnEllipsoid(endPosition)
+      const point = super._getPointOnEllipsoid(endPosition)
       if (point) {
         edge = point
       }
-      this.eventBus.emit(SubEventType.DRAW_MOVE, {
+      this._eventBus.emit(SubEventType.DRAW_MOVE, {
         type: this.type,
         event: SubEventType.DRAW_MOVE,
         data: { id, center, edge },
@@ -73,8 +74,8 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
 
     return new Promise<Draw.CircleReturn>((resolve, reject) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        super.setViewControl(false)
-        const point = super.getPointOnEllipsoid(position)
+        super._setViewControl(false)
+        const point = super._getPointOnEllipsoid(position)
         if (point) {
           center = point
           const cbp = () => {
@@ -84,7 +85,7 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
             const radius = Figure.CalcRhumbDistance(_center, _edge, "meters")
             return radius
           }
-          this.cacheEntity = ent = this.viewer.entities.add({
+          this._cacheEntity = ent = this._viewer.entities.add({
             position: center,
             ellipse: {
               semiMajorAxis: new CallbackProperty(cbp, false),
@@ -94,19 +95,19 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
               heightReference: ground ? HeightReference.CLAMP_TO_GROUND : HeightReference.NONE,
             },
           })
-          this.eventBus.emit(SubEventType.DRAW_CERTAIN, {
+          this._eventBus.emit(SubEventType.DRAW_CERTAIN, {
             type: this.type,
             event: SubEventType.DRAW_CERTAIN,
             data: { id, center },
           })
         } else {
-          super.endEvent(handler)
+          super._endEvent(handler)
           reject("Please choose a center from Earth.")
         }
       }, ScreenSpaceEventType.LEFT_DOWN)
 
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const _point = super.getPointOnEllipsoid(position) ?? edge
+        const _point = super._getPointOnEllipsoid(position) ?? edge
         const _center = Geographic.fromCartesian(center)
         const _edge = Geographic.fromCartesian(_point)
         const radius = Figure.CalcRhumbDistance(_center, _edge, "meters")
@@ -132,10 +133,10 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
             },
           })
         }
-        this.viewer.entities.remove(ent)
-        super.endEvent(handler)
+        this._viewer.entities.remove(ent)
+        super._endEvent(handler)
         onFinish?.(center, radius)
-        this.eventBus.emit(SubEventType.DRAW_FINISH, {
+        this._eventBus.emit(SubEventType.DRAW_FINISH, {
           type: this.type,
           event: SubEventType.DRAW_FINISH,
           data: { ...circle },
@@ -150,7 +151,7 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
    * @param id 目标ID
    * @returns
    */
-  public edit(id: string): Promise<unknown> {
+  edit(id: string): Promise<Draw.CircleReturn> {
     const data: Dynamic.Circle | undefined = this.layer.getEntity(id)?.data.data
     if (!data) {
       return new Promise((_, reject) => reject(`Object ${id} does not exist.`))
@@ -160,7 +161,7 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
       })
     }
 
-    const handler = super.startEvent()
+    const handler = super._startEvent()
     this.layer.remove(id)
     let ent: Entity
     let dynamicRadius: number = data.attr.radius
@@ -172,7 +173,7 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
     let centerPosition: Cartesian3 = data.positions[0].clone()
     let edgePosition: Cartesian3 = data.positions[1].clone()
 
-    centerPoint = this.viewer.entities.add({
+    centerPoint = this._viewer.entities.add({
       id: "ModifyPoint_center",
       position: data.positions[0],
       point: {
@@ -183,7 +184,7 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
       },
     })
 
-    edgePoint = this.viewer.entities.add({
+    edgePoint = this._viewer.entities.add({
       id: "ModifyPoint_edge",
       position: data.positions[1],
       point: {
@@ -194,7 +195,7 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
       },
     })
 
-    ent = this.viewer.entities.add({
+    ent = this._viewer.entities.add({
       position: centerPosition.clone(),
       ellipse: {
         semiMajorAxis: new CallbackProperty(() => dynamicRadius, false),
@@ -207,10 +208,10 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
 
     handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
       if (!currentPoint) return
-      const _position = super.getPointOnEllipsoid(position) ?? lastPos
+      const _position = super._getPointOnEllipsoid(position) ?? lastPos
       ;(currentPoint.position as ConstantPositionProperty).setValue(_position)
       currentPoint = undefined
-      this.eventBus.emit(SubEventType.EDIT_CERTAIN, {
+      this._eventBus.emit(SubEventType.EDIT_CERTAIN, {
         type: this.type,
         event: SubEventType.EDIT_CERTAIN,
         data: { id, position: _position },
@@ -218,7 +219,7 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
     }, ScreenSpaceEventType.LEFT_UP)
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const position = super.getPointOnEllipsoid(endPosition)
+      const position = super._getPointOnEllipsoid(endPosition)
       if (!position || !currentPoint || !currentType) return
       ;(currentPoint.position as ConstantPositionProperty).setValue(position)
       if (currentType === "center") {
@@ -231,7 +232,7 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
       const _edge = Geographic.fromCartesian(edgePosition)
       dynamicRadius = Figure.CalcDistance(_center, _edge)
       lastPos = position
-      this.eventBus.emit(SubEventType.EDIT_MOVE, {
+      this._eventBus.emit(SubEventType.EDIT_MOVE, {
         type: this.type,
         event: SubEventType.EDIT_MOVE,
         data: { id, position },
@@ -240,11 +241,11 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
 
     return new Promise((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const _position = super.getPointOnEllipsoid(position)
-        const pick = this.scene.pick(position)
+        const _position = super._getPointOnEllipsoid(position)
+        const pick = this._scene.pick(position)
         if (!_position) return
         if (!pick || (pick.id.id !== centerPoint.id && pick.id.id !== edgePoint.id)) {
-          super.endEvent(handler)
+          super._endEvent(handler)
           this.layer.add({
             id,
             center: centerPosition,
@@ -264,17 +265,17 @@ export class CircleDynamic extends Dynamic<EllipseLayer<Dynamic.Circle>> {
               },
             },
           })
-          ent && this.viewer.entities.remove(ent)
-          this.viewer.entities.remove(centerPoint)
-          this.viewer.entities.remove(edgePoint)
-          this.eventBus.emit(SubEventType.EDIT_FINISH, {
+          ent && this._viewer.entities.remove(ent)
+          this._viewer.entities.remove(centerPoint)
+          this._viewer.entities.remove(edgePoint)
+          this._eventBus.emit(SubEventType.EDIT_FINISH, {
             type: this.type,
             event: SubEventType.EDIT_FINISH,
             data: { id, positions: [centerPosition, edgePosition] },
           })
-          resolve({ id, positions: [centerPosition, edgePosition] })
+          resolve({ id, center: centerPosition, radius: dynamicRadius })
         } else {
-          super.setViewControl(false)
+          super._setViewControl(false)
           if (pick.id.id === centerPoint.id) {
             currentPoint = centerPoint
             currentType = "center"

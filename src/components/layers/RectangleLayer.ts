@@ -11,12 +11,13 @@ import {
   PerInstanceColorAppearance,
   Primitive,
   PrimitiveCollection,
+  Rectangle,
   RectangleGeometry,
   VerticalOrigin,
-  type Rectangle,
 } from "cesium"
+import { generate, is, validate } from "decorators"
 import { LabelLayer } from "./LabelLayer"
-import { Layer } from "./Layer"
+import { Labeled, Layer, Outlined } from "abstract"
 import { PolylineLayer } from "./PolylineLayer"
 import { Utils } from "utils"
 import type { Earth } from "components/Earth"
@@ -45,36 +46,40 @@ export namespace RectangleLayer {
   }
 }
 
+export interface RectangleLayer<T = unknown> {
+  _labelLayer: LabelLayer<T>
+  _outlineLayer: PolylineLayer<T>
+}
+
 /**
  * @description 矩形图层
  * @extends Layer {@link Layer} 图层基类
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const rectLayer = new RectangleLayer(earth)
  * //or
- * const rectLayer = earth.useDefaultLayers().rectangle
+ * const rectLayer = earth.layers.rectangle
  * ```
  */
-export class RectangleLayer<T = unknown> extends Layer<
-  PrimitiveCollection,
-  Primitive | GroundPrimitive,
-  Layer.Data<T>
-> {
-  public labelLayer: LabelLayer<T>
-  private outlineLayer: PolylineLayer<T>
+export class RectangleLayer<T = unknown>
+  extends Layer<PrimitiveCollection, Primitive | GroundPrimitive, Layer.Data<T>>
+  implements Labeled, Outlined
+{
+  @generate() labelLayer!: LabelLayer<T>
+  @generate() outlineLayer!: PolylineLayer<T>
 
   constructor(earth: Earth) {
     super(earth, new PrimitiveCollection())
-    this.labelLayer = new LabelLayer(earth)
-    this.outlineLayer = new PolylineLayer(earth)
+    this._labelLayer = new LabelLayer(earth)
+    this._outlineLayer = new PolylineLayer(earth)
   }
 
-  private getDefaultOption(param: RectangleLayer.AddParam<T>) {
+  #getDefaultOption(param: RectangleLayer.AddParam<T>) {
     const option = {
       rectangle: {
-        id: param.id ?? Utils.RandomUUID(),
+        id: param.id ?? Utils.uuid(),
         rectangle: param.rectangle,
         color: param.color ?? Color.BLUE.withAlpha(0.4),
         height: param.height ?? 0,
@@ -109,7 +114,7 @@ export class RectangleLayer<T = unknown> extends Layer<
    * @param param {@link RectangleLayer.AddParam} 矩形参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const rectLayer = new RectangleLayer(earth)
    * rectLayer.add({
    *  rectangle: Rectangle.fromDegrees(104, 31, 105, 32),
@@ -118,8 +123,9 @@ export class RectangleLayer<T = unknown> extends Layer<
    * })
    * ```
    */
-  public add(param: RectangleLayer.AddParam<T>) {
-    const { rectangle, outline, label } = this.getDefaultOption(param)
+  @validate
+  add(@is(Rectangle, "rectangle") param: RectangleLayer.AddParam<T>) {
+    const { rectangle, outline, label } = this.#getDefaultOption(param)
 
     const geometry = rectangle.ground
       ? new RectangleGeometry({
@@ -133,7 +139,7 @@ export class RectangleLayer<T = unknown> extends Layer<
         })
 
     const instance = new GeometryInstance({
-      id: Utils.EncodeId(rectangle.id, param.module),
+      id: Utils.encode(rectangle.id, param.module),
       geometry,
       attributes: {
         color: ColorGeometryInstanceAttribute.fromColor(rectangle.color),
@@ -170,7 +176,7 @@ export class RectangleLayer<T = unknown> extends Layer<
         south,
         rectangle.height,
       ])
-      this.outlineLayer.add({
+      this._outlineLayer.add({
         id: rectangle.id,
         module: param.module,
         data: param.data,
@@ -188,14 +194,14 @@ export class RectangleLayer<T = unknown> extends Layer<
       const { west, east, north, south } = rectangle.rectangle
       const longitude = (west + east) / 2
       const latitude = (north + south) / 2
-      this.labelLayer.add({
+      this._labelLayer.add({
         id: rectangle.id,
         position: Cartesian3.fromRadians(longitude, latitude, rectangle.height),
         ...label,
       })
     }
 
-    super.save(rectangle.id, { primitive, data: { module: param.module, data: param.data } })
+    super._save(rectangle.id, { primitive, data: { module: param.module, data: param.data } })
   }
 
   /**
@@ -203,70 +209,70 @@ export class RectangleLayer<T = unknown> extends Layer<
    * @param id ID
    * @returns 外边框实体
    */
-  public getOutlineEntity(id: string) {
-    return this.outlineLayer.getEntity(id)
+  getOutlineEntity(id: string) {
+    return this._outlineLayer.getEntity(id)
   }
 
   /**
    * @description 隐藏所有矩形
    */
-  public hide(): void
+  hide(): void
   /**
    * @description 隐藏所有矩形
    * @param id 根据ID隐藏矩形
    */
-  public hide(id: string): void
-  public hide(id?: string) {
+  hide(id: string): void
+  hide(id?: string) {
     if (id) {
       super.hide(id)
-      this.outlineLayer.hide(id)
-      this.labelLayer.hide(id)
+      this._outlineLayer.hide(id)
+      this._labelLayer.hide(id)
     } else {
       super.hide()
-      this.outlineLayer.hide()
-      this.labelLayer.hide()
+      this._outlineLayer.hide()
+      this._labelLayer.hide()
     }
   }
 
   /**
    * @description 显示所有矩形
    */
-  public show(): void
+  show(): void
   /**
    * @description 显示所有矩形
    * @param id 根据ID显示矩形
    */
-  public show(id: string): void
-  public show(id?: string) {
+  show(id: string): void
+  show(id?: string) {
     if (id) {
       super.show(id)
-      this.outlineLayer.show(id)
-      this.labelLayer.show(id)
+      this._outlineLayer.show(id)
+      this._labelLayer.show(id)
     } else {
       super.show()
-      this.outlineLayer.show()
-      this.labelLayer.show()
+      this._outlineLayer.show()
+      this._labelLayer.show()
     }
   }
 
   /**
    * @description 移除所有矩形
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 根据ID移除矩形
    * @param id ID
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
       super.remove(id)
-      this.outlineLayer.remove(id)
-      this.labelLayer.remove(id)
+      this._outlineLayer.remove(id)
+      this._labelLayer.remove(id)
     } else {
       super.remove()
-      this.outlineLayer.remove()
-      this.labelLayer.remove()
+      this._outlineLayer.remove()
+      this._labelLayer.remove()
     }
   }
 
@@ -274,10 +280,10 @@ export class RectangleLayer<T = unknown> extends Layer<
    * @description 销毁图层
    * @returns 返回`boolean`值
    */
-  public destroy(): boolean {
+  destroy(): boolean {
     if (super.destroy()) {
-      this.labelLayer.destroy()
-      this.outlineLayer.destroy()
+      this._labelLayer.destroy()
+      this._outlineLayer.destroy()
       return true
     } else return false
   }

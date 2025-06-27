@@ -1,13 +1,16 @@
 import {
+  AnimationViewModel,
   Camera,
   Cartesian2,
   Cartesian3,
   Cartographic,
   Clock,
+  ClockViewModel,
   Event,
   ImageryLayer,
   ImageryProvider,
-  Math as CMath,
+  JulianDate,
+  Math as Czm_Math,
   Matrix4,
   Rectangle,
   Scene,
@@ -29,7 +32,9 @@ import { CameraTool, Utils } from "utils"
 import { Coordinate } from "./coordinate"
 import { GraphicsLayer } from "./layers"
 import { DefaultContextMenuItem as MapMode } from "enum"
-import { ImprovedScreenSpaceCameraController } from "improved"
+import { ImprovedAnimation, ImprovedScreenSpaceCameraController, ImprovedTimeline } from "improved"
+import { welcome, generate } from "decorators"
+import type { Destroyable } from "abstract"
 
 export namespace Earth {
   /**
@@ -37,14 +42,18 @@ export namespace Earth {
    * @property [showAnimation = false] 是否显示动画控件
    * @property [showTimeline = false] 是否显示时间轴控件
    * @property [lockCamera] {@link CameraLockOptions} 相机锁定选项
+   * @property [adaptiveAnimation = true] 是否使用适应性的动画控件
    * @property [adaptiveCameraController = true] 是否使用适应性的相机控制器
+   * @property [adaptiveTimeline = true] 是否使用适应性的时间轴控件
    */
   export type ConstructorOptions = {
     defaultViewRectangle?: Rectangle
     showAnimation?: boolean
     showTimeline?: boolean
     lockCamera?: CameraLockOptions
+    adaptiveAnimation?: boolean
     adaptiveCameraController?: boolean
+    adaptiveTimeline?: boolean
   }
 
   /**
@@ -58,6 +67,49 @@ export namespace Earth {
     rectangle?: Rectangle
     height?: number
   }
+
+  /**
+   * @property [position] {@link Cartesian3} 位置
+   * @property [rectangle] {@link Rectangle} 视窗矩形
+   * @property [duration = 2] 动画时间
+   * @property [orientation] 相机姿态
+   */
+  export type CameraFlyOptions = {
+    position?: Cartesian3
+    rectangle?: Rectangle
+    duration?: number
+    orientation?: {
+      direction?: Cartesian3
+      up?: Cartesian3
+      heading?: number
+      pitch?: number
+      roll?: number
+    }
+  }
+
+  /**
+   * @property [timelineFormatter] 时间轴时间显示格式化函数
+   * @property [animationDateFormatter] 动画控件日期显示格式化函数
+   * @property [animationTimeFormatter] 动画控件时间显示格式化函数
+   */
+  export type Formatters = {
+    timelineFormatter?: (time: JulianDate) => string
+    animationDateFormatter?: (time: JulianDate) => string
+    animationTimeFormatter?: (time: JulianDate) => string
+  }
+}
+
+export interface Earth {
+  _isDestroyed: boolean
+  _viewer: Viewer
+  _scene: Scene
+  _camera: Camera
+  _clock: Clock
+  _coordinate: Coordinate
+  _layers: GraphicsLayer
+  _container: HTMLElement
+  _animation: HTMLElement
+  _timeline: HTMLElement
 }
 
 /**
@@ -69,11 +121,11 @@ export namespace Earth {
  * ```
  * //use hook
  * //already have a viewer
- * const earth = useEarth("my_earth", viewer)
+ * const earth = createEarth("my_earth", viewer)
  *
  * //use hook
  * //no available viewer
- * const earth = useEarth()
+ * const earth = createEarth()
  *
  * //use class
  * //already have a viewer
@@ -102,57 +154,58 @@ export namespace Earth {
  * })
  * ```
  */
-export class Earth {
-  private destroyed: boolean = false
+@welcome
+export class Earth implements Destroyable {
+  @generate(false) isDestroyed!: boolean
   /**
    * @description ID
    */
-  public id: string = Utils.RandomUUID()
+  @generate(Utils.uuid()) id!: string
   /**
    * @description HTML容器
    */
-  public readonly container: HTMLElement
+  @generate() container!: HTMLElement
   /**
    * @description 视窗实列
    */
-  public readonly viewer: Viewer
+  @generate() viewer!: Viewer
   /**
    * @description 场景实例
    */
-  public readonly scene: Scene
+  @generate() scene!: Scene
   /**
    * @description 相机实例
    */
-  public readonly camera: Camera
+  @generate() camera!: Camera
   /**
    * @description 时钟实例
    */
-  public readonly clock: Clock
+  @generate() clock!: Clock
   /**
    * @description 动画控件
    */
-  public readonly animation: HTMLElement
+  @generate() animation!: HTMLElement
   /**
    * @description 时间轴控件
    */
-  public readonly timeline: HTMLElement
+  @generate() timeline!: HTMLElement
   /**
    * @description 坐标系
    */
-  public readonly coordinate: Coordinate
+  @generate() coordinate!: Coordinate
   /**
    * @description 默认图层实例
    */
-  public readonly layers: GraphicsLayer
+  @generate() layers!: GraphicsLayer
   /**
    * @description cesium视图选项
    */
-  private cesiumOptions: Viewer.ConstructorOptions
+  #cesiumOptions: Viewer.ConstructorOptions
   /**
    * @description {@link Earth.ConstructorOptions} 参数
    */
-  private options: Earth.ConstructorOptions
-  private preRenderCallback?: Event.RemoveCallback
+  #options: Earth.ConstructorOptions
+  #preRenderCallback?: Event.RemoveCallback
 
   constructor(
     container: string | HTMLDivElement | Viewer,
@@ -161,45 +214,72 @@ export class Earth {
   ) {
     Camera.DEFAULT_VIEW_RECTANGLE = options?.defaultViewRectangle || Rectangle.fromDegrees(72, 0.83, 137.83, 55.83)
 
-    this.cesiumOptions = {}
-    this.options = {}
-    this.defaultOptions(cesiumOptions, options)
+    this.#cesiumOptions = {}
+    this.#options = {}
+    this.#defaultOptions(cesiumOptions, options)
 
     if (container instanceof Viewer) {
-      this.viewer = container
+      this._viewer = container
     } else {
-      this.viewer = new Viewer(container, this.cesiumOptions)
+      this._viewer = new Viewer(container, this.#cesiumOptions)
     }
 
-    this.scene = this.viewer.scene
-    this.camera = this.viewer.camera
-    this.clock = this.viewer.clock
+    this._scene = this._viewer.scene
+    this._camera = this._viewer.camera
+    this._clock = this._viewer.clock
 
-    this.container = this.viewer.container as HTMLElement
-    this.animation = this.viewer.animation.container as HTMLElement
-    this.timeline = this.viewer.timeline.container as HTMLElement
+    this._container = this._viewer.container as HTMLElement
+    this._animation = this._viewer.animation.container as HTMLElement
+    this._timeline = this._viewer.timeline.container as HTMLElement
 
-    this.defaultSettings()
+    this.#defaultSettings()
 
-    this.coordinate = new Coordinate(this)
-    this.layers = new GraphicsLayer(this)
+    this._coordinate = new Coordinate(this)
+    this._layers = new GraphicsLayer(this)
 
-    if (this.options.adaptiveCameraController) {
+    if (this.#options.adaptiveCameraController) {
       //@ts-ignore
-      this.scene._screenSpaceCameraController = new ImprovedScreenSpaceCameraController(this.scene)
+      this._scene._screenSpaceCameraController = new ImprovedScreenSpaceCameraController(this._scene)
+    }
+    if (this.#options.adaptiveAnimation) {
+      //@ts-ignore
+      this._viewer._animation.destroy()
+      //@ts-ignore
+      this.viewer._animation = new ImprovedAnimation(
+        this.animation,
+        new AnimationViewModel(new ClockViewModel(this._clock)),
+        this._scene
+      )
+    }
+    if (this.#options.adaptiveTimeline) {
+      //@ts-ignore
+      this._viewer._timeline.destroy()
+      const timeline = new ImprovedTimeline(this._timeline, this._clock, this._scene)
+      timeline.addEventListener(
+        "settime",
+        (e) => {
+          const clock = e.clock
+          clock.currentTime = e.timeJulian
+          clock.shouldAnimate = false
+        },
+        false
+      )
+      timeline.zoomTo(this._clock.startTime, this._clock.stopTime)
+      //@ts-ignore
+      this._viewer._timeline = timeline
     }
     this.lockCamera()
-    this.addSceneRenderListener()
+    this.#addCameraLockRenderListener()
   }
 
-  private addSceneRenderListener() {
-    if (!this.preRenderCallback && this.options.lockCamera?.enable) {
-      this.preRenderCallback = this.scene.preRender.addEventListener(() => {
-        if (this.options.lockCamera?.enable && this.options.lockCamera.rectangle) {
-          CameraTool.LockCameraInRectangle(
-            this.camera,
-            this.options.lockCamera.rectangle,
-            this.options.lockCamera.height
+  #addCameraLockRenderListener() {
+    if (!this.#preRenderCallback && this.#options.lockCamera?.enable) {
+      this.#preRenderCallback = this._scene.preRender.addEventListener(() => {
+        if (this.#options.lockCamera?.enable && this.#options.lockCamera.rectangle) {
+          CameraTool.lockCameraInRectangle(
+            this._camera,
+            this.#options.lockCamera.rectangle,
+            this.#options.lockCamera.height
           )
         }
       })
@@ -211,33 +291,47 @@ export class Earth {
    * @param cesiumOptions cesium视图选项
    * @param [options] {@link Earth.ConstructorOptions} 参数
    */
-  private defaultOptions(cesiumOptions?: Viewer.ConstructorOptions, options?: Earth.ConstructorOptions) {
+  #defaultOptions(cesiumOptions?: Viewer.ConstructorOptions, options?: Earth.ConstructorOptions) {
     Object.assign(
-      this.options,
+      this.#options,
       {
+        adaptiveAnimation: true,
         adaptiveCameraController: true,
+        adaptiveTimeline: true,
         showAnimation: false,
         showTimeline: false,
       },
       options
     )
-    Object.assign(this.cesiumOptions, cesiumOptions)
+    Object.assign(this.#cesiumOptions, cesiumOptions)
   }
 
   /**
    * @description 地图默认设置
    */
-  private defaultSettings() {
-    if (this.options.showAnimation === false && this.animation) this.animation.style.visibility = "hidden"
-    if (this.options.showTimeline === false && this.timeline) this.timeline.style.visibility = "hidden"
+  #defaultSettings() {
+    if (this.#options.showAnimation === false && this._animation) this._animation.style.visibility = "hidden"
+    if (this.#options.showTimeline === false && this._timeline) this._timeline.style.visibility = "hidden"
 
     // 使Canvas可接受其它HTMLElement的拖动行为
-    this.viewer.canvas.ondragover = (ev: DragEvent) => {
+    this._viewer.canvas.ondragover = (ev: DragEvent) => {
       ev.preventDefault()
     }
-    this.viewer.canvas.ondragenter = (ev: DragEvent) => {
+    this._viewer.canvas.ondragenter = (ev: DragEvent) => {
       ev.preventDefault()
     }
+  }
+
+  /**
+   * @description 自定义时间轴及动画控件时间显示格式化函数
+   * @param formatters {@link Earth.Formatters} 格式化配置
+   */
+  setFormatters(formatters: Earth.Formatters) {
+    const { animationDateFormatter, animationTimeFormatter, timelineFormatter } = formatters
+    if (animationDateFormatter) this._viewer.animation.viewModel.dateFormatter = animationDateFormatter
+    if (animationTimeFormatter) this._viewer.animation.viewModel.timeFormatter = animationTimeFormatter
+    //@ts-ignore
+    if (timelineFormatter) this._viewer.timeline.makeLabel = timelineFormatter
   }
 
   /**
@@ -248,12 +342,12 @@ export class Earth {
    * 4. 其他Echarts图形实例也可加载，但不随视图更新位置
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * earth.useEcharts()
    * const overlay = new Overlay({ earth, echartsOption })
    * ```
    */
-  public useEcharts() {
+  useEcharts() {
     const self = this
     extendComponentModel({
       type: "GLMap",
@@ -268,7 +362,7 @@ export class Earth {
         //@ts-ignore
         this.api = api
         //@ts-ignore
-        self.scene.postRender.addEventListener(this.moveHandler, this)
+        self._scene.postRender.addEventListener(this.moveHandler, this)
       },
       moveHandler() {
         //@ts-ignore
@@ -277,23 +371,25 @@ export class Earth {
       render() {},
       dispose() {
         //@ts-ignore
-        self.scene.postRender.removeEventListener(this.moveHandler, this)
+        self._scene.postRender.removeEventListener(this.moveHandler, this)
       },
     })
 
     class EarthCoordinateSystem {
-      public static dimensions = ["lng", "lat"]
-      public dimensions = ["lng", "lat"]
-      private mapOffset = [0, 0]
-      constructor(
-        public scene: Scene,
-        private api: CustomSeriesRenderItemAPI
-      ) {}
+      static dimensions = ["lng", "lat"]
+      dimensions = ["lng", "lat"]
+      scene: Scene
+      mapOffset = [0, 0]
+      api: CustomSeriesRenderItemAPI
+      constructor(scene: Scene, api: CustomSeriesRenderItemAPI) {
+        this.scene = scene
+        this.api = api
+      }
 
-      public static create(globalModel: any, api: CustomSeriesRenderItemAPI) {
+      static create(globalModel: any, api: CustomSeriesRenderItemAPI) {
         let coordSys: EarthCoordinateSystem
         globalModel.eachComponent("GLMap", (earthModel: ComponentModel) => {
-          coordSys = new EarthCoordinateSystem(self.scene, api)
+          coordSys = new EarthCoordinateSystem(self._scene, api)
           //@ts-ignore
           coordSys.setMapOffest(earthModel.__mapOffest || [0, 0])
           //@ts-ignore
@@ -307,11 +403,11 @@ export class Earth {
         })
       }
 
-      public setMapOffest(offset: number[]) {
+      setMapOffest(offset: number[]) {
         this.mapOffset = [...offset]
       }
 
-      public getEarthMap() {
+      getEarthMap() {
         return this.scene
       }
 
@@ -319,8 +415,8 @@ export class Earth {
        * @description 数据坐标转坐标点
        * @param data 坐标
        */
-      public dataToPoint(data: number[]) {
-        const maxRadians = CMath.toRadians(80)
+      dataToPoint(data: number[]) {
+        const maxRadians = Czm_Math.toRadians(80)
         const position = Cartesian3.fromDegrees(data[0], data[1])
         if (!position) return [undefined, undefined]
         const canvasCoordinate = this.scene.cartesianToCanvasCoordinates(position)
@@ -338,7 +434,7 @@ export class Earth {
        * @description 坐标点转数据坐标
        * @param point 点
        */
-      public pointToData(point: number[]) {
+      pointToData(point: number[]) {
         const pt = new Cartesian2(point[0] + this.mapOffset[0], point[1] + this.mapOffset[1])
         const cartesian = this.scene.pickPosition(pt)
         if (!cartesian) return [undefined, undefined]
@@ -350,12 +446,12 @@ export class Earth {
        * @description 获取视窗
        * @returns 视窗
        */
-      public getViewRect(): graphic.BoundingRect {
+      getViewRect(): graphic.BoundingRect {
         const rect = new graphic.BoundingRect(0, 0, this.api.getWidth(), this.api.getHeight())
         return rect
       }
 
-      public getRoamTransform() {
+      getRoamTransform() {
         return matrix.create()
       }
     }
@@ -378,7 +474,7 @@ export class Earth {
    * @param param {@link Earth.CameraLockOptions} 参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * earth.lockCamera({
    *  enable: true,
    *  rectangle: Rectangle.fromDegrees(72.004, 0.8293, 137.8347, 55.8271),
@@ -386,18 +482,18 @@ export class Earth {
    * })
    * ```
    */
-  public lockCamera(param?: Earth.CameraLockOptions) {
-    const op = param || this.options.lockCamera
+  lockCamera(param?: Earth.CameraLockOptions) {
+    const op = param || this.#options.lockCamera
     if (!op) return
-    if (!this.options.lockCamera) {
-      this.options.lockCamera = {}
+    if (!this.#options.lockCamera) {
+      this.#options.lockCamera = {}
     }
     if (op.enable !== undefined) {
-      this.options.lockCamera.enable = op.enable
-      this.addSceneRenderListener()
+      this.#options.lockCamera.enable = op.enable
+      this.#addCameraLockRenderListener()
     }
-    if (op.height !== undefined) this.options.lockCamera.height = op.height
-    if (op.rectangle) this.options.lockCamera.rectangle = op.rectangle
+    if (op.height !== undefined) this.#options.lockCamera.height = op.height
+    if (op.rectangle) this.#options.lockCamera.rectangle = op.rectangle
   }
 
   /**
@@ -405,40 +501,40 @@ export class Earth {
    * @param provider 影像图层
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const imageryProvider = useTileImageryProvider({ url: "/api/imagery", maximumLevel: 18 })
    * earth.addImageryProvider(imageryProvider)
    * ```
    */
-  public addImageryProvider(provider: ImageryProvider) {
-    return this.viewer.imageryLayers.addImageryProvider(provider)
+  addImageryProvider(provider: ImageryProvider) {
+    return this._viewer.imageryLayers.addImageryProvider(provider)
   }
 
   /**
    * @description 移除所有地图影像层
+   * @example
+   * ```
+   * earth.removeImageryProvider()
+   * ```
    */
-  public removeImageryProvider(): void
+  removeImageryProvider(): void
   /**
    * @description 移除地图影像层
    * @param layer 图层
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const imageryProvider = useTileImageryProvider({ url: "/api/imagery", maximumLevel: 18 })
-   *
-   * //remove one
+   * earth.addImageryProvider(imageryProvider)
    * earth.removeImageryProvider(imageryProvider)
-   *
-   * //remove all
-   * earth.removeImageryProvider()
    * ```
    */
-  public removeImageryProvider(layer: ImageryLayer): void
-  public removeImageryProvider(layer?: ImageryLayer): void {
+  removeImageryProvider(layer: ImageryLayer): void
+  removeImageryProvider(layer?: ImageryLayer): void {
     if (layer) {
-      this.viewer.imageryLayers.remove(layer)
+      this._viewer.imageryLayers.remove(layer)
     } else {
-      this.viewer.imageryLayers.removeAll()
+      this._viewer.imageryLayers.removeAll()
     }
   }
 
@@ -447,13 +543,13 @@ export class Earth {
    * @param terrainProvider 地形
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const terrainProvider = await CesiumTerrainProvider.fromUrl("/api/terrain")
    * earth.setTerrain(terrainProvider)
    * ```
    */
-  public setTerrain(terrainProvider: TerrainProvider) {
-    this.viewer.terrainProvider = terrainProvider
+  setTerrain(terrainProvider: TerrainProvider) {
+    this._viewer.terrainProvider = terrainProvider
   }
 
   /**
@@ -461,7 +557,7 @@ export class Earth {
    * @param value
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    *
    * //turn on
    * earth.setDepthTestAgainstTerrain(true)
@@ -470,17 +566,17 @@ export class Earth {
    * earth.setDepthTestAgainstTerrain(false)
    * ```
    */
-  public setDepthTestAgainstTerrain(value: boolean) {
-    this.scene.globe.depthTestAgainstTerrain = value
+  setDepthTestAgainstTerrain(value: boolean) {
+    this._scene.globe.depthTestAgainstTerrain = value
   }
 
   /**
    * @description 移动相机到默认位置
    * @param duration 动画时间，默认`2s`
    */
-  public flyHome(duration: number = 2) {
-    this.camera.lookAtTransform(Matrix4.IDENTITY)
-    this.camera.flyHome(duration)
+  flyHome(duration: number = 2) {
+    this._camera.lookAtTransform(Matrix4.IDENTITY)
+    this._camera.flyHome(duration)
   }
 
   /**
@@ -488,43 +584,20 @@ export class Earth {
    * @param target 目标位置参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * earth.flyTo({ position: Cartesian3.fromDegrees(104, 31) })
    * ```
    */
-  public flyTo(target: {
-    position?: Cartesian3
-    rectangle?: Rectangle
-    duration?: number
-    orientation?: { heading?: number; pitch?: number; roll?: number }
-  }): void
-  public flyTo(target: {
-    position?: Cartesian3
-    rectangle?: { west: number; south: number; east: number; north: number }
-    duration?: number
-    orientation?: { heading?: number; pitch?: number; roll?: number }
-  }): void
-  public flyTo(target: {
-    position?: Cartesian3
-    rectangle?: Rectangle | { west: number; south: number; east: number; north: number }
-    duration?: number
-    orientation?: { heading?: number; pitch?: number; roll?: number }
-  }) {
+  flyTo({ position, rectangle, duration = 2, orientation }: Earth.CameraFlyOptions) {
     let destination: Cartesian3 | Rectangle
-    const { position, rectangle, duration, orientation } = target
     if (position) {
-      destination = position
+      destination = position.clone()
     } else if (rectangle) {
-      if (rectangle instanceof Rectangle) {
-        destination = rectangle
-      } else {
-        const { west, south, east, north } = rectangle
-        destination = Rectangle.fromDegrees(west, south, east, north)
-      }
+      destination = rectangle.clone()
     } else {
-      destination = Camera.DEFAULT_VIEW_RECTANGLE
+      destination = Camera.DEFAULT_VIEW_RECTANGLE.clone()
     }
-    this.camera.flyTo({ destination, duration: duration ?? 2, orientation })
+    this._camera.flyTo({ destination, duration, orientation })
   }
 
   /**
@@ -533,7 +606,7 @@ export class Earth {
    * @param duration 动画时间，默认`2s`
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    *
    * //2D
    * earth.morphTo(MapMode.Scene2D)
@@ -542,28 +615,28 @@ export class Earth {
    * earth.morphTo(MapMode.Scene3D)
    * ```
    */
-  public morphTo(mode: MapMode, duration: number = 2) {
+  morphTo(mode: MapMode, duration: number = 2) {
     const viewCenter = new Cartesian2(
-      Math.floor(this.viewer.canvas.clientWidth / 2),
-      Math.floor(this.viewer.canvas.clientHeight / 2)
+      Math.floor(this._viewer.canvas.clientWidth / 2),
+      Math.floor(this._viewer.canvas.clientHeight / 2)
     )
-    const position = this.coordinate.screenToGeographic(viewCenter)!
+    const position = this._coordinate.screenToGeographic(viewCenter)!
     let distance: number | undefined
     switch (mode) {
       case MapMode.Scene2D: {
-        distance = Cartesian3.distance(this.camera.pickEllipsoid(viewCenter)!, this.camera.positionWC)
-        this.scene.morphTo2D(duration)
+        distance = Cartesian3.distance(this._camera.pickEllipsoid(viewCenter)!, this._camera.positionWC)
+        this._scene.morphTo2D(duration)
         break
       }
       case MapMode.Scene3D: {
-        distance = this.camera.positionCartographic.height
-        this.scene.morphTo3D(duration)
+        distance = this._camera.positionCartographic.height
+        this._scene.morphTo3D(duration)
         break
       }
     }
     setTimeout(() => {
-      this.scene.completeMorph()
-      this.camera.flyTo({
+      this._scene.completeMorph()
+      this._camera.flyTo({
         destination: Cartesian3.fromDegrees(position.longitude, position.latitude, distance),
         duration: 2,
       })
@@ -571,19 +644,12 @@ export class Earth {
   }
 
   /**
-   * @description 获取销毁状态
-   */
-  public isDestroyed(): boolean {
-    return this.destroyed
-  }
-
-  /**
    * @description 销毁
    */
-  public destroy() {
-    if (this.destroyed) return
-    this.destroyed = true
-    this.layers.destroy()
-    this.viewer.destroy()
+  destroy() {
+    if (this._isDestroyed) return
+    this._isDestroyed = true
+    this._layers.destroy()
+    this._viewer.destroy()
   }
 }

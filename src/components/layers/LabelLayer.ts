@@ -1,4 +1,5 @@
 import {
+  Cartesian3,
   Color,
   HorizontalOrigin,
   Label,
@@ -6,13 +7,13 @@ import {
   LabelStyle,
   VerticalOrigin,
   type Cartesian2,
-  type Cartesian3,
   type DistanceDisplayCondition,
   type HeightReference,
   type NearFarScalar,
 } from "cesium"
-import { Layer } from "./Layer"
+import { Layer } from "abstract"
 import { Utils } from "utils"
+import { is, validate } from "decorators"
 import type { Earth } from "components/Earth"
 
 export namespace LabelLayer {
@@ -75,7 +76,7 @@ export namespace LabelLayer {
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const labelLayer = new LabelLayer(earth)
  * ```
  */
@@ -89,7 +90,7 @@ export class LabelLayer<T = unknown> extends Layer<LabelCollection, Label, Layer
    * @param param {@link LabelLayer.AddParam} 标签参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const labelLayer = new LabelLayer(earth)
    * labelLayer.add({
    *  text: "This is a label.",
@@ -113,8 +114,9 @@ export class LabelLayer<T = unknown> extends Layer<LabelCollection, Label, Layer
    * })
    * ```
    */
-  public add(param: LabelLayer.AddParam<T>) {
-    const id = param.id ?? Utils.RandomUUID()
+  @validate
+  add(@is(Cartesian3, "position") param: LabelLayer.AddParam<T>) {
+    const id = param.id ?? Utils.uuid()
     const option = {
       font: "14px Helvetica",
       fillColor: Color.RED,
@@ -124,9 +126,9 @@ export class LabelLayer<T = unknown> extends Layer<LabelCollection, Label, Layer
       horizontalOrigin: HorizontalOrigin.CENTER,
       verticalOrigin: VerticalOrigin.CENTER,
       ...param,
-      id: Utils.EncodeId(id, param.module),
+      id: Utils.encode(id, param.module),
     }
-    super.save(id, {
+    super._save(id, {
       primitive: new Label(option, this.collection),
       data: { module: param.module, data: param.data },
     })
@@ -138,7 +140,7 @@ export class LabelLayer<T = unknown> extends Layer<LabelCollection, Label, Layer
    * @param param {@link LabelLayer.SetParam} 标签参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const labelLayer = new LabelLayer(earth)
    * labelLayer.set("some_id", {
    *  text: "This is a label.",
@@ -146,7 +148,7 @@ export class LabelLayer<T = unknown> extends Layer<LabelCollection, Label, Layer
    * })
    * ```
    */
-  public set(id: string, param: LabelLayer.SetParam<T>) {
+  set(id: string, param: LabelLayer.SetParam<T>) {
     const label = this.getEntity(id)?.primitive
     if (label && param) {
       Object.assign(label, param)

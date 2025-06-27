@@ -11,7 +11,7 @@ import {
 } from "cesium"
 import { Geographic } from "components/coordinate"
 import { DefaultModuleName, SubEventType, DrawType } from "enum"
-import { Dynamic } from "./Dynamic"
+import { Dynamic } from "abstract"
 import { Figure, Utils, State } from "utils"
 import { PolygonLayer } from "components/layers"
 import type { Earth } from "components/Earth"
@@ -26,13 +26,17 @@ type OptionParam = {
 
 const { pow, sin, cos, PI } = window.Math
 
+/**
+ * @description 动态绘制嵌击箭头
+ * @extends Dynamic {@link Dynamic} 动态绘制基类
+ */
 export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow>> {
-  public type: string = "Pincer_Arrow"
+  type: string = "Pincer_Arrow"
   constructor(earth: Earth) {
     super(earth, new PolygonLayer(earth))
   }
 
-  private getBinomialFactor(t: number, o: number) {
+  #getBinomialFactor(t: number, o: number) {
     const factor = (v: number) => {
       if (v <= 1) return 1
       if (v === 2) return 2
@@ -48,9 +52,9 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
     return factor(t) / (factor(o) * factor(t - o))
   }
 
-  private getTempPoint<T extends [number, number]>(t: T, o: T, e: T) {
+  #getTempPoint<T extends number[]>(t: T, o: T, e: T) {
     let n, g, i, r
-    const s: [number, number] = [(t[0] + o[0]) / 2, (t[1] + o[1]) / 2]
+    const s: number[] = [(t[0] + o[0]) / 2, (t[1] + o[1]) / 2]
     const a = Figure.CalcMathDistance([s, e])
     const l = Figure.CalcMathAngle(t, s, e)
     if (l < PI / 2) {
@@ -77,14 +81,14 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
     return r
   }
 
-  private getBezierpoints(t: [number, number][]) {
+  #getBezierpoints(t: number[][]) {
     const e = t.length - 1
     const res = []
     for (let r = 0; r <= 1; r += 0.01) {
       let x = 0
       let y = 0
       for (let g = 0; g <= e; g++) {
-        const i = this.getBinomialFactor(e, g)
+        const i = this.#getBinomialFactor(e, g)
         const s = pow(r, g)
         const a = pow(1 - r, e - g)
         x += i * s * a * t[g][0]
@@ -96,7 +100,7 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
     return res
   }
 
-  private computeHeadPoints(t: [number, number][], option: OptionParam) {
+  #computeHeadPoints(t: number[][], option: OptionParam) {
     const { neckWidthFactor, headWidthFactor, headHeightFactor, neckHeightFactor } = option
     const g = t[t.length - 1]
     const r = pow(Figure.CalcMathDistance(t), 0.99)
@@ -113,7 +117,7 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
     return [h, c, g, p, d]
   }
 
-  private computeBodyPoints<T extends [number, number]>(t: T[], o: T, e: T, r: number) {
+  #computeBodyPoints<T extends number[]>(t: T[], o: T, e: T, r: number) {
     let l = 0
     const u = []
     const c = []
@@ -134,17 +138,17 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
     return u.concat(c)
   }
 
-  private computePoints<T extends [number, number]>(t: T, o: T, e: T, r: boolean, option: OptionParam) {
-    const n: [number, number] = [(t[0] + o[0]) / 2, (t[1] + o[1]) / 2]
+  #computePoints<T extends number[]>(t: T, o: T, e: T, r: boolean, option: OptionParam) {
+    const n: number[] = [(t[0] + o[0]) / 2, (t[1] + o[1]) / 2]
     const g = Figure.CalcMathDistance([n, e])
     const i = Figure.CalcThirdPoint(e, n, 0, g * 0.3, true)
     const s = Figure.CalcThirdPoint(e, n, 0, g * 0.5, true)
     const j = Figure.CalcThirdPoint(n, i, PI / 2, g / 5, r)
     const k = Figure.CalcThirdPoint(n, s, PI / 2, g / 4, r)
     const a = [n, j, k, e]
-    const l = this.computeHeadPoints(a, option)
+    const l = this.#computeHeadPoints(a, option)
     const p = Figure.CalcMathDistance([t, o]) / pow(Figure.CalcMathDistance(a), 2) / 2
-    const h = this.computeBodyPoints(a, l[0], l[4], p)
+    const h = this.#computeBodyPoints(a, l[0], l[4], p)
     const f = h.slice(0, h.length / 2)
     const m = h.slice(h.length / 2, h.length)
     f.push(l[0])
@@ -154,22 +158,19 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
     return f.concat(l, m.reverse())
   }
 
-  private computeArrow(positions: Cartesian3[], option: OptionParam) {
-    const points: [number, number][] = positions.map((p) => {
-      const { latitude, longitude } = Geographic.fromCartesian(p)
-      return [longitude, latitude]
-    })
+  #computeArrow(positions: Cartesian3[], option: OptionParam) {
+    const points: number[][] = positions.map((p) => Geographic.fromCartesian(p).toArray())
     let n, g
     const t = positions.length
     const [o, e, r] = points
-    const temp = t === 3 ? this.getTempPoint(o, e, r) : points[3]
-    const conn: [number, number] = t === 3 || t === 4 ? [(o[0] + e[0]) / 2, (o[1] + e[1]) / 2] : points[4]
+    const temp = t === 3 ? this.#getTempPoint(o, e, r) : points[3]
+    const conn: number[] = t === 3 || t === 4 ? [(o[0] + e[0]) / 2, (o[1] + e[1]) / 2] : points[4]
     if (Figure.CrossProduct(o, e, r) < 0) {
-      n = this.computePoints(o, conn, temp, false, option)
-      g = this.computePoints(conn, e, r, true, option)
+      n = this.#computePoints(o, conn, temp, false, option)
+      g = this.#computePoints(conn, e, r, true, option)
     } else {
-      n = this.computePoints(e, conn, r, false, option)
-      g = this.computePoints(conn, o, temp, true, option)
+      n = this.#computePoints(e, conn, r, false, option)
+      g = this.#computePoints(conn, o, temp, true, option)
     }
     const s = (n.length - 5) / 2
     const a = n.slice(0, s)
@@ -178,9 +179,9 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
     const c = g.slice(0, s)
     const p = g.slice(s, s + 5)
     const h = g.slice(s + 5, n.length)
-    const _c = this.getBezierpoints(c)
-    const _u = this.getBezierpoints(u)
-    const d = this.getBezierpoints(h.concat(a.slice(1)))
+    const _c = this.#getBezierpoints(c)
+    const _u = this.#getBezierpoints(u)
+    const d = this.#getBezierpoints(h.concat(a.slice(1)))
     const f = _c.concat(p, d, l, _u)
     const control = [o, e, r, temp, conn]
     return {
@@ -193,7 +194,7 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
    * @description 添加可编辑对象
    * @param option 新增参数以及可编辑附加数据
    */
-  public add(option: PolygonLayer.AddParam<Dynamic.PincerArrow>) {
+  add(option: PolygonLayer.AddParam<Dynamic.PincerArrow>) {
     this.layer.add(option)
   }
 
@@ -202,8 +203,8 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
    * @param param {@link Draw.PincerArrow} 画箭头参数
    * @returns 沿途选点的坐标
    */
-  public draw({
-    id = Utils.RandomUUID(),
+  draw({
+    id = Utils.uuid(),
     module = DefaultModuleName.PINCER_ARROW,
     neckWidthFactor = 0.15,
     headWidthFactor = 0.3,
@@ -232,21 +233,21 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
       neckHeightFactor,
     }
     const points: Cartesian3[] = []
-    const handler = super.startEvent()
+    const handler = super._startEvent()
 
-    this.cacheHandler = handler
+    this._cacheHandler = handler
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const point = super.getPointOnEllipsoid(endPosition)
+      const point = super._getPointOnEllipsoid(endPosition)
       if (!point || points.length < 2) return
       lastPoint = point
       if (points.length > 2) points.pop()
       points.push(point)
       if (!ent) {
-        this.cacheEntity = ent = this.viewer.entities.add({
+        this._cacheEntity = ent = this._viewer.entities.add({
           polygon: {
             hierarchy: new CallbackProperty(() => {
-              return new PolygonHierarchy(this.computeArrow(points, option).shape)
+              return new PolygonHierarchy(this.#computeArrow(points, option).shape)
             }, false),
             material: color,
             outline: true,
@@ -256,7 +257,7 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
           },
         })
       }
-      this.eventBus.emit(SubEventType.DRAW_MOVE, {
+      this._eventBus.emit(SubEventType.DRAW_MOVE, {
         type: this.type,
         event: SubEventType.DRAW_MOVE,
         data: { id, position: point },
@@ -265,7 +266,7 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
 
     return new Promise<Draw.PincerArrowReturn>((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const point = super.getPointOnEllipsoid(position) ?? lastPoint
+        const point = super._getPointOnEllipsoid(position) ?? lastPoint
         if (!point) return
         if (points.length === 5) {
           flag = true
@@ -273,14 +274,14 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
         }
         points.push(point)
         onEvery?.(point, points.length - 1)
-        this.eventBus.emit(SubEventType.DRAW_CERTAIN, {
+        this._eventBus.emit(SubEventType.DRAW_CERTAIN, {
           type: this.type,
           event: SubEventType.DRAW_CERTAIN,
           data: { id, index: points.length - 1, position: point },
         })
         if (flag) {
           if (keep) {
-            const { control, shape } = this.computeArrow(points, option)
+            const { control, shape } = this.#computeArrow(points, option)
             this.layer.add({
               id,
               module,
@@ -307,10 +308,10 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
               },
             })
           }
-          super.endEvent(handler)
-          this.viewer.entities.remove(ent)
+          super._endEvent(handler)
+          this._viewer.entities.remove(ent)
           onFinish?.(points)
-          this.eventBus.emit(SubEventType.DRAW_FINISH, {
+          this._eventBus.emit(SubEventType.DRAW_FINISH, {
             type: this.type,
             event: SubEventType.DRAW_FINISH,
             data: { id, positions: points },
@@ -326,7 +327,7 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
    * @param id 目标ID
    * @returns
    */
-  public edit(id: string): Promise<Draw.PincerArrowReturn> {
+  edit(id: string): Promise<Draw.PincerArrowReturn> {
     const data: Dynamic.PincerArrow | undefined = this.layer.getEntity(id)?.data.data
     if (!data) {
       return new Promise((_, reject) => reject(`Object ${id} does not exist.`))
@@ -336,7 +337,7 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
       })
     }
 
-    const handler = super.startEvent()
+    const handler = super._startEvent()
     const tempPoints: Entity[] = []
     const positions: Cartesian3[] = [...data.positions]
     const option = {
@@ -352,7 +353,7 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
 
     data.positions.forEach((value, index) => {
       tempPoints.push(
-        this.viewer.entities.add({
+        this._viewer.entities.add({
           id: `ModifyPoint_${index}`,
           position: value,
           point: {
@@ -365,10 +366,10 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
       )
     })
 
-    ent = this.viewer.entities.add({
+    ent = this._viewer.entities.add({
       polygon: {
         hierarchy: new CallbackProperty(() => {
-          const polygon = this.computeArrow(positions, option).shape
+          const polygon = this.#computeArrow(positions, option).shape
           return new PolygonHierarchy(polygon)
         }, false),
         material: data.attr.color,
@@ -382,11 +383,11 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
 
     handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
       if (!currentPoint) return
-      const _position = super.getPointOnEllipsoid(position) ?? lastPos
+      const _position = super._getPointOnEllipsoid(position) ?? lastPos
       ;(currentPoint.position as ConstantPositionProperty).setValue(_position)
       positions.splice(currentIndex, 1, _position)
       currentPoint = undefined
-      this.eventBus.emit(SubEventType.EDIT_CERTAIN, {
+      this._eventBus.emit(SubEventType.EDIT_CERTAIN, {
         type: this.type,
         event: SubEventType.EDIT_CERTAIN,
         data: { id, index: currentIndex, position: _position },
@@ -394,12 +395,12 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
     }, ScreenSpaceEventType.LEFT_UP)
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const position = super.getPointOnEllipsoid(endPosition)
+      const position = super._getPointOnEllipsoid(endPosition)
       if (!position || !currentPoint) return
       ;(currentPoint.position as ConstantPositionProperty).setValue(position)
       positions.splice(currentIndex, 1, position)
       lastPos = position
-      this.eventBus.emit(SubEventType.EDIT_MOVE, {
+      this._eventBus.emit(SubEventType.EDIT_MOVE, {
         type: this.type,
         event: SubEventType.EDIT_MOVE,
         data: { id, index: currentIndex, position },
@@ -408,12 +409,12 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
 
     return new Promise((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const _position = super.getPointOnEllipsoid(position)
-        const pick = this.scene.pick(position)
+        const _position = super._getPointOnEllipsoid(position)
+        const pick = this._scene.pick(position)
         if (!_position) return
         if (!pick || !tempPoints.some((entity) => entity.id === pick.id.id)) {
-          super.endEvent(handler)
-          const { control, shape } = this.computeArrow(positions, option)
+          super._endEvent(handler)
+          const { control, shape } = this.#computeArrow(positions, option)
           this.layer.add({
             id,
             positions: shape,
@@ -428,16 +429,16 @@ export class PincerArrowDynamic extends Dynamic<PolygonLayer<Dynamic.PincerArrow
             },
             data: { type: data.type, positions: control, attr: data.attr },
           })
-          ent && this.viewer.entities.remove(ent)
-          tempPoints.forEach((entity) => this.viewer.entities.remove(entity))
-          this.eventBus.emit(SubEventType.EDIT_FINISH, {
+          ent && this._viewer.entities.remove(ent)
+          tempPoints.forEach((entity) => this._viewer.entities.remove(entity))
+          this._eventBus.emit(SubEventType.EDIT_FINISH, {
             type: this.type,
             event: SubEventType.EDIT_FINISH,
             data: { id, positions },
           })
           resolve({ id, positions })
         } else {
-          super.setViewControl(false)
+          super._setViewControl(false)
           currentIndex = pick.id.id.split("_")[1]
           currentPoint = tempPoints[currentIndex]
         }

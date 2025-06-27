@@ -10,15 +10,16 @@ import {
   PrimitiveType,
   ShaderSource,
   Texture,
+  type Context,
 } from "cesium"
 import { segmentDrawVert, segmentDraw, fullscreenVert, trailDraw, screenDraw } from "shaders"
-import { Utils } from "utils"
 import { CustomPrimitive } from "./CustomPrimitive"
 import { ParticlesComputing } from "./ParticlesComputing"
 import { WindField } from "./WindField"
+import { PrivateUtils } from "utils/PrivateUtils"
 
 export class ParticlesRendering {
-  public textures?: {
+  textures?: {
     segmentsColor: Texture
     segmentsDepth: Texture
     currentTrailsColor: Texture
@@ -26,19 +27,19 @@ export class ParticlesRendering {
     nextTrailsColor: Texture
     nextTrailsDepth: Texture
   }
-  public framebuffers?: {
+  framebuffers?: {
     segments: Framebuffer
     currentTrails: Framebuffer
     nextTrails: Framebuffer
     [key: string]: Framebuffer
   }
-  public primitives?: {
+  primitives?: {
     segments: CustomPrimitive
     trails: CustomPrimitive
     screen: CustomPrimitive
   }
   constructor(
-    context: any,
+    context: Context,
     data: WindField.Data,
     params: WindField.Param,
     viewerParameters: WindField.ViewerParam,
@@ -50,7 +51,7 @@ export class ParticlesRendering {
   }
 
   //@ts-ignore
-  createRenderingTextures(context: any, data: WindField.Data) {
+  createRenderingTextures(context: Context, data: WindField.Data) {
     const colorTextureOptions = {
       context: context,
       width: context.drawingBufferWidth,
@@ -68,24 +69,28 @@ export class ParticlesRendering {
     }
 
     this.textures = {
-      segmentsColor: Utils.createTexture(colorTextureOptions),
-      segmentsDepth: Utils.createTexture(depthTextureOptions),
-      currentTrailsColor: Utils.createTexture(colorTextureOptions),
-      currentTrailsDepth: Utils.createTexture(depthTextureOptions),
-      nextTrailsColor: Utils.createTexture(colorTextureOptions),
-      nextTrailsDepth: Utils.createTexture(depthTextureOptions),
+      segmentsColor: PrivateUtils.createTexture(colorTextureOptions),
+      segmentsDepth: PrivateUtils.createTexture(depthTextureOptions),
+      currentTrailsColor: PrivateUtils.createTexture(colorTextureOptions),
+      currentTrailsDepth: PrivateUtils.createTexture(depthTextureOptions),
+      nextTrailsColor: PrivateUtils.createTexture(colorTextureOptions),
+      nextTrailsDepth: PrivateUtils.createTexture(depthTextureOptions),
     }
   }
 
-  createRenderingFramebuffers(context: any) {
+  createRenderingFramebuffers(context: Context) {
     this.framebuffers = {
-      segments: Utils.createFramebuffer(context, this.textures?.segmentsColor, this.textures?.segmentsDepth),
-      currentTrails: Utils.createFramebuffer(
+      segments: PrivateUtils.createFramebuffer(context, this.textures?.segmentsColor, this.textures?.segmentsDepth),
+      currentTrails: PrivateUtils.createFramebuffer(
         context,
         this.textures?.currentTrailsColor,
         this.textures?.currentTrailsDepth
       ),
-      nextTrails: Utils.createFramebuffer(context, this.textures?.nextTrailsColor, this.textures?.nextTrailsDepth),
+      nextTrails: PrivateUtils.createFramebuffer(
+        context,
+        this.textures?.nextTrailsColor,
+        this.textures?.nextTrailsDepth
+      ),
     }
   }
 
@@ -152,7 +157,7 @@ export class ParticlesRendering {
   }
 
   createRenderingPrimitives(
-    context: any,
+    context: Context,
     params: WindField.Param,
     viewerParameters: WindField.ViewerParam,
     particlesComputing: ParticlesComputing
@@ -195,7 +200,7 @@ export class ParticlesRendering {
         fragmentShaderSource: new ShaderSource({
           sources: [segmentDraw],
         }),
-        rawRenderState: Utils.createRawRenderState({
+        rawRenderState: PrivateUtils.createRawRenderState({
           viewport: undefined,
           depthTest: {
             enabled: true,
@@ -212,7 +217,7 @@ export class ParticlesRendering {
           position: 0,
           st: 1,
         },
-        geometry: Utils.getFullscreenQuad(),
+        geometry: PrivateUtils.getFullscreenQuad(),
         primitiveType: PrimitiveType.TRIANGLES,
         uniformMap: {
           segmentsColorTexture: () => {
@@ -240,7 +245,7 @@ export class ParticlesRendering {
           defines: ["DISABLE_LOG_DEPTH_FRAGMENT_WRITE"],
           sources: [trailDraw],
         }),
-        rawRenderState: Utils.createRawRenderState({
+        rawRenderState: PrivateUtils.createRawRenderState({
           viewport: undefined,
           depthTest: {
             enabled: true,
@@ -272,7 +277,7 @@ export class ParticlesRendering {
           position: 0,
           st: 1,
         },
-        geometry: Utils.getFullscreenQuad(),
+        geometry: PrivateUtils.getFullscreenQuad(),
         primitiveType: PrimitiveType.TRIANGLES,
         uniformMap: {
           trailsColorTexture: () => {
@@ -291,7 +296,7 @@ export class ParticlesRendering {
           defines: ["DISABLE_LOG_DEPTH_FRAGMENT_WRITE"],
           sources: [screenDraw],
         }),
-        rawRenderState: Utils.createRawRenderState({
+        rawRenderState: PrivateUtils.createRawRenderState({
           viewport: undefined,
           depthTest: {
             enabled: false,

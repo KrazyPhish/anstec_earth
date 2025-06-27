@@ -8,15 +8,16 @@ import {
   Texture,
   TextureMagnificationFilter,
   TextureMinificationFilter,
+  type Context,
 } from "cesium"
 import { calculateSpeed, updatePosition, postProcessingPosition } from "shaders"
-import { Utils } from "utils"
 import { CustomPrimitive } from "./CustomPrimitive"
 import { WindField } from "./WindField"
+import { PrivateUtils } from "utils/PrivateUtils"
 
 export class ParticlesComputing {
-  public windTextures?: { U: Texture; V: Texture; [key: string]: Texture }
-  public particlesTextures?: {
+  windTextures?: { U: Texture; V: Texture; [key: string]: Texture }
+  particlesTextures?: {
     previousParticlesPosition: Texture
     currentParticlesPosition: Texture
     nextParticlesPosition: Texture
@@ -24,21 +25,26 @@ export class ParticlesComputing {
     particlesSpeed: Texture
     [key: string]: Texture
   }
-  public data: WindField.Data
-  public primitives?: {
+  data: WindField.Data
+  primitives?: {
     calculateSpeed: CustomPrimitive
     updatePosition: CustomPrimitive
     postProcessingPosition: CustomPrimitive
   }
 
-  constructor(context: any, data: WindField.Data, params: WindField.Param, viewerParameters: WindField.ViewerParam) {
+  constructor(
+    context: Context,
+    data: WindField.Data,
+    params: WindField.Param,
+    viewerParameters: WindField.ViewerParam
+  ) {
     this.data = data
     this.createWindTextures(context, data)
     this.createParticlesTextures(context, params, viewerParameters)
     this.createComputingPrimitives(data, params, viewerParameters)
   }
 
-  createWindTextures(context: any, data: WindField.Data) {
+  createWindTextures(context: Context, data: WindField.Data) {
     const windTextureOptions = {
       context: context,
       width: data.dimensions.lon,
@@ -54,12 +60,12 @@ export class ParticlesComputing {
     const uArray = data.U.array as Float32Array
     const vArray = data.V.array as Float32Array
     this.windTextures = {
-      U: Utils.createTexture(windTextureOptions, uArray),
-      V: Utils.createTexture(windTextureOptions, vArray),
+      U: PrivateUtils.createTexture(windTextureOptions, uArray),
+      V: PrivateUtils.createTexture(windTextureOptions, vArray),
     }
   }
 
-  createParticlesTextures(context: any, params: WindField.Param, viewerParameters: WindField.ViewerParam) {
+  createParticlesTextures(context: Context, params: WindField.Param, viewerParameters: WindField.ViewerParam) {
     const particlesTextureOptions = {
       context: context,
       width: params.particlesTextureSize,
@@ -72,7 +78,7 @@ export class ParticlesComputing {
         magnificationFilter: TextureMagnificationFilter.NEAREST,
       }),
     }
-    const particlesArray = Utils.randomizeParticles(
+    const particlesArray = PrivateUtils.randomizeParticles(
       params.maxParticles as number,
       viewerParameters,
       this.data.lev.min,
@@ -81,11 +87,11 @@ export class ParticlesComputing {
     if (params.maxParticles) {
       const zeroArray = new Float32Array(4 * params.maxParticles).fill(0)
       this.particlesTextures = {
-        previousParticlesPosition: Utils.createTexture(particlesTextureOptions, particlesArray),
-        currentParticlesPosition: Utils.createTexture(particlesTextureOptions, particlesArray),
-        nextParticlesPosition: Utils.createTexture(particlesTextureOptions, particlesArray),
-        postProcessingPosition: Utils.createTexture(particlesTextureOptions, particlesArray),
-        particlesSpeed: Utils.createTexture(particlesTextureOptions, zeroArray),
+        previousParticlesPosition: PrivateUtils.createTexture(particlesTextureOptions, particlesArray),
+        currentParticlesPosition: PrivateUtils.createTexture(particlesTextureOptions, particlesArray),
+        nextParticlesPosition: PrivateUtils.createTexture(particlesTextureOptions, particlesArray),
+        postProcessingPosition: PrivateUtils.createTexture(particlesTextureOptions, particlesArray),
+        particlesSpeed: PrivateUtils.createTexture(particlesTextureOptions, zeroArray),
       }
     }
   }

@@ -20,12 +20,14 @@ import {
   type Scene,
   type Viewer,
 } from "cesium"
+import { singleton, generate, enumerable } from "decorators"
 import { CameraTool, Utils, State, Figure } from "utils"
-import { Draw } from "components/draw"
+import { ProtoDraw } from "components/draw"
 import { DrawType } from "enum"
 import { Geographic } from "components/coordinate"
 import { PolylineLayer, LabelLayer, PolygonLayer } from "components/layers"
 import type { Earth } from "components/Earth"
+import type { Destroyable } from "abstract"
 
 export namespace Measure {
   /**
@@ -209,42 +211,46 @@ export namespace Measure {
 
 const { max } = window.Math
 
+export interface Measure {
+  _isDestroyed: boolean
+}
+
 /**
  * @description 测量工具
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const measure = new Measure(earth)
- * //or
- * const measure = earth.useMeasure()
  * ```
  */
-export class Measure {
-  private destroyed: boolean = false
-  private viewer: Viewer
-  private camera: Camera
-  private scene: Scene
-  private drawTool: Draw
+@singleton()
+export class Measure implements Destroyable {
+  @generate(false) isDestroyed!: boolean
+  @enumerable(false) _drawTool: ProtoDraw
+  @enumerable(false) _label: LabelLayer
+  @enumerable(false) _polygon: PolygonLayer
+  @enumerable(false) _polyline: PolylineLayer
 
-  private label: LabelLayer
-  private polygon: PolygonLayer
-  private polyline: PolylineLayer
+  #earth: Earth
+  #viewer: Viewer
+  #camera: Camera
+  #scene: Scene
+  #cache = new Map<string, Set<string>>()
 
-  private cache = new Map<string, Set<string>>()
+  constructor(earth: Earth) {
+    this.#earth = earth
+    this.#viewer = earth.viewer
+    this.#camera = earth.viewer.camera
+    this.#scene = earth.viewer.scene
+    this._label = new LabelLayer(earth)
+    this._drawTool = new ProtoDraw(earth)
 
-  constructor(private earth: Earth) {
-    this.viewer = earth.viewer
-    this.camera = earth.viewer.camera
-    this.scene = earth.viewer.scene
-    this.label = new LabelLayer(earth)
-    this.drawTool = new Draw(earth)
-
-    this.polygon = new PolygonLayer(earth)
-    this.polyline = new PolylineLayer(earth)
+    this._polygon = new PolygonLayer(earth)
+    this._polyline = new PolylineLayer(earth)
   }
 
-  private async getSectionData(positions: Cartesian3[], inter: number) {
+  async _getSectionData(positions: Cartesian3[], inter: number) {
     let offset, x, y
     const geos: Geographic[] = positions.map((position) => Geographic.fromCartesian(position))
     const length = geos.length
@@ -257,16 +263,16 @@ export class Measure {
     }
     const interData: Cartographic[] = interGeos.map((g) => Cartographic.fromDegrees(g[0], g[1]))
 
-    if (!this.viewer.terrainProvider) {
+    if (!this.#viewer.terrainProvider) {
       throw new DeveloperError("Lack of terrian data, or load terrian failed.")
     } else {
-      const res = await sampleTerrainMostDetailed(this.viewer.terrainProvider, interData)
+      const res = await sampleTerrainMostDetailed(this.#viewer.terrainProvider, interData)
       return res.map((position) => Geographic.fromCartographic(position))
     }
   }
 
-  private getPointOnEllipsoid(point: Cartesian2) {
-    return CameraTool.PickPointOnEllipsoid(point, this.scene, this.camera)
+  #getPointOnEllipsoid(point: Cartesian2) {
+    return CameraTool.pickPointOnEllipsoid(point, this.#scene, this.#camera)
   }
 
   /**
@@ -275,13 +281,13 @@ export class Measure {
    * @returns {Promise<Measure.TriangleReturn>} 测量结果
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const measure = new Measure(earth)
    * const result = await measure.calcTriangle()
    * ```
    */
-  public calcTriangle({
-    id = Utils.RandomUUID(),
+  calcTriangle({
+    id = Utils.uuid(),
     color = Color.ORANGE,
     width = 1,
     labelFillColor = Color.RED,
@@ -291,7 +297,7 @@ export class Measure {
     module,
     labelText,
   }: Measure.Triangle): Promise<Measure.TriangleReturn> {
-    if (!this.viewer.terrainProvider.availability) {
+    if (!this.#viewer.terrainProvider.availability) {
       console.warn("Lack of terrain data, or load terrain failed. Triangle measuring makes no significance.")
     }
 
@@ -304,13 +310,13 @@ export class Measure {
     let spaceDistance: number
     let rhumbDistance: number
     let heightDifference: number
-    const handler = new ScreenSpaceEventHandler(this.viewer.canvas)
+    const handler = new ScreenSpaceEventHandler(this.#viewer.canvas)
 
     const computeThird = (start: Cartesian3, end: Cartesian3) => {
       const _start = Geographic.fromCartesian(start)
       const _end = Geographic.fromCartesian(end)
       let third: Geographic
-      if ((_start.height ?? 0) > (_end.height ?? 0)) {
+      if (_start.height > _end.height) {
         third = _end.clone()
         third.height = _start.height
       } else {
@@ -336,10 +342,10 @@ export class Measure {
     }
 
     State.start()
-    this.earth.container.style.cursor = "crosshair"
+    this.#earth.container.style.cursor = "crosshair"
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const point = this.getPointOnEllipsoid(endPosition)
+      const point = this.#getPointOnEllipsoid(endPosition)
       if (!point || !start) return
       tempEnd = point
       third = computeThird(start, tempEnd)
@@ -347,18 +353,18 @@ export class Measure {
       const _end = Geographic.fromCartesian(tempEnd)
       spaceDistance = Cartesian3.distance(start, tempEnd)
       rhumbDistance = Figure.CalcRhumbDistance(_start, _end)
-      heightDifference = _start.height ?? 0 - (_end.height ?? 0)
+      heightDifference = _start.height - _end.height
       const params = { spaceDistance, rhumbDistance, heightDifference }
       const _center = Figure.CalcMidPoint(_start, _end)
-      _center.height = max(_start.height ?? 0, _end.height ?? 0)
+      _center.height = max(_start.height, _end.height)
       const center = (_center as Geographic).toCartesian()
-      if (this.label.has(id)) {
-        this.label.set(id, {
+      if (this._label.has(id)) {
+        this._label.set(id, {
           position: center,
           text: labelText ? labelText(params) : formatText(params),
         })
       } else {
-        this.label.add({
+        this._label.add({
           id,
           module,
           position: center,
@@ -370,7 +376,7 @@ export class Measure {
         })
       }
       if (!ent && start) {
-        ent = this.viewer.entities.add({
+        ent = this.#viewer.entities.add({
           polyline: {
             positions: new CallbackProperty(() => {
               if (start.equals(third)) return [start, tempEnd]
@@ -385,7 +391,7 @@ export class Measure {
 
     return new Promise((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const point = this.getPointOnEllipsoid(position)
+        const point = this.#getPointOnEllipsoid(position)
         if (!point) return
         if (start && !end) end = point
         if (!start) start = point
@@ -393,11 +399,11 @@ export class Measure {
           third = computeThird(start, end)
           State.end()
           handler.destroy()
-          this.earth.container.style.cursor = "default"
+          this.#earth.container.style.cursor = "default"
           const clone = third.clone()
           // 防止地形失效时不能正确渲染图形
           clone.z += 1
-          this.polygon.add({
+          this._polygon.add({
             id,
             module,
             positions: [start, end, clone],
@@ -409,7 +415,7 @@ export class Measure {
               materialUniforms: { color, gapColor: Color.TRANSPARENT },
             },
           })
-          this.viewer.entities.remove(ent)
+          this.#viewer.entities.remove(ent)
           resolve({
             id,
             startPosition: start,
@@ -429,13 +435,13 @@ export class Measure {
    * @returns {Promise<Draw.PolylineReturn>} 测量点
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const measure = new Measure(earth)
    * const result = await measure.calcBearing()
    * ```
    */
-  public calcBearing({
-    id = Utils.RandomUUID(),
+  calcBearing({
+    id = Utils.uuid(),
     split = true,
     width = 2,
     labelFillColor = Color.RED,
@@ -451,18 +457,18 @@ export class Measure {
     let start: Cartesian3
     const points: Cartesian3[] = []
     const idCache: Set<string> = new Set()
-    this.cache.set(id, idCache)
+    this.#cache.set(id, idCache)
 
     const onFinish = (points: Cartesian3[]) => {
       const _id = `${points.length}_${id}`
-      this.label.remove(_id)
+      this._label.remove(_id)
       idCache.delete(_id)
     }
 
     const onEvery = (position: Cartesian3, index: number) => {
       if (index === 0) {
         start = position
-        this.label.add({
+        this._label.add({
           id,
           text: typeof headLabelText === "string" ? headLabelText : headLabelText(Geographic.fromCartesian(start)),
           position,
@@ -484,13 +490,13 @@ export class Measure {
       const lastPoint = split ? Geographic.fromCartesian(points[lastIndex]) : Geographic.fromCartesian(start)
       const currentPoint = Geographic.fromCartesian(position)
       const bearing = Figure.CalcBearing(lastPoint, currentPoint)
-      if (this.label.has(_id)) {
-        this.label.set(_id, {
+      if (this._label.has(_id)) {
+        this._label.set(_id, {
           text: nodeLabelText ? nodeLabelText(bearing) : `${bearing.toFixed(2)}°`,
           position,
         })
       } else {
-        this.label.add({
+        this._label.add({
           id: _id,
           text: nodeLabelText ? nodeLabelText(0) : "0°",
           position,
@@ -504,7 +510,7 @@ export class Measure {
       }
     }
 
-    return this.drawTool
+    return this._drawTool
       .draw(DrawType.POLYLINE, {
         id,
         module,
@@ -529,13 +535,13 @@ export class Measure {
    * @returns {Promise<Draw.PointReturn[]>} 测量结果
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const measure = new Measure(earth)
    * const result = await measure.calcCoordinate()
    * ```
    */
-  public calcCoordinate({
-    id = Utils.RandomUUID(),
+  calcCoordinate({
+    id = Utils.uuid(),
     color = Color.YELLOW,
     pointPixelSize = 10,
     labelFillColor = Color.RED,
@@ -555,7 +561,7 @@ export class Measure {
     const onFinish = (positions: Cartesian3[]) => {
       const position = positions[0]
       const geo = Geographic.fromCartesian(position)
-      this.label.add({
+      this._label.add({
         id,
         text: labelText ? labelText(geo) : formatText(geo),
         position: positions[0],
@@ -568,7 +574,7 @@ export class Measure {
       })
     }
 
-    return this.drawTool
+    return this._drawTool
       .draw(DrawType.POINT, {
         id,
         module,
@@ -590,13 +596,13 @@ export class Measure {
    * @returns {Promise<Draw.PolylineReturn>} 测量点
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const measure = new Measure(earth)
    * const result = await measure.groundDistance()
    * ```
    */
-  public groundDistance({
-    id = Utils.RandomUUID(),
+  groundDistance({
+    id = Utils.uuid(),
     split = true,
     width = 2,
     labelFillColor = Color.RED,
@@ -614,7 +620,7 @@ export class Measure {
     const points: Cartesian3[] = []
     const idCache: Set<string> = new Set()
 
-    this.cache.set(id, idCache)
+    this.#cache.set(id, idCache)
 
     const formatText = (distance: number) => {
       return `${distance.toFixed(2)}m`
@@ -627,14 +633,14 @@ export class Measure {
 
     const onFinish = (points: Cartesian3[]) => {
       const _id = `${points.length}_${id}`
-      this.label.remove(_id)
+      this._label.remove(_id)
       idCache.delete(_id)
     }
 
     const onEvery = async (position: Cartesian3, index: number) => {
       if (index === 0) {
         start = position
-        this.label.add({
+        this._label.add({
           id,
           text: formatHead(total),
           position,
@@ -652,10 +658,10 @@ export class Measure {
         const distance = await Figure.CalcGroundDistance(
           Geographic.fromCartesian(last),
           Geographic.fromCartesian(position),
-          this.scene,
-          this.viewer.terrainProvider
+          this.#scene,
+          this.#viewer.terrainProvider
         )
-        this.label.add({
+        this._label.add({
           id: _id,
           text: nodeLabelText ? nodeLabelText(distance) : formatText(distance),
           position,
@@ -669,15 +675,15 @@ export class Measure {
         total += await Figure.CalcGroundDistance(
           Geographic.fromCartesian(points[index - 1]),
           Geographic.fromCartesian(position),
-          this.scene,
-          this.viewer.terrainProvider
+          this.#scene,
+          this.#viewer.terrainProvider
         )
       }
       points.push(position)
-      this.label.set(id, { text: formatHead(total) })
+      this._label.set(id, { text: formatHead(total) })
     }
 
-    return this.drawTool
+    return this._drawTool
       .draw(DrawType.POLYLINE, {
         id,
         module,
@@ -701,13 +707,13 @@ export class Measure {
    * @returns {Promise<Draw.PolylineReturn>} 测量点
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const measure = new Measure(earth)
    * const result = await measure.spaceDistance()
    * ```
    */
-  public spaceDistance({
-    id = Utils.RandomUUID(),
+  spaceDistance({
+    id = Utils.uuid(),
     split = true,
     width = 2,
     labelFillColor = Color.RED,
@@ -725,7 +731,7 @@ export class Measure {
     const points: Cartesian3[] = []
     const idCache: Set<string> = new Set()
 
-    this.cache.set(id, idCache)
+    this.#cache.set(id, idCache)
 
     const formatText = (distance: number) => {
       return `${distance.toFixed(2)}m`
@@ -738,20 +744,20 @@ export class Measure {
 
     const onFinish = (points: Cartesian3[]) => {
       const _id = `${points.length}_${id}`
-      this.label.remove(_id)
+      this._label.remove(_id)
       idCache.delete(_id)
       total = points.reduce((prev, current, currentIndex, arr) => {
         const distance = currentIndex !== 0 ? Cartesian3.distance(arr[currentIndex - 1], current) : 0
         prev += distance
         return prev
       }, 0)
-      this.label.set(id, { text: formatHead(total) })
+      this._label.set(id, { text: formatHead(total) })
     }
 
     const onEvery = (position: Cartesian3, index: number) => {
       if (index === 0) {
         start = position
-        this.label.add({
+        this._label.add({
           id,
           text: formatHead(total),
           position,
@@ -772,13 +778,13 @@ export class Measure {
       idCache.add(_id)
       const last = split ? points[lastIndex] : start
       const distance = Cartesian3.distance(position, last)
-      if (this.label.has(_id)) {
-        this.label.set(_id, {
+      if (this._label.has(_id)) {
+        this._label.set(_id, {
           text: nodeLabelText ? nodeLabelText(distance) : formatText(distance),
           position,
         })
       } else {
-        this.label.add({
+        this._label.add({
           id: _id,
           text: nodeLabelText ? nodeLabelText(distance) : formatText(distance),
           position,
@@ -796,11 +802,11 @@ export class Measure {
         prev += distance
         return prev
       }, 0)
-      this.label.set(id, { text: formatHead(total) })
+      this._label.set(id, { text: formatHead(total) })
       points.pop()
     }
 
-    return this.drawTool
+    return this._drawTool
       .draw(DrawType.POLYLINE, {
         id,
         module,
@@ -825,13 +831,13 @@ export class Measure {
    * @returns {Promise<Draw.PolylineReturn>} 测量点
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const measure = new Measure(earth)
    * const result = await measure.heightDifference()
    * ```
    */
-  public heightDifference({
-    id = Utils.RandomUUID(),
+  heightDifference({
+    id = Utils.uuid(),
     width = 2,
     labelFillColor = Color.RED,
     labelOutlineColor = Color.RED,
@@ -847,18 +853,18 @@ export class Measure {
     const points: Cartesian3[] = []
     const idCache: Set<string> = new Set()
 
-    this.cache.set(id, idCache)
+    this.#cache.set(id, idCache)
 
     const onFinish = (points: Cartesian3[]) => {
       const _id = `${points.length}_${id}`
-      this.label.remove(_id)
+      this._label.remove(_id)
       idCache.delete(_id)
     }
 
     const onEvery = (position: Cartesian3, index: number) => {
       if (index === 0) {
         start = position
-        this.label.add({
+        this._label.add({
           id,
           text: typeof headLabelText === "string" ? headLabelText : headLabelText(Geographic.fromCartesian(start)),
           position,
@@ -877,16 +883,16 @@ export class Measure {
       if (lastIndex === -1) return
       const _id = `${lastIndex + 1}_${id}`
       idCache.add(_id)
-      const startHeight = Geographic.fromCartesian(start).height ?? 0
-      const currentHeight = Geographic.fromCartesian(position).height ?? 0
+      const startHeight = Geographic.fromCartesian(start).height
+      const currentHeight = Geographic.fromCartesian(position).height
       const distance = currentHeight - startHeight
-      if (this.label.has(_id)) {
-        this.label.set(_id, {
+      if (this._label.has(_id)) {
+        this._label.set(_id, {
           text: nodeLabelText ? nodeLabelText(distance) : `${distance.toFixed(2)}m`,
           position,
         })
       } else {
-        this.label.add({
+        this._label.add({
           id: _id,
           text: nodeLabelText ? nodeLabelText(0) : "0m",
           position,
@@ -900,7 +906,7 @@ export class Measure {
       }
     }
 
-    return this.drawTool
+    return this._drawTool
       .draw(DrawType.POLYLINE, {
         id,
         module,
@@ -925,13 +931,13 @@ export class Measure {
    * @returns {Promise<Draw.PolygonReturn>} 测量点
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const measure = new Measure(earth)
    * const result = await measure.spaceArea()
    * ```
    */
-  public spaceArea({
-    id = Utils.RandomUUID(),
+  spaceArea({
+    id = Utils.uuid(),
     color = Color.YELLOW.withAlpha(0.25),
     outlineColor = Color.YELLOW,
     outlineWidth = 1,
@@ -950,14 +956,14 @@ export class Measure {
       const _points = points.map((position) => Geographic.fromCartesian(position))
       _points.push(_points[0].clone())
       const area = Figure.CalcPolygonArea(_points)
-      const center = (Figure.CalcMassCenter(_points, true) as Geographic).toCartesian()
-      if (this.label.has(id)) {
-        this.label.set(id, {
+      const center = Figure.CalcMassCenter(_points, true).toCartesian()
+      if (this._label.has(id)) {
+        this._label.set(id, {
           text: formatText(area),
           position: center,
         })
       } else {
-        this.label.add({
+        this._label.add({
           id,
           text: formatText(area),
           position: center,
@@ -973,8 +979,8 @@ export class Measure {
       const _points = points.map((position) => Geographic.fromCartesian(position))
       _points.push(_points[0].clone())
       const area = Figure.CalcPolygonArea(_points)
-      const center = (Figure.CalcMassCenter(_points, true) as Geographic).toCartesian()
-      this.label.set(id, {
+      const center = Figure.CalcMassCenter(_points, true).toCartesian()
+      this._label.set(id, {
         text: formatText(area),
         position: center,
       })
@@ -985,14 +991,14 @@ export class Measure {
       const _points = points.map((position) => Geographic.fromCartesian(position))
       _points.push(_points[0].clone())
       const area = Figure.CalcPolygonArea(_points)
-      const center = (Figure.CalcMassCenter(_points, true) as Geographic).toCartesian()
-      this.label.set(id, {
+      const center = Figure.CalcMassCenter(_points, true).toCartesian()
+      this._label.set(id, {
         text: formatText(area),
         position: center,
       })
     }
 
-    return this.drawTool
+    return this._drawTool
       .draw(DrawType.POLYGON, {
         id,
         module,
@@ -1019,13 +1025,13 @@ export class Measure {
    * @exception A certain material type is required.
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const measure = new Measure(earth)
    * const result = await measure.sectionAnalyse()
    * ```
    */
-  public sectionAnalyse({
-    id = Utils.RandomUUID(),
+  sectionAnalyse({
+    id = Utils.uuid(),
     splits = 50,
     width = 2,
     materialType = "PolylineDash",
@@ -1071,17 +1077,17 @@ export class Measure {
     let start: Cartesian3
     let tempEnd: Cartesian3
     let end: Cartesian3
-    const handler = new ScreenSpaceEventHandler(this.viewer.canvas)
+    const handler = new ScreenSpaceEventHandler(this.#viewer.canvas)
 
     State.start()
-    this.earth.container.style.cursor = "crosshair"
+    this.#earth.container.style.cursor = "crosshair"
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const point = this.getPointOnEllipsoid(endPosition)
+      const point = this.#getPointOnEllipsoid(endPosition)
       if (!point || !start) return
       tempEnd = point
       if (!ent && start) {
-        ent = this.viewer.entities.add({
+        ent = this.#viewer.entities.add({
           polyline: {
             positions: new CallbackProperty(() => {
               return [start, tempEnd]
@@ -1096,15 +1102,15 @@ export class Measure {
 
     return new Promise((resolve) => {
       handler.setInputAction(async ({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const point = this.getPointOnEllipsoid(position)
+        const point = this.#getPointOnEllipsoid(position)
         if (!point) return
         if (start && !end) end = point
         if (!start) start = point
         if (start && end) {
           State.end()
-          this.earth.container.style.cursor = "default"
+          this.#earth.container.style.cursor = "default"
           handler.destroy()
-          this.polyline.add({
+          this._polyline.add({
             id,
             width,
             materialType,
@@ -1112,8 +1118,8 @@ export class Measure {
             ground: true,
             lines: [[start, end]],
           })
-          this.viewer.entities.remove(ent)
-          const interPoints = (await this.getSectionData([start, end], splits)) ?? []
+          this.#viewer.entities.remove(ent)
+          const interPoints = (await this._getSectionData([start, end], splits)) ?? []
           resolve({ id, positions: interPoints })
         }
       }, ScreenSpaceEventType.LEFT_CLICK)
@@ -1123,54 +1129,43 @@ export class Measure {
   /**
    * @description 清除所有测绘对象
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 按ID清除测绘对象
    * @param id ID
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
-      this.drawTool.remove(id)
-      this.label.remove(id)
-      this.polygon.remove(id)
-      this.polyline.remove(id)
-      const idCache = this.cache.get(id)
+      this._drawTool.remove(id)
+      this._label.remove(id)
+      this._polygon.remove(id)
+      this._polyline.remove(id)
+      const idCache = this.#cache.get(id)
       if (idCache) {
         idCache.forEach((str) => {
-          this.label.remove(str)
+          this._label.remove(str)
         })
-        this.cache.delete(id)
+        this.#cache.delete(id)
       }
     } else {
-      this.drawTool.remove()
-      this.label.remove()
-      this.polygon.remove()
-      this.polyline.remove()
-      this.cache.clear()
+      this._drawTool.remove()
+      this._label.remove()
+      this._polygon.remove()
+      this._polyline.remove()
+      this.#cache.clear()
     }
-  }
-
-  /**
-   * @description 获取销毁状态
-   */
-  public isDestroyed(): boolean {
-    return this.destroyed
   }
 
   /**
    * @description 销毁
    */
-  public destroy() {
-    if (this.destroyed) return
-    this.destroyed = true
+  destroy() {
+    if (this._isDestroyed) return
+    this._isDestroyed = true
     this.remove()
-    this.label.destroy()
-    this.polygon.destroy()
-    this.polyline.destroy()
-    this.camera = undefined as any
-    this.scene = undefined as any
-    this.viewer = undefined as any
-    this.earth = undefined as any
+    this._label.destroy()
+    this._polygon.destroy()
+    this._polyline.destroy()
   }
 }

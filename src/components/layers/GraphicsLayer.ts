@@ -1,3 +1,4 @@
+import { generate } from "decorators"
 import {
   BillboardLayer,
   EllipseLayer,
@@ -7,78 +8,82 @@ import {
   RectangleLayer,
 } from "components/layers"
 import type { Earth } from "components/Earth"
+import type { Destroyable } from "abstract"
+
+export interface GraphicsLayer {
+  _isDestroyed: boolean
+  _billboard: BillboardLayer
+  _ellipse: EllipseLayer
+  _point: PointLayer
+  _polygon: PolygonLayer
+  _polyline: PolylineLayer
+  _rectangle: RectangleLayer
+}
 
 /**
  * @description 默认提供图形类
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const layers = new GraphicsLayer(earth)
  * //or
- * const layers = earth.useDefaultLayers()
+ * const layers = earth.layers
  * ```
  */
-export class GraphicsLayer {
-  private destroyed: boolean = false
-  public billboard: BillboardLayer
-  public ellipse: EllipseLayer
-  public point: PointLayer
-  public polygon: PolygonLayer
-  public polyline: PolylineLayer
-  public rectangle: RectangleLayer
+export class GraphicsLayer implements Destroyable {
+  @generate(false) isDestroyed!: boolean
+  @generate() billboard!: BillboardLayer
+  @generate() ellipse!: EllipseLayer
+  @generate() point!: PointLayer
+  @generate() polygon!: PolygonLayer
+  @generate() polyline!: PolylineLayer
+  @generate() rectangle!: RectangleLayer
 
   constructor(earth: Earth) {
-    this.billboard = new BillboardLayer(earth)
-    this.ellipse = new EllipseLayer(earth)
-    this.point = new PointLayer(earth)
-    this.polygon = new PolygonLayer(earth)
-    this.polyline = new PolylineLayer(earth)
-    this.rectangle = new RectangleLayer(earth)
+    this._billboard = new BillboardLayer(earth)
+    this._ellipse = new EllipseLayer(earth)
+    this._point = new PointLayer(earth)
+    this._polygon = new PolygonLayer(earth)
+    this._polyline = new PolylineLayer(earth)
+    this._rectangle = new RectangleLayer(earth)
   }
 
   /**
    * @description 重置图层
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const layers = new GraphicsLayer(earth)
    * layers.reset()
    * ```
    */
-  public reset() {
-    this.billboard.remove()
-    this.ellipse.remove()
-    this.point.remove()
-    this.polygon.remove()
-    this.polyline.remove()
-    this.rectangle.remove()
+  reset() {
+    this._billboard.remove()
+    this._ellipse.remove()
+    this._point.remove()
+    this._polygon.remove()
+    this._polyline.remove()
+    this._rectangle.remove()
 
-    this.billboard.show()
-    this.ellipse.show()
-    this.point.show()
-    this.polygon.show()
-    this.polyline.show()
-    this.rectangle.show()
-  }
-
-  /**
-   * @description 获取销毁状态
-   */
-  public isDestroyed(): boolean {
-    return this.destroyed
+    this._billboard.show()
+    this._ellipse.show()
+    this._point.show()
+    this._polygon.show()
+    this._polyline.show()
+    this._rectangle.show()
   }
 
   /**
    * @description 销毁
    */
-  public destroy() {
-    if (this.destroyed) return
-    this.destroyed = true
-    this.billboard.destroy()
-    this.ellipse.destroy()
-    this.point.destroy()
-    this.polygon.destroy()
-    this.polyline.destroy()
-    this.rectangle.destroy()
+  destroy() {
+    if (this._isDestroyed) return
+    this._isDestroyed = true
+    this._billboard.destroy()
+    this._ellipse.destroy()
+    this._point.destroy()
+    this._polygon.destroy()
+    this._polyline.destroy()
+    this._rectangle.destroy()
   }
 }

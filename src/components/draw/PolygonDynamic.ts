@@ -12,16 +12,17 @@ import {
 } from "cesium"
 import { PolygonLayer } from "components/layers"
 import { DrawType, DefaultModuleName, SubEventType } from "enum"
-import { Dynamic } from "./Dynamic"
+import { Dynamic } from "abstract"
 import { Utils, State } from "utils"
 import type { Draw } from "./Draw"
 import type { Earth } from "components/Earth"
 
 /**
  * @description 动态绘制多边形
+ * @extends Dynamic {@link Dynamic} 动态绘制基类
  */
 export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
-  public type: string = "Polygon"
+  type: string = "Polygon"
   constructor(earth: Earth) {
     super(earth, new PolygonLayer(earth))
   }
@@ -30,7 +31,7 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
    * @description 添加可编辑对象
    * @param option 新增参数以及可编辑附加数据
    */
-  public add(option: PolygonLayer.AddParam<Dynamic.Polygon>) {
+  add(option: PolygonLayer.AddParam<Dynamic.Polygon>) {
     this.layer.add(option)
   }
 
@@ -39,8 +40,8 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
    * @param param {@link Draw.Polygon} 画多边形参数
    * @returns 多边形点的坐标
    */
-  public draw({
-    id = Utils.RandomUUID(),
+  draw({
+    id = Utils.uuid(),
     module = DefaultModuleName.POLYGON,
     color = Color.RED.withAlpha(0.4),
     outlineColor = Color.RED.withAlpha(0.4),
@@ -63,18 +64,18 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
 
     const hierarchy = new PolygonHierarchy(points)
 
-    const handler = super.startEvent()
+    const handler = super._startEvent()
 
-    this.cacheHandler = handler
+    this._cacheHandler = handler
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
       const _position = new Cartesian2(endPosition.x + 0.000001, endPosition.y + 0.000001)
-      const point = super.getPointOnEllipsoid(_position)
+      const point = super._getPointOnEllipsoid(_position)
       if (!point) return
       points.pop()
       points.push(point)
       onMove?.(point, index)
-      this.eventBus.emit(SubEventType.DRAW_MOVE, {
+      this._eventBus.emit(SubEventType.DRAW_MOVE, {
         type: this.type,
         event: SubEventType.DRAW_MOVE,
         data: { id, index, position: point },
@@ -83,22 +84,22 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
 
     return new Promise<Draw.PolygonReturn>((resolve, reject) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const point = super.getPointOnEllipsoid(position)
+        const point = super._getPointOnEllipsoid(position)
         if (point) {
           index++
           points.push(point)
           onEvery?.(point, index)
-          this.eventBus.emit(SubEventType.DRAW_CERTAIN, {
+          this._eventBus.emit(SubEventType.DRAW_CERTAIN, {
             type: this.type,
             event: SubEventType.DRAW_CERTAIN,
             data: { id, index, position: point },
           })
         } else {
-          super.endEvent(handler)
+          super._endEvent(handler)
           reject("Please choose a point from earth.")
         }
         if (!tempLine && points.length === 2) {
-          tempLine = this.viewer.entities.add({
+          tempLine = this._viewer.entities.add({
             polyline: {
               positions: new CallbackProperty(() => {
                 return points
@@ -110,8 +111,8 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
           })
         }
         if (!ent && points.length > 2) {
-          this.viewer.entities.remove(tempLine)
-          this.cacheEntity = ent = this.viewer.entities.add({
+          this._viewer.entities.remove(tempLine)
+          this._cacheEntity = ent = this._viewer.entities.add({
             polygon: {
               hierarchy: new CallbackProperty(() => {
                 return hierarchy
@@ -130,9 +131,9 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
       handler.setInputAction(() => {
         points.pop()
         if (points.length < 3) {
-          tempLine && this.viewer.entities.remove(tempLine)
-          ent && this.viewer.entities.remove(ent)
-          super.endEvent(handler)
+          tempLine && this._viewer.entities.remove(tempLine)
+          ent && this._viewer.entities.remove(ent)
+          super._endEvent(handler)
           reject("Polygon needs at least three vertexes.")
         } else {
           const polygon = { id, positions: points }
@@ -156,11 +157,11 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
               },
             })
           }
-          tempLine && this.viewer.entities.remove(tempLine)
-          ent && this.viewer.entities.remove(ent)
-          super.endEvent(handler)
+          tempLine && this._viewer.entities.remove(tempLine)
+          ent && this._viewer.entities.remove(ent)
+          super._endEvent(handler)
           onFinish?.(points)
-          this.eventBus.emit(SubEventType.DRAW_FINISH, {
+          this._eventBus.emit(SubEventType.DRAW_FINISH, {
             type: this.type,
             event: SubEventType.DRAW_FINISH,
             data: { ...polygon },
@@ -176,7 +177,7 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
    * @param id 目标ID
    * @returns
    */
-  public edit(id: string): Promise<Draw.PolygonReturn> {
+  edit(id: string): Promise<Draw.PolygonReturn> {
     const data: Dynamic.Polygon | undefined = this.layer.getEntity(id)?.data.data
     if (!data) {
       return new Promise((_, reject) => reject(`Object ${id} does not exist.`))
@@ -185,7 +186,7 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
         reject("Another drawing or editing is in progress, end it first.")
       })
     }
-    const handler = super.startEvent()
+    const handler = super._startEvent()
     const tempPoints: Entity[] = []
     const positions: Cartesian3[] = [...data.positions]
     let ent: Entity
@@ -197,7 +198,7 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
 
     data.positions.forEach((value, index) => {
       tempPoints.push(
-        this.viewer.entities.add({
+        this._viewer.entities.add({
           id: `ModifyPoint_${index}`,
           position: value,
           point: {
@@ -210,7 +211,7 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
       )
     })
 
-    ent = this.viewer.entities.add({
+    ent = this._viewer.entities.add({
       polygon: {
         hierarchy: new CallbackProperty(() => {
           return hierarchy
@@ -226,11 +227,11 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
 
     handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
       if (!currentPoint) return
-      const _position = super.getPointOnEllipsoid(position) ?? lastPos
+      const _position = super._getPointOnEllipsoid(position) ?? lastPos
       ;(currentPoint.position as ConstantPositionProperty).setValue(_position)
       positions.splice(currentIndex, 1, _position)
       currentPoint = undefined
-      this.eventBus.emit(SubEventType.EDIT_CERTAIN, {
+      this._eventBus.emit(SubEventType.EDIT_CERTAIN, {
         type: this.type,
         event: SubEventType.EDIT_CERTAIN,
         data: { id, index: currentIndex, position: _position },
@@ -238,12 +239,12 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
     }, ScreenSpaceEventType.LEFT_UP)
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const position = super.getPointOnEllipsoid(endPosition)
+      const position = super._getPointOnEllipsoid(endPosition)
       if (!position || !currentPoint) return
       ;(currentPoint.position as ConstantPositionProperty).setValue(position)
       positions.splice(currentIndex, 1, position)
       lastPos = position
-      this.eventBus.emit(SubEventType.EDIT_MOVE, {
+      this._eventBus.emit(SubEventType.EDIT_MOVE, {
         type: this.type,
         event: SubEventType.EDIT_MOVE,
         data: { id, position },
@@ -252,11 +253,11 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
 
     return new Promise((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const _position = super.getPointOnEllipsoid(position)
-        const pick = this.scene.pick(position)
+        const _position = super._getPointOnEllipsoid(position)
+        const pick = this._scene.pick(position)
         if (!_position) return
         if (!pick || !tempPoints.some((entity) => entity.id === pick.id.id)) {
-          super.endEvent(handler)
+          super._endEvent(handler)
           this.layer.add({
             id,
             positions,
@@ -271,16 +272,16 @@ export class PolygonDynamic extends Dynamic<PolygonLayer<Dynamic.Polygon>> {
             },
             data: { type: data.type, positions, attr: data.attr },
           })
-          ent && this.viewer.entities.remove(ent)
-          tempPoints.forEach((entity) => this.viewer.entities.remove(entity))
-          this.eventBus.emit(SubEventType.EDIT_FINISH, {
+          ent && this._viewer.entities.remove(ent)
+          tempPoints.forEach((entity) => this._viewer.entities.remove(entity))
+          this._eventBus.emit(SubEventType.EDIT_FINISH, {
             type: this.type,
             event: SubEventType.EDIT_FINISH,
             data: { id, positions },
           })
           resolve({ id, positions })
         } else {
-          super.setViewControl(false)
+          super._setViewControl(false)
           currentIndex = pick.id.id.split("_")[1]
           currentPoint = tempPoints[currentIndex]
         }

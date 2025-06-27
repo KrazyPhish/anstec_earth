@@ -12,8 +12,8 @@ import {
 import { Geographic } from "components/coordinate"
 import { PolygonLayer } from "components/layers"
 import { DefaultModuleName, SubEventType, DrawType } from "enum"
+import { Dynamic } from "abstract"
 import { Figure, Utils, State } from "utils"
-import { Dynamic } from "./Dynamic"
 import type { Earth } from "components/Earth"
 import type { Draw } from "./Draw"
 
@@ -29,16 +29,18 @@ type OptionParam = {
 
 const { pow, sin, PI } = window.Math
 
+//TODO fix ground finish error
 /**
  * @description 动态绘制攻击箭头
+ * @extends Dynamic {@link Dynamic} 动态绘制基类
  */
 export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow>> {
-  public type: string = "Attack_Arrow"
+  type: string = "Attack_Arrow"
   constructor(earth: Earth) {
     super(earth, new PolygonLayer(earth))
   }
 
-  private computeHeadPoints(t: [number, number][], o: [number, number], e: [number, number], option: OptionParam) {
+  #computeHeadPoints(t: number[][], o: number[], e: number[], option: OptionParam) {
     const { headHeightFactor, headTailFactor, headWidthFactor, neckWidthFactor, neckHeightFactor } = option
     let r = pow(Figure.CalcMathDistance(t), 0.99)
     let n = r * headHeightFactor
@@ -61,7 +63,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
     return [d, p, g, h, f]
   }
 
-  private computeBodyPoints<T extends [number, number]>(t: T[], o: T, e: T, r: number) {
+  #computeBodyPoints<T extends number[]>(t: T[], o: T, e: T, r: number) {
     let l = 0
     const u = []
     const c = []
@@ -82,10 +84,10 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
     return u.concat(c)
   }
 
-  private computeQBPoints(t: [number, number][]) {
+  #computeQBPoints(t: number[][]) {
     if (t.length <= 2) return t
     const o = 2
-    const e: [number, number][] = []
+    const e: number[][] = []
     const r = t.length - o - 1
     e.push(t[0])
     for (let n = 0; r >= n; n++) {
@@ -93,7 +95,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
         let i = 0
         let y = 0
         for (let s = 0; o >= s; s++) {
-          const a = this.getQuadricBSplineFactor(s, g)
+          const a = this.#getQuadricBSplineFactor(s, g)
           i += a * t[n + s][0]
           y += a * t[n + s][1]
         }
@@ -104,23 +106,20 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
     return e
   }
 
-  private getQuadricBSplineFactor(t: number, o: number) {
+  #getQuadricBSplineFactor(t: number, o: number) {
     return t === 0 ? pow(o - 1, 2) / 2 : t === 1 ? (-2 * pow(o, 2) + 2 * o + 1) / 2 : t === 2 ? pow(o, 2) / 2 : 0
   }
 
-  private computeArrow(positions: Cartesian3[], option: OptionParam) {
+  #computeArrow(positions: Cartesian3[], option: OptionParam) {
     const { tailWidthFactor, swallowTailFactor } = option
-    const points: [number, number][] = positions.map((p) => {
-      const { longitude, latitude } = Geographic.fromCartesian(p)
-      return [longitude, latitude]
-    })
+    const points: number[][] = positions.map((p) => Geographic.fromCartesian(p).toArray())
     let [e, r] = points
     if (Figure.CrossProduct(points[0], points[1], points[2]) < 0) {
       ;[r, e] = points
     }
     const n = [(e[0] + r[0]) / 2, (e[1] + r[1]) / 2]
-    const g = [n].concat(points.slice(2)) as [number, number][]
-    const i = this.computeHeadPoints(g, e, r, option)
+    const g = [n].concat(points.slice(2))
+    const i = this.#computeHeadPoints(g, e, r, option)
     const s = i[0]
     const a = i[4]
     const l = Figure.CalcMathDistance([e, r])
@@ -128,14 +127,14 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
     const c = u * tailWidthFactor * swallowTailFactor
     const swallowTailPoint = Figure.CalcThirdPoint(g[1], g[0], 0, c, true)
     const p = l / u
-    const h = this.computeBodyPoints(g, s, a, p)
+    const h = this.#computeBodyPoints(g, s, a, p)
     const t = h.length
     const d = [e].concat(h.slice(0, t / 2))
     d.push(s)
     const f = [r].concat(h.slice(t / 2, t))
     f.push(a)
-    const _d = this.computeQBPoints(d)
-    const _f = this.computeQBPoints(f)
+    const _d = this.#computeQBPoints(d)
+    const _f = this.#computeQBPoints(f)
     const arr = _d.concat(i, _f.reverse(), [swallowTailPoint, _d[0]]).flat()
     return {
       control: positions,
@@ -147,7 +146,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
    * @description 添加可编辑对象
    * @param option 新增参数以及可编辑附加数据
    */
-  public add(option: PolygonLayer.AddParam<Dynamic.AttackArrow>) {
+  add(option: PolygonLayer.AddParam<Dynamic.AttackArrow>) {
     this.layer.add(option)
   }
 
@@ -156,8 +155,8 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
    * @param param {@link Draw.AttackArrow} 画箭头参数
    * @returns 攻击发起点和沿途选点的坐标
    */
-  public draw({
-    id = Utils.RandomUUID(),
+  draw({
+    id = Utils.uuid(),
     module = DefaultModuleName.ATTACK_ARROW,
     headHeightFactor = 0.18,
     headWidthFactor = 0.3,
@@ -191,16 +190,16 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
       swallowTailFactor,
     }
     const points: Cartesian3[] = []
-    const handler = super.startEvent()
+    const handler = super._startEvent()
 
-    this.cacheHandler = handler
+    this._cacheHandler = handler
 
     handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-      const point = super.getPointOnEllipsoid(position)
+      const point = super._getPointOnEllipsoid(position)
       if (!point) return
       points.push(point)
       onEvery?.(point, points.length - 1)
-      this.eventBus.emit(SubEventType.DRAW_CERTAIN, {
+      this._eventBus.emit(SubEventType.DRAW_CERTAIN, {
         type: this.type,
         event: SubEventType.DRAW_CERTAIN,
         data: { id, index: points.length - 1, position: point },
@@ -208,16 +207,16 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
     }, ScreenSpaceEventType.LEFT_CLICK)
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const point = super.getPointOnEllipsoid(endPosition)
+      const point = super._getPointOnEllipsoid(endPosition)
       if (!point || points.length < 2) return
       lastPoint = point
       if (points.length > 2) points.pop()
       points.push(point)
       if (!ent) {
-        this.cacheEntity = ent = this.viewer.entities.add({
+        this._cacheEntity = ent = this._viewer.entities.add({
           polygon: {
             hierarchy: new CallbackProperty(() => {
-              return new PolygonHierarchy(this.computeArrow(points, option).shape)
+              return new PolygonHierarchy(this.#computeArrow(points, option).shape)
             }, false),
             material: color,
             outline: true,
@@ -227,7 +226,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
           },
         })
       }
-      this.eventBus.emit(SubEventType.DRAW_MOVE, {
+      this._eventBus.emit(SubEventType.DRAW_MOVE, {
         type: this.type,
         event: SubEventType.DRAW_MOVE,
         data: { id, position: point },
@@ -236,16 +235,16 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
 
     return new Promise<Draw.AttackArrowReturn>((resolve, reject) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const point = super.getPointOnEllipsoid(position) ?? lastPoint
+        const point = super._getPointOnEllipsoid(position) ?? lastPoint
         points.pop()
         points.push(point)
         if (points.length <= 2) {
           reject("Attck arrow needs at least three points.")
-          super.endEvent(handler)
-          this.viewer.entities.remove(ent)
+          super._endEvent(handler)
+          this._viewer.entities.remove(ent)
           return
         }
-        const { shape, control } = this.computeArrow(points, option)
+        const { shape, control } = this.#computeArrow(points, option)
         if (keep) {
           this.layer.add({
             id,
@@ -273,10 +272,10 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
             },
           })
         }
-        super.endEvent(handler)
-        this.viewer.entities.remove(ent)
+        super._endEvent(handler)
+        this._viewer.entities.remove(ent)
         onFinish?.(points)
-        this.eventBus.emit(SubEventType.DRAW_FINISH, {
+        this._eventBus.emit(SubEventType.DRAW_FINISH, {
           type: this.type,
           event: SubEventType.DRAW_FINISH,
           data: { id, positions: points },
@@ -291,7 +290,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
    * @param id 目标ID
    * @returns
    */
-  public edit(id: string): Promise<Draw.AttackArrowReturn> {
+  edit(id: string): Promise<Draw.AttackArrowReturn> {
     const data: Dynamic.AttackArrow | undefined = this.layer.getEntity(id)?.data.data
     if (!data) {
       return new Promise((_, reject) => reject(`Object ${id} does not exist.`))
@@ -301,7 +300,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
       })
     }
 
-    const handler = super.startEvent()
+    const handler = super._startEvent()
     const tempPoints: Entity[] = []
     const positions: Cartesian3[] = [...data.positions]
     const option = {
@@ -320,7 +319,7 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
 
     data.positions.forEach((value, index) => {
       tempPoints.push(
-        this.viewer.entities.add({
+        this._viewer.entities.add({
           id: `ModifyPoint_${index}`,
           position: value,
           point: {
@@ -333,10 +332,10 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
       )
     })
 
-    ent = this.viewer.entities.add({
+    ent = this._viewer.entities.add({
       polygon: {
         hierarchy: new CallbackProperty(() => {
-          const polygon = this.computeArrow(positions, option).shape
+          const polygon = this.#computeArrow(positions, option).shape
           return new PolygonHierarchy(polygon)
         }, false),
         material: data.attr.color,
@@ -350,11 +349,11 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
 
     handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
       if (!currentPoint) return
-      const _position = super.getPointOnEllipsoid(position) ?? lastPos
+      const _position = super._getPointOnEllipsoid(position) ?? lastPos
       ;(currentPoint.position as ConstantPositionProperty).setValue(_position)
       positions.splice(currentIndex, 1, _position)
       currentPoint = undefined
-      this.eventBus.emit(SubEventType.EDIT_CERTAIN, {
+      this._eventBus.emit(SubEventType.EDIT_CERTAIN, {
         type: this.type,
         event: SubEventType.EDIT_CERTAIN,
         data: { id, index: currentIndex, position: _position },
@@ -362,12 +361,12 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
     }, ScreenSpaceEventType.LEFT_UP)
 
     handler.setInputAction(({ endPosition }: ScreenSpaceEventHandler.MotionEvent) => {
-      const position = super.getPointOnEllipsoid(endPosition)
+      const position = super._getPointOnEllipsoid(endPosition)
       if (!position || !currentPoint) return
       ;(currentPoint.position as ConstantPositionProperty).setValue(position)
       positions.splice(currentIndex, 1, position)
       lastPos = position
-      this.eventBus.emit(SubEventType.EDIT_MOVE, {
+      this._eventBus.emit(SubEventType.EDIT_MOVE, {
         type: this.type,
         event: SubEventType.EDIT_MOVE,
         data: { id, index: currentIndex, position },
@@ -376,12 +375,12 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
 
     return new Promise((resolve) => {
       handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
-        const _position = super.getPointOnEllipsoid(position)
-        const pick = this.scene.pick(position)
+        const _position = super._getPointOnEllipsoid(position)
+        const pick = this._scene.pick(position)
         if (!_position) return
         if (!pick || !tempPoints.some((entity) => entity.id === pick.id.id)) {
-          super.endEvent(handler)
-          const { control, shape } = this.computeArrow(positions, option)
+          super._endEvent(handler)
+          const { control, shape } = this.#computeArrow(positions, option)
           this.layer.add({
             id,
             positions: shape,
@@ -396,16 +395,16 @@ export class AttackArrowDynamic extends Dynamic<PolygonLayer<Dynamic.AttackArrow
             },
             data: { type: data.type, positions: control, attr: data.attr },
           })
-          ent && this.viewer.entities.remove(ent)
-          tempPoints.forEach((entity) => this.viewer.entities.remove(entity))
-          this.eventBus.emit(SubEventType.EDIT_FINISH, {
+          ent && this._viewer.entities.remove(ent)
+          tempPoints.forEach((entity) => this._viewer.entities.remove(entity))
+          this._eventBus.emit(SubEventType.EDIT_FINISH, {
             type: this.type,
             event: SubEventType.EDIT_FINISH,
             data: { id, positions },
           })
           resolve({ id, positions })
         } else {
-          super.setViewControl(false)
+          super._setViewControl(false)
           currentIndex = pick.id.id.split("_")[1]
           currentPoint = tempPoints[currentIndex]
         }

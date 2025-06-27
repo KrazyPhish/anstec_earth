@@ -16,14 +16,17 @@ import {
   ScreenSpaceEventType,
   Transforms,
   VerticalOrigin,
+  type Camera,
   type DistanceDisplayCondition,
   type HeightReference,
+  type Scene,
 } from "cesium"
 import { EllipsoidLayer } from "./EllipsoidLayer"
 import { LabelLayer } from "./LabelLayer"
-import { Layer } from "./Layer"
+import { Labeled, Layer } from "abstract"
 import { Utils } from "utils"
 import { ViewAngle } from "enum"
+import { generate, is, validate } from "decorators"
 import type { Earth } from "components/Earth"
 
 const { sqrt, floor } = window.Math
@@ -136,33 +139,42 @@ export namespace ModelLayer {
   }
 }
 
+export interface ModelLayer<T = unknown> {
+  _labelLayer: LabelLayer<T>
+  _envelope: EllipsoidLayer<T>
+}
+
 /**
  * @description 模型图层
  * @extends Layer {@link Layer} 图层基类
  * @param earth {@link Earth} 地球实例
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const modelLayer = new ModelLayer(earth)
- * //or
- * const modelLayer = earth.useDefaultLayers().model
  * ```
  */
-export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, ModelLayer.Data<T>> {
-  public labelLayer: LabelLayer<T>
+export class ModelLayer<T = unknown>
+  extends Layer<PrimitiveCollection, Model, ModelLayer.Data<T>>
+  implements Labeled<T>
+{
+  @generate() labelLayer!: LabelLayer<T>
   /**
    * @description 模型包络
    */
-  private envelope: EllipsoidLayer<T>
-
+  @generate() envelope!: EllipsoidLayer<T>
+  #scene: Scene
+  #camera: Camera
   constructor(earth: Earth) {
     super(earth, new PrimitiveCollection())
-    this.labelLayer = new LabelLayer(earth)
-    this.envelope = new EllipsoidLayer(earth)
+    this._labelLayer = new LabelLayer(earth)
+    this._envelope = new EllipsoidLayer(earth)
+    this.#camera = earth.camera
+    this.#scene = earth.scene
   }
 
-  private getDefaultOption({
-    id = Utils.RandomUUID(),
+  #getDefaultOption({
+    id = Utils.uuid(),
     module,
     url,
     position,
@@ -184,7 +196,7 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
     const modelMatrix = Transforms.headingPitchRollToFixedFrame(position, hpr)
     const option = {
       model: {
-        id: Utils.EncodeId(id, module),
+        id: Utils.encode(id, module),
         url,
         show,
         scale,
@@ -225,8 +237,8 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
   /**
    * @description 当前模型包络集合的二维投影计算
    */
-  public calcEnvProjection() {
-    this.envelope.calcEnvProjection()
+  calcEnvProjection() {
+    this._envelope.calcEnvProjection()
   }
 
   /**
@@ -234,7 +246,7 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
    * @param param {@link ModelLayer.AddParam} 模型参数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const modelLayer = new ModelLayer(earth)
    * modelLayer.add({
    *  url: "/Plane.glb",
@@ -255,27 +267,28 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
    * })
    * ```
    */
-  public async add(param: ModelLayer.AddParam<T>) {
+  @validate
+  async add(@is(Cartesian3, "position") param: ModelLayer.AddParam<T>) {
     const {
       data,
       position,
       hpr = HeadingPitchRoll.fromDegrees(0, 0, 0),
       animationLoop = ModelAnimationLoop.REPEAT,
     } = param
-    const { model, label, envelope } = this.getDefaultOption(param)
+    const { model, label, envelope } = this.#getDefaultOption(param)
 
     const mo = await Model.fromGltfAsync(model)
     mo.readyEvent.addEventListener(() => {
       mo.activeAnimations.addAll({ loop: animationLoop })
     })
 
-    super.save(Utils.DecodeId(mo.id).id, {
+    super._save(Utils.decode(mo.id).id, {
       primitive: mo,
       data: { position, hpr, data, module: param.module },
     })
 
     if (label) {
-      this.labelLayer.add({
+      this._labelLayer.add({
         id: model.id,
         position,
         pixelOffset: new Cartesian2(0, -55),
@@ -284,7 +297,7 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
     }
 
     if (envelope) {
-      this.envelope.add({
+      this._envelope.add({
         id: model.id,
         ...envelope,
       })
@@ -296,7 +309,7 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
    * @param id ID
    * @param param {@link ModelLayer.SetParam} 模型参数
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const modelLayer = new ModelLayer(earth)
    * modelLayer.set("some_id", {
    *  position: Cartesian3.fromDegrees(104, 31, 5000),
@@ -304,8 +317,8 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
    * })
    * ```
    */
-  public set(id: string, param: ModelLayer.SetParam<T>) {
-    const mo = super.getEntity(id)
+  set(id: string, param: ModelLayer.SetParam<T>) {
+    const mo = this.getEntity(id)
 
     if (!mo || !mo.primitive) return
 
@@ -326,7 +339,7 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
         hpr: _hpr,
       })
 
-      this.envelope.set(id, {
+      this._envelope.set(id, {
         center: _position,
         hpr: _hpr,
       })
@@ -335,8 +348,8 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
     if (color) mo.primitive.color = color
     if (silhouetteColor) mo.primitive.silhouetteColor = silhouetteColor
     if (distanceDisplayCondition) mo.primitive.distanceDisplayCondition = distanceDisplayCondition
-    if (label) this.labelLayer.set(id, label)
-    if (envelope) this.envelope.set(id, envelope)
+    if (label) this._labelLayer.set(id, label)
+    if (envelope) this._envelope.set(id, envelope)
   }
 
   /**
@@ -345,7 +358,7 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
    * @returns 结束行动的函数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const modelLayer = new ModelLayer(earth)
    * const stop: Function = modelLayer.useAction({
    *  id: "some_id",
@@ -359,7 +372,7 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
    * stop()
    * ```
    */
-  public useAction({ id, path, split = 5, frequency = 40, loop = false, onActionEnd }: ModelLayer.ActionOptions) {
+  useAction({ id, path, split = 5, frequency = 40, loop = false, onActionEnd }: ModelLayer.ActionOptions) {
     if (!path || path.length < 2) {
       throw new Error("Positions are required at least two in 'path'.")
     }
@@ -413,7 +426,7 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
    * @returns 关闭视角跟踪的函数
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const modelLayer = new ModelLayer(earth)
    *
    * //first person view
@@ -426,36 +439,36 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
    * stop()
    * ```
    */
-  public usePersonView(id: string, option?: ModelLayer.ViewOptions) {
+  usePersonView(id: string, option?: ModelLayer.ViewOptions) {
     switch (option?.view) {
       case ViewAngle.FIRST: {
-        return this.useFirstPersonView(id, option?.sensitivity)
+        return this._useFirstPersonView(id, option?.sensitivity)
       }
       case ViewAngle.THIRD: {
-        return this.useThirdPersonView(id, option?.offset, option?.sensitivity)
+        return this._useThirdPersonView(id, option?.offset, option?.sensitivity)
       }
       default: {
-        return this.useThirdPersonView(id, option?.offset, option?.sensitivity)
+        return this._useThirdPersonView(id, option?.offset, option?.sensitivity)
       }
     }
   }
 
-  private useThirdPersonView(id: string, offset = new Cartesian3(50, 0, 20), sensitivity = 0.1) {
+  _useThirdPersonView(id: string, offset = new Cartesian3(50, 0, 20), sensitivity = 0.1) {
     const rotationZ = Math.PI
 
-    const model = super.getData(id)
+    const model = this.getData(id)
     if (!model) return () => {}
 
     const hpr = new HeadingPitchRoll(model.hpr.heading, 0, 0)
-    const removeListener = this.scene.preUpdate.addEventListener(() => {
+    const removeListener = this.#scene.preUpdate.addEventListener(() => {
       const angle = Matrix3.fromRotationZ(rotationZ)
       const rotation = Matrix4.fromRotationTranslation(angle)
       const moedlMatrix = Transforms.headingPitchRollToFixedFrame(model.position, hpr)
       Matrix4.multiply(moedlMatrix, rotation, moedlMatrix)
-      this.camera.lookAtTransform(moedlMatrix, offset)
+      this.#camera.lookAtTransform(moedlMatrix, offset)
     })
     let mouse: { x: number; y: number } | undefined
-    const handler = new ScreenSpaceEventHandler(this.viewer.canvas)
+    const handler = new ScreenSpaceEventHandler(this.#scene.canvas)
     handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
       mouse = { x: position.x, y: position.y }
     }, ScreenSpaceEventType.LEFT_DOWN)
@@ -481,32 +494,32 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
     }, ScreenSpaceEventType.WHEEL)
     const stop = () => {
       removeListener()
-      this.camera.lookAtTransform(Matrix4.IDENTITY)
+      this.#camera.lookAtTransform(Matrix4.IDENTITY)
       handler.destroy()
     }
     return stop
   }
 
-  private useFirstPersonView(id: string, sensitivity = 0.1) {
+  _useFirstPersonView(id: string, sensitivity = 0.1) {
     const rotationZ = Math.PI
     const offset = new Cartesian3(20, 0, 0)
 
-    const model = super.getEntity(id)
+    const model = this.getEntity(id)
     if (!model) return () => {}
 
     model.primitive.show = false
 
     const data = model.data
     const hpr = data.hpr.clone()
-    const removeListener = this.scene.preUpdate.addEventListener(() => {
+    const removeListener = this.#scene.preUpdate.addEventListener(() => {
       const angle = Matrix3.fromRotationZ(rotationZ)
       const rotation = Matrix4.fromRotationTranslation(angle)
       const moedlMatrix = Transforms.headingPitchRollToFixedFrame(data.position, hpr)
       Matrix4.multiply(moedlMatrix, rotation, moedlMatrix)
-      this.camera.lookAtTransform(moedlMatrix, offset)
+      this.#camera.lookAtTransform(moedlMatrix, offset)
     })
     let mouse: { x: number; y: number } | undefined
-    const handler = new ScreenSpaceEventHandler(this.viewer.canvas)
+    const handler = new ScreenSpaceEventHandler(this.#scene.canvas)
     handler.setInputAction(({ position }: ScreenSpaceEventHandler.PositionedEvent) => {
       mouse = { x: position.x, y: position.y }
     }, ScreenSpaceEventType.LEFT_DOWN)
@@ -533,7 +546,7 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
     const stop = () => {
       model.primitive.show = true
       removeListener()
-      this.camera.lookAtTransform(Matrix4.IDENTITY)
+      this.#camera.lookAtTransform(Matrix4.IDENTITY)
       handler.destroy()
     }
     return stop
@@ -542,63 +555,63 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
   /**
    * @description 隐藏所有模型
    */
-  public hide(): void
+  hide(): void
   /**
    * @description 隐藏所有模型
    * @param id 根据ID隐藏模型
    */
-  public hide(id: string): void
-  public hide(id?: string) {
+  hide(id: string): void
+  hide(id?: string) {
     if (id) {
       super.hide(id)
-      this.labelLayer.hide(id)
-      this.envelope.hide(id)
+      this._labelLayer.hide(id)
+      this._envelope.hide(id)
     } else {
       super.hide()
-      this.labelLayer.hide()
-      this.envelope.hide()
+      this._labelLayer.hide()
+      this._envelope.hide()
     }
   }
 
   /**
    * @description 显示所有模型
    */
-  public show(): void
+  show(): void
   /**
    * @description 显示所有模型
    * @param id 根据ID显示模型
    */
-  public show(id: string): void
-  public show(id?: string) {
+  show(id: string): void
+  show(id?: string) {
     if (id) {
       super.show(id)
-      this.labelLayer.show(id)
-      this.envelope.show(id)
+      this._labelLayer.show(id)
+      this._envelope.show(id)
     } else {
       super.show()
-      this.labelLayer.show()
-      this.envelope.show()
+      this._labelLayer.show()
+      this._envelope.show()
     }
   }
 
   /**
    * @description 移除所有模型
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 根据ID移除模型
    * @param id ID
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
       super.remove(id)
-      this.labelLayer.remove(id)
-      this.envelope.remove(id)
+      this._labelLayer.remove(id)
+      this._envelope.remove(id)
     } else {
       super.remove()
-      this.labelLayer.remove()
-      this.envelope.remove()
+      this._labelLayer.remove()
+      this._envelope.remove()
     }
   }
 
@@ -606,10 +619,10 @@ export class ModelLayer<T = unknown> extends Layer<PrimitiveCollection, Model, M
    * @description 销毁图层
    * @returns 返回`boolean`值
    */
-  public destroy(): boolean {
+  destroy(): boolean {
     if (super.destroy()) {
-      this.labelLayer.destroy()
-      this.envelope.destroy()
+      this._labelLayer.destroy()
+      this._envelope.destroy()
       return true
     } else return false
   }

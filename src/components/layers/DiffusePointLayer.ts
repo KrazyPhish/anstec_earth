@@ -1,6 +1,8 @@
-import { Viewer, Scene, Camera, Cartesian3, Color, Ellipsoid, EllipsoidalOccluder } from "cesium"
-import { Earth } from "components/Earth"
+import { type Viewer, type Scene, type Camera, Cartesian3, Color, Ellipsoid, EllipsoidalOccluder } from "cesium"
 import { Utils } from "utils"
+import { is, generate, validate } from "decorators"
+import { Destroyable, DestroyControl } from "abstract"
+import type { Earth } from "components/Earth"
 
 export namespace DiffusePointLayer {
   /**
@@ -45,55 +47,59 @@ export namespace DiffusePointLayer {
   }
 }
 
+export interface DiffusePointLayer<T = unknown> {
+  _isDestroyed: boolean
+  _allowDestroy: boolean
+  _cache: Map<string, DiffusePointLayer.Data<T>>
+}
+
 /**
  * @description 扩散点图层
  * @example
  * ```
- * const earth = useEarth()
+ * const earth = createEarth()
  * const diffusePointLayer = new DiffusePointLayer(earth)
  * ```
  */
-export class DiffusePointLayer<T = unknown> {
-  private destroyed: boolean = false
-  private allowDestroy: boolean = true
-  private viewer: Viewer
-  private scene: Scene
-  private camera: Camera
-  private cache: Map<string, DiffusePointLayer.Data<T>> = new Map()
+export class DiffusePointLayer<T = unknown> implements Destroyable, DestroyControl {
+  @generate(false) isDestroyed!: boolean
+  @generate(true) allowDestroy!: boolean
+  @generate(new Map()) cache!: Map<string, DiffusePointLayer.Data<T>>
+
+  #viewer: Viewer
+  #scene: Scene
+  #camera: Camera
   constructor(earth: Earth) {
-    this.viewer = earth.viewer
-    this.scene = earth.scene
-    this.camera = earth.camera
+    this.#viewer = earth.viewer
+    this.#scene = earth.scene
+    this.#camera = earth.camera
   }
 
   /**
    * @description 设置是否可被销毁
    * @param status
    */
-  public setAllowDestroy(status: boolean) {
-    this.allowDestroy = status
-  }
-
-  /**
-   * @description 获取是否可被销毁的属性
-   */
-  public getAllowDestroy() {
-    return this.allowDestroy
+  setAllowDestroy(status: boolean) {
+    this._allowDestroy = status
   }
 
   /**
    * @description 新增一个扩散点
    * @param param {@link DiffusePointLayer.AddParam} 参数
    */
-  public add({
-    id = Utils.RandomUUID(),
-    position,
-    className = [],
-    pixelSize = 10,
-    color = Color.RED,
-    strokeColor = Color.RED,
-    data,
-  }: DiffusePointLayer.AddParam<T>) {
+  @validate
+  add(
+    @is(Cartesian3, "position")
+    {
+      id = Utils.uuid(),
+      position,
+      className = [],
+      pixelSize = 10,
+      color = Color.RED,
+      strokeColor = Color.RED,
+      data,
+    }: DiffusePointLayer.AddParam<T>
+  ) {
     className.push("diffuse-point")
     const pointSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg")
     pointSVG.style.width = "100%"
@@ -102,30 +108,30 @@ export class DiffusePointLayer<T = unknown> {
     pointSVG.style.pointerEvents = "none"
     pointSVG.style.left = "0px"
     pointSVG.style.top = "0px"
-    this.viewer.container.appendChild(pointSVG)
+    this.#viewer.container.appendChild(pointSVG)
     const classG = className.join(" ")
     const stroke = strokeColor.toCssColorString()
     const fill = color.toCssColorString()
-    const canvasCoordinate = this.scene.cartesianToCanvasCoordinates(position)
-    const offset = this.scene.canvas.getBoundingClientRect()
+    const canvasCoordinate = this.#scene.cartesianToCanvasCoordinates(position)
+    const offset = this.#scene.canvas.getBoundingClientRect()
     const cx = canvasCoordinate.x + offset.left
     const cy = canvasCoordinate.y + offset.top
     pointSVG.innerHTML = `<circle class="${classG}" cx="${cx}" cy="${cy}" r="${pixelSize / 2}" stroke="${stroke}" fill="${fill}" />`
     const callback = () => {
-      const ent = this.cache.get(id)
+      const ent = this._cache.get(id)
       const _position = ent?.position ?? position
-      const canvasCoordinate = this.scene.cartesianToCanvasCoordinates(_position)
-      const offset = this.scene.canvas.getBoundingClientRect()
+      const canvasCoordinate = this.#scene.cartesianToCanvasCoordinates(_position)
+      const offset = this.#scene.canvas.getBoundingClientRect()
       const cx = canvasCoordinate.x + offset.left
       const cy = canvasCoordinate.y + offset.top
       pointSVG.children[0].setAttribute("cx", cx.toString())
       pointSVG.children[0].setAttribute("cy", cy.toString())
-      const cameraOccluder = new EllipsoidalOccluder(Ellipsoid.WGS84, this.camera.position)
+      const cameraOccluder = new EllipsoidalOccluder(Ellipsoid.WGS84, this.#camera.position)
       if (
         canvasCoordinate.x < 0 ||
         canvasCoordinate.y < 0 ||
-        canvasCoordinate.x > this.scene.canvas.clientWidth ||
-        canvasCoordinate.y > this.scene.canvas.clientHeight ||
+        canvasCoordinate.x > this.#scene.canvas.clientWidth ||
+        canvasCoordinate.y > this.#scene.canvas.clientHeight ||
         !cameraOccluder.isPointVisible(_position)
       ) {
         pointSVG.style.display = "none"
@@ -133,8 +139,8 @@ export class DiffusePointLayer<T = unknown> {
         pointSVG.style.display = "flex"
       }
     }
-    this.scene.preRender.addEventListener(callback)
-    this.cache.set(id, { pointSVG, position, data, callback })
+    this.#scene.preRender.addEventListener(callback)
+    this._cache.set(id, { pointSVG, position, data, callback })
   }
 
   /**
@@ -142,8 +148,8 @@ export class DiffusePointLayer<T = unknown> {
    * @param id ID
    * @param param {@link DiffusePointLayer.SetParam} 参数
    */
-  public set(id: string, { position, data }: DiffusePointLayer.SetParam<T>) {
-    const ent = this.cache.get(id)
+  set(id: string, { position, data }: DiffusePointLayer.SetParam<T>) {
+    const ent = this._cache.get(id)
     if (!ent) return
     if (position) ent.position = position
     if (data && ent.data) {
@@ -157,27 +163,27 @@ export class DiffusePointLayer<T = unknown> {
    * @description 获取附加数据
    * @param id ID
    */
-  public getData(id: string) {
-    return this.cache.get(id)?.data
+  getData(id: string) {
+    return this._cache.get(id)?.data
   }
 
   /**
    * @description 显示所有扩散点
    */
-  public show(): void
+  show(): void
   /**
    * @description 按ID显示扩散点
    * @param id ID
    */
-  public show(id: string): void
-  public show(id?: string) {
+  show(id: string): void
+  show(id?: string) {
     if (id) {
-      const ent = this.cache.get(id)
+      const ent = this._cache.get(id)
       if (ent) {
         ent.pointSVG.style.display = "flex"
       }
     } else {
-      this.cache.forEach((ent) => {
+      this._cache.forEach((ent) => {
         ent.pointSVG.style.display = "flex"
       })
     }
@@ -186,20 +192,20 @@ export class DiffusePointLayer<T = unknown> {
   /**
    * @description 隐藏所有扩散点
    */
-  public hide(): void
+  hide(): void
   /**
    * @description 按ID隐藏扩散点
    * @param id ID
    */
-  public hide(id: string): void
-  public hide(id?: string) {
+  hide(id: string): void
+  hide(id?: string) {
     if (id) {
-      const ent = this.cache.get(id)
+      const ent = this._cache.get(id)
       if (ent) {
         ent.pointSVG.style.display = "none"
       }
     } else {
-      this.cache.forEach((ent) => {
+      this._cache.forEach((ent) => {
         ent.pointSVG.style.display = "none"
       })
     }
@@ -208,50 +214,39 @@ export class DiffusePointLayer<T = unknown> {
   /**
    * @description 移除所有扩散点
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 按ID移除扩散点
    * @param id ID
    */
-  public remove(id: string): void
-  public remove(id?: string) {
+  remove(id: string): void
+  remove(id?: string) {
     if (id) {
-      const ent = this.cache.get(id)
+      const ent = this._cache.get(id)
       if (ent) {
-        this.viewer.container.removeChild(ent.pointSVG)
-        this.scene.preRender.removeEventListener(ent.callback)
+        this.#viewer.container.removeChild(ent.pointSVG)
+        this.#scene.preRender.removeEventListener(ent.callback)
       }
     } else {
-      this.cache.forEach((ent) => {
-        this.viewer.container.removeChild(ent.pointSVG)
-        this.scene.preRender.removeEventListener(ent.callback)
+      this._cache.forEach((ent) => {
+        this.#viewer.container.removeChild(ent.pointSVG)
+        this.#scene.preRender.removeEventListener(ent.callback)
       })
     }
   }
 
   /**
-   * @description 获取销毁状态
-   */
-  public isDestroyed(): boolean {
-    return this.destroyed
-  }
-
-  /**
    * @description 销毁
    */
-  public destroy() {
-    if (this.destroyed) return true
-    if (!this.allowDestroy) {
+  destroy() {
+    if (this._isDestroyed) return true
+    if (!this._allowDestroy) {
       console.warn("Current entity layer is not allowed to destory.")
       return false
     }
-    this.destroyed = true
+    this._isDestroyed = true
     this.remove()
-    this.cache.clear()
-    this.cache = undefined as any
-    this.viewer = undefined as any
-    this.scene = undefined as any
-    this.camera = undefined as any
+    this._cache.clear()
     return true
   }
 }

@@ -37,7 +37,9 @@ import { StraightArrowDynamic } from "./StraightArrowDynamic"
 import { StrokeDynamic } from "./StrokeDynamic"
 import { WallDynamic } from "./WallDynamic"
 import { LabelDynamic } from "./LabelDynamic"
-import { Dynamic } from "./Dynamic"
+import { Dynamic } from "abstract"
+import { enumerable, generate, singleton } from "decorators"
+import { Destroyable } from "abstract"
 
 export namespace Draw {
   /**
@@ -512,52 +514,54 @@ export namespace Draw {
   }
 }
 
+export interface ProtoDraw {
+  _isDestroyed: boolean
+}
+
 /**
  * @description 绘制工具
  * @example
  * ```
- * const earth = useEarth
- * const draw = earth.useDraw()
- * //or
+ * const earth = createEarth()
  * const draw = new Draw(earth)
  * ```
  */
-export class Draw {
-  private scene: Scene
-  private destroyed: boolean = false
-  private point: PointDynamic
-  private billboard: BillboardDynamic
-  private circle: CircleDynamic
-  private model: ModelDynamic
-  private rectangle: RectangleDynamic
-  private polygon: PolygonDynamic
-  private polyline: PolylineDynamic
-  private straightArrow: StraightArrowDynamic
-  private attackArrow: AttackArrowDynamic
-  private pincerArrow: PincerArrowDynamic
-  private wall: WallDynamic
-  private stroke: StrokeDynamic
-  private label: LabelDynamic
-  private editHandler: ScreenSpaceEventHandler
+export class ProtoDraw implements Destroyable {
+  @generate(false) isDestroyed!: boolean
+  @enumerable(false) _point: PointDynamic
+  @enumerable(false) _billboard: BillboardDynamic
+  @enumerable(false) _circle: CircleDynamic
+  @enumerable(false) _model: ModelDynamic
+  @enumerable(false) _rectangle: RectangleDynamic
+  @enumerable(false) _polygon: PolygonDynamic
+  @enumerable(false) _polyline: PolylineDynamic
+  @enumerable(false) _straightArrow: StraightArrowDynamic
+  @enumerable(false) _attackArrow: AttackArrowDynamic
+  @enumerable(false) _pincerArrow: PincerArrowDynamic
+  @enumerable(false) _wall: WallDynamic
+  @enumerable(false) _stroke: StrokeDynamic
+  @enumerable(false) _label: LabelDynamic
+  #scene: Scene
+  #editHandler: ScreenSpaceEventHandler
 
   constructor(earth: Earth) {
-    this.scene = earth.scene
+    this.#scene = earth.scene
 
-    this.point = new PointDynamic(earth)
-    this.billboard = new BillboardDynamic(earth)
-    this.circle = new CircleDynamic(earth)
-    this.model = new ModelDynamic(earth)
-    this.rectangle = new RectangleDynamic(earth)
-    this.polygon = new PolygonDynamic(earth)
-    this.polyline = new PolylineDynamic(earth)
-    this.straightArrow = new StraightArrowDynamic(earth)
-    this.attackArrow = new AttackArrowDynamic(earth)
-    this.pincerArrow = new PincerArrowDynamic(earth)
-    this.wall = new WallDynamic(earth)
-    this.stroke = new StrokeDynamic(earth)
-    this.label = new LabelDynamic(earth)
+    this._point = new PointDynamic(earth)
+    this._billboard = new BillboardDynamic(earth)
+    this._circle = new CircleDynamic(earth)
+    this._model = new ModelDynamic(earth)
+    this._rectangle = new RectangleDynamic(earth)
+    this._polygon = new PolygonDynamic(earth)
+    this._polyline = new PolylineDynamic(earth)
+    this._straightArrow = new StraightArrowDynamic(earth)
+    this._attackArrow = new AttackArrowDynamic(earth)
+    this._pincerArrow = new PincerArrowDynamic(earth)
+    this._wall = new WallDynamic(earth)
+    this._stroke = new StrokeDynamic(earth)
+    this._label = new LabelDynamic(earth)
 
-    this.editHandler = new ScreenSpaceEventHandler(earth.viewer.canvas)
+    this.#editHandler = new ScreenSpaceEventHandler(earth.viewer.canvas)
   }
 
   /**
@@ -565,20 +569,20 @@ export class Draw {
    * @param id ID
    * @returns 实体
    */
-  public getEntity(id: string) {
-    const b = this.billboard.getEntity(id)
-    const p = this.point.getEntity(id)
-    const pg = this.polygon.getEntity(id)
-    const pl = this.polyline.getEntity(id)
-    const r = this.rectangle.getEntity(id)
-    const c = this.circle.getEntity(id)
-    const m = this.model.getEntity(id)
-    const aa = this.attackArrow.getEntity(id)
-    const sa = this.straightArrow.getEntity(id)
-    const pa = this.pincerArrow.getEntity(id)
-    const w = this.wall.getEntity(id)
-    const st = this.stroke.getEntity(id)
-    const l = this.label.getEntity(id)
+  getEntity(id: string) {
+    const b = this._billboard.getEntity(id)
+    const p = this._point.getEntity(id)
+    const pg = this._polygon.getEntity(id)
+    const pl = this._polyline.getEntity(id)
+    const r = this._rectangle.getEntity(id)
+    const c = this._circle.getEntity(id)
+    const m = this._model.getEntity(id)
+    const aa = this._attackArrow.getEntity(id)
+    const sa = this._straightArrow.getEntity(id)
+    const pa = this._pincerArrow.getEntity(id)
+    const w = this._wall.getEntity(id)
+    const st = this._stroke.getEntity(id)
+    const l = this._label.getEntity(id)
     return b || p || pg || pl || r || c || m || aa || sa || pa || w || st || l
   }
 
@@ -588,58 +592,58 @@ export class Draw {
    * @param event {@link SubEventType} 事件类型
    * @param callback {@link Draw.EventCallback} 回调
    */
-  public subscribe(target: DrawType, event: SubEventType, callback: Draw.EventCallback) {
+  subscribe(target: DrawType, event: SubEventType, callback: Draw.EventCallback) {
     switch (target) {
       case DrawType.POINT: {
-        this.point.subscribe(event, callback)
+        this._point.subscribe(event, callback)
         break
       }
       case DrawType.BILLBOARD: {
-        this.billboard.subscribe(event, callback)
+        this._billboard.subscribe(event, callback)
         break
       }
       case DrawType.CIRCLE: {
-        this.circle.subscribe(event, callback)
+        this._circle.subscribe(event, callback)
         break
       }
       case DrawType.MODEL: {
-        this.model.subscribe(event, callback)
+        this._model.subscribe(event, callback)
         break
       }
       case DrawType.POLYGON: {
-        this.polygon.subscribe(event, callback)
+        this._polygon.subscribe(event, callback)
         break
       }
       case DrawType.POLYLINE: {
-        this.polyline.subscribe(event, callback)
+        this._polyline.subscribe(event, callback)
         break
       }
       case DrawType.RECTANGLE: {
-        this.rectangle.subscribe(event, callback)
+        this._rectangle.subscribe(event, callback)
         break
       }
       case DrawType.STRAIGHT_ARROW: {
-        this.straightArrow.subscribe(event, callback)
+        this._straightArrow.subscribe(event, callback)
         break
       }
       case DrawType.ATTACK_ARROW: {
-        this.attackArrow.subscribe(event, callback)
+        this._attackArrow.subscribe(event, callback)
         break
       }
       case DrawType.PINCER_ARROW: {
-        this.pincerArrow.subscribe(event, callback)
+        this._pincerArrow.subscribe(event, callback)
         break
       }
       case DrawType.WALL: {
-        this.wall.subscribe(event, callback)
+        this._wall.subscribe(event, callback)
         break
       }
       case DrawType.STROKE: {
-        this.stroke.subscribe(event, callback)
+        this._stroke.subscribe(event, callback)
         break
       }
       case DrawType.LABEL: {
-        this.label.subscribe(event, callback)
+        this._label.subscribe(event, callback)
         break
       }
     }
@@ -651,58 +655,58 @@ export class Draw {
    * @param event {@link SubEventType} 事件类型
    * @param callback {@link Draw.EventCallback} 回调
    */
-  public unsubscribe(target: DrawType, event: SubEventType, callback: Draw.EventCallback) {
+  unsubscribe(target: DrawType, event: SubEventType, callback: Draw.EventCallback) {
     switch (target) {
       case DrawType.POINT: {
-        this.point.unsubscribe(event, callback)
+        this._point.unsubscribe(event, callback)
         break
       }
       case DrawType.BILLBOARD: {
-        this.billboard.unsubscribe(event, callback)
+        this._billboard.unsubscribe(event, callback)
         break
       }
       case DrawType.CIRCLE: {
-        this.circle.unsubscribe(event, callback)
+        this._circle.unsubscribe(event, callback)
         break
       }
       case DrawType.MODEL: {
-        this.model.unsubscribe(event, callback)
+        this._model.unsubscribe(event, callback)
         break
       }
       case DrawType.POLYGON: {
-        this.polygon.unsubscribe(event, callback)
+        this._polygon.unsubscribe(event, callback)
         break
       }
       case DrawType.POLYLINE: {
-        this.polyline.unsubscribe(event, callback)
+        this._polyline.unsubscribe(event, callback)
         break
       }
       case DrawType.RECTANGLE: {
-        this.rectangle.unsubscribe(event, callback)
+        this._rectangle.unsubscribe(event, callback)
         break
       }
       case DrawType.STRAIGHT_ARROW: {
-        this.straightArrow.unsubscribe(event, callback)
+        this._straightArrow.unsubscribe(event, callback)
         break
       }
       case DrawType.ATTACK_ARROW: {
-        this.attackArrow.unsubscribe(event, callback)
+        this._attackArrow.unsubscribe(event, callback)
         break
       }
       case DrawType.PINCER_ARROW: {
-        this.pincerArrow.unsubscribe(event, callback)
+        this._pincerArrow.unsubscribe(event, callback)
         break
       }
       case DrawType.WALL: {
-        this.wall.unsubscribe(event, callback)
+        this._wall.unsubscribe(event, callback)
         break
       }
       case DrawType.STROKE: {
-        this.stroke.unsubscribe(event, callback)
+        this._stroke.unsubscribe(event, callback)
         break
       }
       case DrawType.LABEL: {
-        this.label.unsubscribe(event, callback)
+        this._label.unsubscribe(event, callback)
         break
       }
     }
@@ -712,66 +716,66 @@ export class Draw {
    * @description 设置动态绘制对象是否可编辑
    * @param value 是否可编辑
    */
-  public setEditable(value: boolean) {
+  setEditable(value: boolean) {
     if (!value) {
-      this.editHandler.removeInputAction(ScreenSpaceEventType.LEFT_CLICK)
+      this.#editHandler.removeInputAction(ScreenSpaceEventType.LEFT_CLICK)
       return
     }
 
-    this.editHandler.setInputAction(async (evt: ScreenSpaceEventHandler.PositionedEvent) => {
+    this.#editHandler.setInputAction(async (evt: ScreenSpaceEventHandler.PositionedEvent) => {
       if (State.isOperate()) return
-      const pick = this.scene.pick(evt.position)
+      const pick = this.#scene.pick(evt.position)
       if (pick) {
-        const _id = Utils.DecodeId(pick.id).id
+        const _id = Utils.decode(pick.id).id
         const ent = this.getEntity(_id)!
         if (!ent.data.data) return
         switch ((ent.data.data as { type: DrawType }).type) {
           case DrawType.POINT: {
-            this.point.edit(_id)
+            this._point.edit(_id)
             break
           }
           case DrawType.BILLBOARD: {
-            this.billboard.edit(_id)
+            this._billboard.edit(_id)
             break
           }
           case DrawType.CIRCLE: {
-            this.circle.edit(_id)
+            this._circle.edit(_id)
             break
           }
           case DrawType.MODEL: {
-            this.model.edit(_id)
+            this._model.edit(_id)
             break
           }
           case DrawType.POLYLINE: {
-            this.polyline.edit(_id)
+            this._polyline.edit(_id)
             break
           }
           case DrawType.POLYGON: {
-            this.polygon.edit(_id)
+            this._polygon.edit(_id)
             break
           }
           case DrawType.RECTANGLE: {
-            this.rectangle.edit(_id)
+            this._rectangle.edit(_id)
             break
           }
           case DrawType.ATTACK_ARROW: {
-            this.attackArrow.edit(_id)
+            this._attackArrow.edit(_id)
             break
           }
           case DrawType.PINCER_ARROW: {
-            this.pincerArrow.edit(_id)
+            this._pincerArrow.edit(_id)
             break
           }
           case DrawType.STRAIGHT_ARROW: {
-            this.straightArrow.edit(_id)
+            this._straightArrow.edit(_id)
             break
           }
           case DrawType.WALL: {
-            this.wall.edit(_id)
+            this._wall.edit(_id)
             break
           }
           case DrawType.LABEL: {
-            this.label.edit(_id)
+            this._label.edit(_id)
             break
           }
           default: {
@@ -788,7 +792,7 @@ export class Draw {
    * @param option {@link Draw.Features} 配置项
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const drawTool = earth.useDraw()
    * drawTool.setEditable(true)
    *
@@ -866,66 +870,66 @@ export class Draw {
    *   })
    * ```
    */
-  public addFeature(type: EditableType.ATTACK_ARROW, option: PolygonLayer.AddParam<Dynamic.AttackArrow>): void
-  public addFeature(type: EditableType.BILLBOARD, option: BillboardLayer.AddParam<Dynamic.Billboard>): void
-  public addFeature(type: EditableType.CIRCLE, option: EllipseLayer.AddParam<Dynamic.Circle>): void
-  public addFeature(type: EditableType.LABEL, option: LabelLayer.AddParam<Dynamic.Label>): void
-  public addFeature(type: EditableType.MODEL, option: ModelLayer.AddParam<Dynamic.Model>): void
-  public addFeature(type: EditableType.PINCER_ARROW, option: PolygonLayer.AddParam<Dynamic.PincerArrow>): void
-  public addFeature(type: EditableType.POINT, option: PointLayer.AddParam<Dynamic.Point>): void
-  public addFeature(type: EditableType.POLYGON, option: PolygonLayer.AddParam<Dynamic.Polygon>): void
-  public addFeature(type: EditableType.POLYLINE, option: PolylineLayer.AddParam<Dynamic.Polyline>): void
-  public addFeature(type: EditableType.RECTANGLE, option: RectangleLayer.AddParam<Dynamic.Rectangle>): void
-  public addFeature(type: EditableType.STRAIGHT_ARROW, option: PolygonLayer.AddParam<Dynamic.StraightArrow>): void
-  public addFeature(type: EditableType.WALL, option: WallLayer.AddParam<Dynamic.Wall>): void
-  public addFeature(type: EditableType, option: Draw.Features) {
+  addFeature(type: EditableType.ATTACK_ARROW, option: PolygonLayer.AddParam<Dynamic.AttackArrow>): void
+  addFeature(type: EditableType.BILLBOARD, option: BillboardLayer.AddParam<Dynamic.Billboard>): void
+  addFeature(type: EditableType.CIRCLE, option: EllipseLayer.AddParam<Dynamic.Circle>): void
+  addFeature(type: EditableType.LABEL, option: LabelLayer.AddParam<Dynamic.Label>): void
+  addFeature(type: EditableType.MODEL, option: ModelLayer.AddParam<Dynamic.Model>): void
+  addFeature(type: EditableType.PINCER_ARROW, option: PolygonLayer.AddParam<Dynamic.PincerArrow>): void
+  addFeature(type: EditableType.POINT, option: PointLayer.AddParam<Dynamic.Point>): void
+  addFeature(type: EditableType.POLYGON, option: PolygonLayer.AddParam<Dynamic.Polygon>): void
+  addFeature(type: EditableType.POLYLINE, option: PolylineLayer.AddParam<Dynamic.Polyline>): void
+  addFeature(type: EditableType.RECTANGLE, option: RectangleLayer.AddParam<Dynamic.Rectangle>): void
+  addFeature(type: EditableType.STRAIGHT_ARROW, option: PolygonLayer.AddParam<Dynamic.StraightArrow>): void
+  addFeature(type: EditableType.WALL, option: WallLayer.AddParam<Dynamic.Wall>): void
+  addFeature(type: EditableType, option: Draw.Features) {
     switch (type) {
       case EditableType.ATTACK_ARROW: {
-        this.attackArrow.add(option as PolygonLayer.AddParam<Dynamic.AttackArrow>)
+        this._attackArrow.add(option as PolygonLayer.AddParam<Dynamic.AttackArrow>)
         break
       }
       case EditableType.BILLBOARD: {
-        this.billboard.add(option as BillboardLayer.AddParam<Dynamic.Billboard>)
+        this._billboard.add(option as BillboardLayer.AddParam<Dynamic.Billboard>)
         break
       }
       case EditableType.CIRCLE: {
-        this.circle.add(option as EllipseLayer.AddParam<Dynamic.Circle>)
+        this._circle.add(option as EllipseLayer.AddParam<Dynamic.Circle>)
         break
       }
       case EditableType.LABEL: {
-        this.label.add(option as LabelLayer.AddParam<Dynamic.Label>)
+        this._label.add(option as LabelLayer.AddParam<Dynamic.Label>)
         break
       }
       case EditableType.MODEL: {
-        this.model.add(option as ModelLayer.AddParam<Dynamic.Model>)
+        this._model.add(option as ModelLayer.AddParam<Dynamic.Model>)
         break
       }
       case EditableType.PINCER_ARROW: {
-        this.pincerArrow.add(option as PolygonLayer.AddParam<Dynamic.PincerArrow>)
+        this._pincerArrow.add(option as PolygonLayer.AddParam<Dynamic.PincerArrow>)
         break
       }
       case EditableType.POINT: {
-        this.point.add(option as PointLayer.AddParam<Dynamic.Point>)
+        this._point.add(option as PointLayer.AddParam<Dynamic.Point>)
         break
       }
       case EditableType.POLYGON: {
-        this.polygon.add(option as PolygonLayer.AddParam<Dynamic.Polygon>)
+        this._polygon.add(option as PolygonLayer.AddParam<Dynamic.Polygon>)
         break
       }
       case EditableType.POLYLINE: {
-        this.polyline.add(option as PolylineLayer.AddParam<Dynamic.Polyline>)
+        this._polyline.add(option as PolylineLayer.AddParam<Dynamic.Polyline>)
         break
       }
       case EditableType.RECTANGLE: {
-        this.rectangle.add(option as RectangleLayer.AddParam<Dynamic.Rectangle>)
+        this._rectangle.add(option as RectangleLayer.AddParam<Dynamic.Rectangle>)
         break
       }
       case EditableType.STRAIGHT_ARROW: {
-        this.straightArrow.add(option as PolygonLayer.AddParam<Dynamic.StraightArrow>)
+        this._straightArrow.add(option as PolygonLayer.AddParam<Dynamic.StraightArrow>)
         break
       }
       case EditableType.WALL: {
-        this.wall.add(option as WallLayer.AddParam<Dynamic.Wall>)
+        this._wall.add(option as WallLayer.AddParam<Dynamic.Wall>)
         break
       }
     }
@@ -938,7 +942,7 @@ export class Draw {
    * @returns {Promise} 绘制的Promise
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const tool = new Draw(earth)
    *
    * //attack arrow
@@ -1108,59 +1112,59 @@ export class Draw {
    * })
    * ```
    */
-  public draw(type: DrawType.ATTACK_ARROW, option: Draw.AttackArrow): Promise<Draw.AttackArrowReturn>
-  public draw(type: DrawType.BILLBOARD, option: Draw.Billboard): Promise<Draw.BillboardReturn[]>
-  public draw(type: DrawType.CIRCLE, option: Draw.Circle): Promise<Draw.CircleReturn>
-  public draw(type: DrawType.MODEL, option: Draw.Model): Promise<Draw.ModelReturn[]>
-  public draw(type: DrawType.WALL, option: Draw.Wall): Promise<Draw.WallReturn>
-  public draw(type: DrawType.PINCER_ARROW, option: Draw.PincerArrow): Promise<Draw.PincerArrowReturn>
-  public draw(type: DrawType.POINT, option: Draw.Point): Promise<Draw.PointReturn[]>
-  public draw(type: DrawType.POLYGON, option: Draw.Polygon): Promise<Draw.PolygonReturn>
-  public draw(type: DrawType.POLYLINE, option: Draw.Polyline): Promise<Draw.PolylineReturn>
-  public draw(type: DrawType.RECTANGLE, option: Draw.Rectangle): Promise<Draw.RectangleReturn>
-  public draw(type: DrawType.STRAIGHT_ARROW, option: Draw.StraightArrow): Promise<Draw.StraightArrowReturn>
-  public draw(type: DrawType.STROKE, option: Draw.Stroke): Promise<Draw.StrokeReturn>
-  public draw(type: DrawType.LABEL, option: Draw.Label): Promise<Draw.LabelReturn[]>
-  public draw(type: DrawType, option: Draw.Options) {
+  draw(type: DrawType.ATTACK_ARROW, option: Draw.AttackArrow): Promise<Draw.AttackArrowReturn>
+  draw(type: DrawType.BILLBOARD, option: Draw.Billboard): Promise<Draw.BillboardReturn[]>
+  draw(type: DrawType.CIRCLE, option: Draw.Circle): Promise<Draw.CircleReturn>
+  draw(type: DrawType.MODEL, option: Draw.Model): Promise<Draw.ModelReturn[]>
+  draw(type: DrawType.WALL, option: Draw.Wall): Promise<Draw.WallReturn>
+  draw(type: DrawType.PINCER_ARROW, option: Draw.PincerArrow): Promise<Draw.PincerArrowReturn>
+  draw(type: DrawType.POINT, option: Draw.Point): Promise<Draw.PointReturn[]>
+  draw(type: DrawType.POLYGON, option: Draw.Polygon): Promise<Draw.PolygonReturn>
+  draw(type: DrawType.POLYLINE, option: Draw.Polyline): Promise<Draw.PolylineReturn>
+  draw(type: DrawType.RECTANGLE, option: Draw.Rectangle): Promise<Draw.RectangleReturn>
+  draw(type: DrawType.STRAIGHT_ARROW, option: Draw.StraightArrow): Promise<Draw.StraightArrowReturn>
+  draw(type: DrawType.STROKE, option: Draw.Stroke): Promise<Draw.StrokeReturn>
+  draw(type: DrawType.LABEL, option: Draw.Label): Promise<Draw.LabelReturn[]>
+  draw(type: DrawType, option: Draw.Options) {
     switch (type) {
       case DrawType.ATTACK_ARROW: {
-        return this.attackArrow.draw(option as Draw.AttackArrow)
+        return this._attackArrow.draw(option as Draw.AttackArrow)
       }
       case DrawType.BILLBOARD: {
-        return this.billboard.draw(option as Draw.Billboard)
+        return this._billboard.draw(option as Draw.Billboard)
       }
       case DrawType.CIRCLE: {
-        return this.circle.draw(option as Draw.Circle)
+        return this._circle.draw(option as Draw.Circle)
       }
       case DrawType.MODEL: {
-        return this.model.draw(option as Draw.Model)
+        return this._model.draw(option as Draw.Model)
       }
       case DrawType.WALL: {
-        return this.wall.draw(option as Draw.Wall)
+        return this._wall.draw(option as Draw.Wall)
       }
       case DrawType.PINCER_ARROW: {
-        return this.pincerArrow.draw(option as Draw.PincerArrow)
+        return this._pincerArrow.draw(option as Draw.PincerArrow)
       }
       case DrawType.POINT: {
-        return this.point.draw(option as Draw.Point)
+        return this._point.draw(option as Draw.Point)
       }
       case DrawType.POLYGON: {
-        return this.polygon.draw(option as Draw.Polygon)
+        return this._polygon.draw(option as Draw.Polygon)
       }
       case DrawType.POLYLINE: {
-        return this.polyline.draw(option as Draw.Polyline)
+        return this._polyline.draw(option as Draw.Polyline)
       }
       case DrawType.RECTANGLE: {
-        return this.rectangle.draw(option as Draw.Rectangle)
+        return this._rectangle.draw(option as Draw.Rectangle)
       }
       case DrawType.STRAIGHT_ARROW: {
-        return this.straightArrow.draw(option as Draw.StraightArrow)
+        return this._straightArrow.draw(option as Draw.StraightArrow)
       }
       case DrawType.STROKE: {
-        return this.stroke.draw(option as Draw.Stroke)
+        return this._stroke.draw(option as Draw.Stroke)
       }
       case DrawType.LABEL: {
-        return this.label.draw(option as Draw.Label)
+        return this._label.draw(option as Draw.Label)
       }
     }
   }
@@ -1169,121 +1173,102 @@ export class Draw {
    * @description 清除所有动态绘制对象
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const draw = new Draw()
    * draw.remove()
    * ```
    */
-  public remove(): void
+  remove(): void
   /**
    * @description 按ID清除动态绘制对象
    * @param id ID
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const draw = new Draw()
    * draw.remove("some_id")
    * ```
    */
-  public remove(id: string): void
+  remove(id: string): void
   /**
    * @description 按图形类别清除动态绘制对象
    * @param option 类别
    * @example
    * ```
-   * const earth = useEarth()
+   * const earth = createEarth()
    * const draw = new Draw()
    * draw.remove({ polygon: true, polyline: true })
    * ```
    */
-  public remove(option: Draw.RemoveOptions): void
-  public remove(option?: string | Draw.RemoveOptions) {
+  remove(option: Draw.RemoveOptions): void
+  remove(option?: string | Draw.RemoveOptions) {
     if (!option) {
-      this.billboard.remove()
-      this.circle.remove()
-      this.model.remove()
-      this.wall.remove()
-      this.point.remove()
-      this.polygon.remove()
-      this.polyline.remove()
-      this.rectangle.remove()
-      this.straightArrow.remove()
-      this.attackArrow.remove()
-      this.pincerArrow.remove()
-      this.stroke.remove()
-      this.label.remove()
+      this._billboard.remove()
+      this._circle.remove()
+      this._model.remove()
+      this._wall.remove()
+      this._point.remove()
+      this._polygon.remove()
+      this._polyline.remove()
+      this._rectangle.remove()
+      this._straightArrow.remove()
+      this._attackArrow.remove()
+      this._pincerArrow.remove()
+      this._stroke.remove()
+      this._label.remove()
     } else if (typeof option === "string") {
-      this.billboard.remove(option)
-      this.circle.remove(option)
-      this.model.remove(option)
-      this.wall.remove(option)
-      this.point.remove(option)
-      this.polygon.remove(option)
-      this.polyline.remove(option)
-      this.rectangle.remove(option)
-      this.straightArrow.remove(option)
-      this.attackArrow.remove(option)
-      this.pincerArrow.remove(option)
-      this.stroke.remove(option)
-      this.label.remove(option)
+      this._billboard.remove(option)
+      this._circle.remove(option)
+      this._model.remove(option)
+      this._wall.remove(option)
+      this._point.remove(option)
+      this._polygon.remove(option)
+      this._polyline.remove(option)
+      this._rectangle.remove(option)
+      this._straightArrow.remove(option)
+      this._attackArrow.remove(option)
+      this._pincerArrow.remove(option)
+      this._stroke.remove(option)
+      this._label.remove(option)
     } else {
-      if (option.billboard) this.billboard.remove()
-      if (option.circle) this.circle.remove()
-      if (option.model) this.model.remove()
-      if (option.wall) this.wall.remove()
-      if (option.point) this.point.remove()
-      if (option.polygon) this.polygon.remove()
-      if (option.polyline) this.polyline.remove()
-      if (option.rectangle) this.rectangle.remove()
-      if (option.straightArrow) this.straightArrow.remove()
-      if (option.attackArrow) this.attackArrow.remove()
-      if (option.pincerArrow) this.pincerArrow.remove()
-      if (option.stroke) this.stroke.remove()
-      if (option.label) this.label.remove()
+      if (option.billboard) this._billboard.remove()
+      if (option.circle) this._circle.remove()
+      if (option.model) this._model.remove()
+      if (option.wall) this._wall.remove()
+      if (option.point) this._point.remove()
+      if (option.polygon) this._polygon.remove()
+      if (option.polyline) this._polyline.remove()
+      if (option.rectangle) this._rectangle.remove()
+      if (option.straightArrow) this._straightArrow.remove()
+      if (option.attackArrow) this._attackArrow.remove()
+      if (option.pincerArrow) this._pincerArrow.remove()
+      if (option.stroke) this._stroke.remove()
+      if (option.label) this._label.remove()
     }
-  }
-
-  /**
-   * @description 获取销毁状态
-   */
-  public isDestroyed(): boolean {
-    return this.destroyed
   }
 
   /**
    * @description 销毁
    */
-  public destroy() {
-    if (this.destroyed) return
-    this.destroyed = true
-    this.editHandler.destroy()
-    this.attackArrow.destroy()
-    this.billboard.destroy()
-    this.circle.destroy()
-    this.pincerArrow.destroy()
-    this.point.destroy()
-    this.polygon.destroy()
-    this.polyline.destroy()
-    this.rectangle.destroy()
-    this.straightArrow.destroy()
-    this.label.destroy()
-    this.model.destroy()
-    this.wall.destroy()
-    this.stroke.destroy()
-    this.scene = undefined as any
-    this.editHandler = undefined as any
-    this.attackArrow = undefined as any
-    this.billboard = undefined as any
-    this.circle = undefined as any
-    this.pincerArrow = undefined as any
-    this.point = undefined as any
-    this.polygon = undefined as any
-    this.polyline = undefined as any
-    this.rectangle = undefined as any
-    this.straightArrow = undefined as any
-    this.label = undefined as any
-    this.model = undefined as any
-    this.wall = undefined as any
-    this.stroke = undefined as any
+  destroy() {
+    if (this._isDestroyed) return
+    this._isDestroyed = true
+    this.#editHandler.destroy()
+    this._attackArrow.destroy()
+    this._billboard.destroy()
+    this._circle.destroy()
+    this._pincerArrow.destroy()
+    this._point.destroy()
+    this._polygon.destroy()
+    this._polyline.destroy()
+    this._rectangle.destroy()
+    this._straightArrow.destroy()
+    this._label.destroy()
+    this._model.destroy()
+    this._wall.destroy()
+    this._stroke.destroy()
   }
 }
+
+@singleton()
+export class Draw extends ProtoDraw {}

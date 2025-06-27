@@ -1,4 +1,3 @@
-export * from "./Layer"
 export * from "./BillboardLayer"
 export * from "./CloudLayer"
 export * from "./DiffusePointLayer"
