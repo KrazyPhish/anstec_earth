@@ -13,13 +13,19 @@ npm install @anstec/earth
 
 ### Get started
 
-```ts
-import { useEarth } from "@anstec/earth"
-import "@anstec/earth/dist/style/index.css"
-
-const earth = useEarth()
+```html
+<div id="GisContainer" class="relative w-full h-full"></div>
 ```
 
-### License
+```ts
+// in your main.ts or main.tsx
+// import the style sheet
+import "@anstec/earth/dist/style.css"
+```
 
-[MIT](https://mit-license.org/)
+```ts
+// in your map module, when initializing the cesium viewer
+import { type Earth, createEarth } from "@anstec/earth"
+
+const earth: Earth = createEarth()
+```

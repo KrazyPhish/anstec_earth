@@ -47,7 +47,7 @@ export default defineConfig({
     json(),
     postcss({
       plugins: [autoprefixer(), cssnano()],
-      extract: "style/index.css",
+      extract: "style.css",
     }),
   ],
   onwarn(warning, next) {

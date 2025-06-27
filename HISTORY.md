@@ -2,6 +2,41 @@
 
 ### 版本更新历史记录
 
+#### Version 2.5.0
+1. 类 `AnimationManager`，`GlobalEvent`，`Coordinate`，`Draw`，`Measure`，`ContextMenu`，  
+  `EChartsOverlay`，`Weather`，`WindField` 现皆升级为针对地球实例的单例类，以优化开发中的性能问题
+2. `Coordinate` 类新增方法 `cartographicArrayToCartesianArray` 用于地理坐标数组向空间坐标数组的快捷转换
+3. `Coordinate` 类新增方法 `cartesianArrayToCartographicArray` 用于空间坐标数组向地理坐标数组的快捷转换
+4. `Utils` 新增方法 `singleton` 用于注册单例类
+5. 去除覆盖物及上下文菜单样式中的 `z-index` 属性
+6. 修复 `Radar` 类使用灯照扫描效果的过程中，存在视觉闪烁的问题
+7. 各类或命名空间中的方法部分参数新增强类型验证检查
+8. 类中的只读属性现更改为用 `getter` 和 `setter` 覆写的强只读属性
+9. 添加地图实例初始化时附加版本、创建时间等信息，同时控制台打印欢迎信息
+10. 废弃各类的 `isDestroyed` 方法，现可直接访问只读属性 `isDestroyed`
+11. 类 `Geographic` 新增方法 `toString` 用于将地理坐标按模板转换为字符串
+12. 类 `Geographic` 的方法 `clone` 新增可选参数 `result` 用于指定存储对象
+13. 新增语义化工具类 `Color` 用于使用8位十六进制值构建颜色
+14. 新增语义化工具类 `Dimension` 用于描述最多在四个维度或方向上的值
+15. 新增语义化工具类 `Hpr` 用于使用角度制描述物体的航向、俯仰、翻滚
+16. 删除抽象类 `Dynamic` 和 `Layer` 的导出资源，仅保留其命名空间及所含类型声明
+17. 新增 `Runner` 类，用于对数量繁多的异步任务按条件进行调度
+18. 类 `Queue` 新增 `delete` 方法用于删除具体元素
+19. 类 `Stack` 新增 `delete` 方法用于删除具体元素
+20. `Earth.ConstructorOptions` 新增参数 `adaptiveAnimation` 用于配置是否使用适应性的动画控件
+21. 新增适应性的动画控件以解决在视窗画幅缩放、拉伸的情况下鼠标操作与动画控件交互时定位或移动错误的问题
+22. `Earth.ConstructorOptions` 新增参数 `adaptiveTimeline` 用于配置是否使用适应性的时间轴控件
+23. 新增适应性的时间轴控件以解决在视窗画幅缩放、拉伸的情况下鼠标操作与时间轴交互时定位或移动错误的问题
+24. `Earth` 新增方法 `setFormatters` 可以自定义设置时间轴及动画控件的时间显示格式化函数
+25. 修复类构造函数参数验证没有正确忽略可选参数的问题
+26. `PolylineLayer.AddParam` 新增配置项 `perLineVertextColors` 用于新增线段时为组合线段或线段中的顶点单独配置颜色
+27. `PolylineLayer` 类及 `RectangleLayer` 类暴露只读属性 `outlineLayer` 以访问其边框图层
+28. 样式文件引用目录从 `@anstec/earth/dist/style/index.css` 更改为  `@anstec/earth/dist/style.css`
+29. 废弃钩子方法 `useEarth` 改用 `createEarth`
+30. 废弃钩子方法 `useEarthRecycle` 改用 `recycleEarth`
+31. 废弃钩子方法 `useNavigation` 改用 `createNavigation`
+32. 废弃钩子方法 `useTileImageryProvider`
+
 #### Version 2.4.2
 1. `RectangleLayer.AddParam` 新增属性 `outline` 用于绘制矩形轮廓线
 2. `RectangleLayer` 新增方法 `getOutlineEntity` 用于获取矩形轮廓线实体
