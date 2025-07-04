@@ -15,7 +15,7 @@ export const singleton = (reason?: string): ClassDecorator => {
           )
           instance = recordCache.get(args[0].id)!
         }
-        if (!instance || instance.isDestroyed) {
+        if (!instance || instance._isDestroyed) {
           instance = Reflect.construct(target, args)
           recordCache.set(args[0].id, instance)
         }

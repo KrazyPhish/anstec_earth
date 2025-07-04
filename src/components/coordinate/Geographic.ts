@@ -99,7 +99,7 @@ export class Geographic {
    * ```
    */
   @validate
-  clone(result?: Geographic) {
+  clone(@is(Geographic) result?: Geographic) {
     if (result) {
       result.latitude = this.latitude
       result.longitude = this.longitude

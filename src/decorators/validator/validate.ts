@@ -40,10 +40,12 @@ export const validate: {
     descriptor.value = function (...args: any[]) {
       if (args.length && rules && rules.length) {
         for (const { rule, key, index, attr, failed } of rules) {
-          // ignore default args
+          // ignore default partial args
           if (index >= args.length) continue
           const check = attr ? args[index][attr] : args[index]
           if (check === undefined || check === null) {
+            //@ts-ignore
+            if (origin.length - 1 < index) continue
             const realKey = typeof key === "string" ? key : key.toString()
             const realAttr = attr ? `the '${typeof attr === "string" ? attr : attr.toString()}'` : "it"
             console.trace("Developer Error.")
