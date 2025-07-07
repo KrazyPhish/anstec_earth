@@ -142,10 +142,15 @@ export class BillboardLayer<T = unknown>
       })
     }
 
-    super._save(id, {
-      primitive: new Billboard(option, this.collection),
-      data: { module: param.module, data: param.data },
-    })
+    const primitive = this._collection.add(option)
+    super._save(
+      id,
+      {
+        primitive,
+        data: { module: param.module, data: param.data },
+      },
+      false
+    )
   }
 
   /**

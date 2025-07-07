@@ -127,10 +127,14 @@ export abstract class Layer<C extends Layer.Collections, P extends Layer.Primiti
    * @description 绘制并缓存新增对象
    * @param id ID
    * @param param {@link Layer.Cache} 缓存的数据
+   * @param [needAdd = true] 是否执行添加到图层（Label, Billboard不执行）
    * @returns `primitive`图元实例
    */
-  _save(id: string, param: Layer.Cache<P, D>): P {
-    const primitive = this._collection.add(param.primitive)
+  _save(id: string, param: Layer.Cache<P, D>, needAdd: boolean = true): P {
+    let primitive = param.primitive
+    if (needAdd) {
+      primitive = this._collection.add(primitive)
+    }
     this._cache.set(id, { primitive, data: param.data })
     return primitive
   }

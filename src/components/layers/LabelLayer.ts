@@ -2,13 +2,13 @@ import {
   Cartesian3,
   Color,
   HorizontalOrigin,
-  Label,
   LabelCollection,
   LabelStyle,
   VerticalOrigin,
   type Cartesian2,
   type DistanceDisplayCondition,
   type HeightReference,
+  type Label,
   type NearFarScalar,
 } from "cesium"
 import { Layer } from "abstract"
@@ -128,10 +128,15 @@ export class LabelLayer<T = unknown> extends Layer<LabelCollection, Label, Layer
       ...param,
       id: Utils.encode(id, param.module),
     }
-    super._save(id, {
-      primitive: new Label(option, this.collection),
-      data: { module: param.module, data: param.data },
-    })
+    const primitive = this._collection.add(option)
+    super._save(
+      id,
+      {
+        primitive,
+        data: { module: param.module, data: param.data },
+      },
+      false
+    )
   }
 
   /**
