@@ -2,6 +2,13 @@
 
 ### 版本更新历史记录
 
+### Version 2.5.1
+1. 修复在React中使用时，单例工具类导致的事件无效化问题
+2. 修复类型声明文件中 `Sensor` 没有默认数据参数的错误
+3. 修复在React中使用时，风场、洋流实例找不到销毁对象的问题
+4. 风场、洋流不再使用针对地球实例的单例模式
+5. 热力图修改为针对地球实例的单例模式
+
 #### Version 2.5.0
 1. 类 `AnimationManager`，`GlobalEvent`，`Coordinate`，`Draw`，`Measure`，`ContextMenu`，  
   `EChartsOverlay`，`Weather`，`WindField` 现皆升级为针对地球实例的单例类，以优化开发中的性能问题

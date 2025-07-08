@@ -5834,7 +5834,7 @@ declare module "@anstec/earth" {
    * const sensor = new Sensor(earth)
    * ```
    */
-  export class Sensor<T> {
+  export class Sensor<T = unknown> {
     constructor(earth: Earth)
     /**
      * @description 销毁状态

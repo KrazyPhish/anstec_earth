@@ -1,3 +1,3 @@
-export * from "./earthManagement"
+export * from "./createEarth"
 export * from "./creeateNavigation"
 export * from "./useTileImageryProvider"
