@@ -100,6 +100,7 @@ export namespace Earth {
 }
 
 export interface Earth {
+  _id: string
   _isDestroyed: boolean
   _viewer: Viewer
   _scene: Scene
@@ -160,7 +161,7 @@ export class Earth implements Destroyable {
   /**
    * @description ID
    */
-  @generate(Utils.uuid()) id!: string
+  @generate() id!: string
   /**
    * @description HTML容器
    */
@@ -212,8 +213,8 @@ export class Earth implements Destroyable {
     cesiumOptions?: Viewer.ConstructorOptions,
     options?: Earth.ConstructorOptions
   ) {
+    this._id = Utils.uuid()
     Camera.DEFAULT_VIEW_RECTANGLE = options?.defaultViewRectangle || Rectangle.fromDegrees(72, 0.83, 137.83, 55.83)
-
     this.#cesiumOptions = {}
     this.#options = {}
     this.#defaultOptions(cesiumOptions, options)

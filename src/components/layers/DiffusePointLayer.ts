@@ -64,12 +64,13 @@ export interface DiffusePointLayer<T = unknown> {
 export class DiffusePointLayer<T = unknown> implements Destroyable, DestroyControl {
   @generate(false) isDestroyed!: boolean
   @generate(true) allowDestroy!: boolean
-  @generate(new Map()) cache!: Map<string, DiffusePointLayer.Data<T>>
+  @generate() cache!: Map<string, DiffusePointLayer.Data<T>>
 
   #viewer: Viewer
   #scene: Scene
   #camera: Camera
   constructor(earth: Earth) {
+    this._cache = new Map()
     this.#viewer = earth.viewer
     this.#scene = earth.scene
     this.#camera = earth.camera

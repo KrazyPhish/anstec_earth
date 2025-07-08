@@ -1167,5 +1167,6 @@ export class Measure implements Destroyable {
     this._label.destroy()
     this._polygon.destroy()
     this._polyline.destroy()
+    this._drawTool.destroy()
   }
 }

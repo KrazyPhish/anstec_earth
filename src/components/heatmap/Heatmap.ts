@@ -95,7 +95,7 @@ export interface Heatmap {
  */
 export class Heatmap implements Destroyable {
   @generate() isDestroyed!: boolean
-  @generate(Utils.uuid()) id!: string
+  @generate() id!: string
   @enumerable(false) _layer?: Entity | ImageryLayer
   @enumerable(false) _dom: HTMLDivElement
   @enumerable(false) _heatmap?: H337
@@ -148,6 +148,7 @@ export class Heatmap implements Destroyable {
   #additiveCameraHeight = 0
 
   constructor(earth: Earth, options: Heatmap.ConstructorOptions) {
+    this._id = Utils.uuid()
     this.#earth = earth
     this.#options = options
     this._rawData = { min: 0, max: 0, data: [] }

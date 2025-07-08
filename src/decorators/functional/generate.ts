@@ -4,6 +4,7 @@
  * 1. 不要使用引用值作为生成器的默认值
  * 2. 尤其是生成器用于基类（被其他类继承的类）属性生成的时候
  * 3. 除非使用到的类是一个严格的单例类
+ * 4. 不要使用可能被当作唯一值的值作为生成器的默认值，如id，uuid
  * @param [privateName] 私有属性名
  */
 export const generate = (value?: any, privateName?: string): PropertyDecorator => {

@@ -302,6 +302,8 @@ export class WindField implements Destroyable {
 
   #removePrimitives() {
     const primitives = this.#scene.primitives
+    // fix react hooks bugs
+    if (!primitives) return
     if (this.#particleSystem?.particlesComputing.primitives) {
       primitives.remove(this.#particleSystem.particlesComputing.primitives.calculateSpeed)
       primitives.remove(this.#particleSystem.particlesComputing.primitives.updatePosition)
