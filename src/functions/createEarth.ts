@@ -35,7 +35,12 @@ export const createEarth = (
 ): Earth => {
   const el = id ?? "GisContainer"
   if (earthCache.has(el)) {
-    return earthCache.get(el)!
+    const currentEarth = earthCache.get(el)!
+    if (!currentEarth._isDestroyed) {
+      return currentEarth
+    } else {
+      earthCache.delete(el)
+    }
   }
   const earth = new Earth(
     ref ?? el,

@@ -1,6 +1,6 @@
 export * from "./components"
 export * from "./enum"
-export * from "./hooks"
+export * from "./functions"
 export * from "./improved"
 export * from "./semantic"
 export * from "./utils"
