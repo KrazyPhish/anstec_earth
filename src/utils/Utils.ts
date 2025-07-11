@@ -32,6 +32,22 @@ export class Utils {
   }
 
   /**
+   * @deprecated
+   */
+  @deprecated("convertPic2Canvas")
+  static ConvertPic2Canvas(pic: string, width?: number, height?: number) {
+    return this.convertPic2Canvas(pic, width, height)
+  }
+
+  /**
+   * @deprecated
+   */
+  @deprecated("convertSvg2Canvas")
+  static ConvertSvg2Canvas(svg: string, width?: number, height?: number) {
+    return this.convertPic2Canvas(svg, width, height)
+  }
+
+  /**
    * @description 获取随机ID
    * @param [symbol = "-"] 连接符
    * @returns 随机ID
@@ -130,7 +146,7 @@ export class Utils {
    * @param [height = 48] 高度
    * @returns Canvas结果
    */
-  static async ConvertSvg2Canvas(
+  static async convertSvg2Canvas(
     @is(String) svg: string,
     @is(Number) width: number = 48,
     @is(Number) height: number = 48
@@ -161,7 +177,7 @@ export class Utils {
    * @returns Canvas结果
    */
   @validate
-  static async ConvertPic2Canvas(
+  static async convertPic2Canvas(
     @isPic() pic: string,
     @is(Number) width: number = 48,
     @is(Number) height: number = 48

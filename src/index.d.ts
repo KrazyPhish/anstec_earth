@@ -1005,6 +1005,7 @@ declare module "@anstec/earth" {
      * ```
      * coordinate.registerMouseCoordinate((data) => { console.log(data) }, true)
      * ```
+     * @deprecated use `GlobalEvent.subscribe` instead, this will be removed at next minor version
      */
     registerMouseCoordinate(callback: (data: Cartographic) => void, realtime?: boolean): void
     /**
@@ -1013,6 +1014,7 @@ declare module "@anstec/earth" {
      * ```
      * coordinate.unregisterMouseCoordinate()
      * ```
+     * @deprecated use `GlobalEvent.subscribe` instead, this will be removed at next minor version
      */
     unregisterMouseCoordinate(): void
     /**
@@ -6592,6 +6594,23 @@ declare module "@anstec/earth" {
      * @param [height = 48] 高度
      * @returns Canvas结果
      */
+    const convertSvg2Canvas: (svg: string, width?: number, height?: number) => HTMLCanvasElement
+    /**
+     * @description 将图片格式转换为Canvas
+     * @param pic 图片
+     * @param [width = 48] 宽度
+     * @param [height = 48] 高度
+     * @returns Canvas结果
+     */
+    const convertPic2Canvas: (pic: string, width?: number, height?: number) => HTMLCanvasElement
+    /**
+     * @description 将SVG图片格式转换为Canvas
+     * @param svg SVG图片
+     * @param [width = 48] 宽度
+     * @param [height = 48] 高度
+     * @returns Canvas结果
+     * @deprecated use `Utils.convertSvg2Canvas`, this will be deleted at next minor version
+     */
     const ConvertSvg2Canvas: (svg: string, width?: number, height?: number) => HTMLCanvasElement
     /**
      * @description 将图片格式转换为Canvas
@@ -6599,6 +6618,7 @@ declare module "@anstec/earth" {
      * @param [width = 48] 宽度
      * @param [height = 48] 高度
      * @returns Canvas结果
+     * @deprecated use `Utils.convertPic2Canvas`, this will be deleted at next minor version
      */
     const ConvertPic2Canvas: (pic: string, width?: number, height?: number) => HTMLCanvasElement
     /**

@@ -39,15 +39,12 @@ export class Dimension {
    * ```
    */
   @validate
-  clone(@is(Dimension) result?: Dimension) {
-    if (result) {
-      result.x = this.x
-      result.y = this.y
-      result.z = this.z
-      result.w = this.w
-      return result
-    }
-    return new Dimension(this.x, this.y, this.z, this.w)
+  clone(@is(Dimension) result: Dimension = new Dimension()) {
+    result.x = this.x
+    result.y = this.y
+    result.z = this.z
+    result.w = this.w
+    return result
   }
 
   /**
@@ -145,13 +142,10 @@ export class Dimension {
    * @param [result] 存储的对象
    */
   @validate
-  static fromCartesian2(@is(Cartesian2) cartesian: Cartesian2, @is(Dimension) result?: Dimension) {
-    if (result) {
-      result.x = cartesian.x
-      result.y = cartesian.y
-      return result
-    }
-    return new Cartesian2(cartesian.x, cartesian.y)
+  static fromCartesian2(@is(Cartesian2) cartesian: Cartesian2, @is(Dimension) result: Dimension = new Dimension()) {
+    result.x = cartesian.x
+    result.y = cartesian.y
+    return result
   }
 
   /**
@@ -160,14 +154,11 @@ export class Dimension {
    * @param [result] 存储的对象
    */
   @validate
-  static fromCartesian3(@is(Cartesian3) cartesian: Cartesian3, @is(Dimension) result?: Dimension) {
-    if (result) {
-      result.x = cartesian.x
-      result.y = cartesian.y
-      result.z = cartesian.z
-      return result
-    }
-    return new Cartesian3(cartesian.x, cartesian.y, cartesian.z)
+  static fromCartesian3(@is(Cartesian3) cartesian: Cartesian3, @is(Dimension) result: Dimension = new Dimension()) {
+    result.x = cartesian.x
+    result.y = cartesian.y
+    result.z = cartesian.z
+    return result
   }
 
   /**
@@ -176,14 +167,11 @@ export class Dimension {
    * @param [result] 存储的对象
    */
   @validate
-  static fromCartesian4(@is(Cartesian4) cartesian: Cartesian4, @is(Dimension) result?: Dimension) {
-    if (result) {
-      result.x = cartesian.x
-      result.y = cartesian.y
-      result.z = cartesian.z
-      result.w = cartesian.w
-      return result
-    }
-    return new Cartesian4(cartesian.x, cartesian.y, cartesian.z, cartesian.w)
+  static fromCartesian4(@is(Cartesian4) cartesian: Cartesian4, @is(Dimension) result: Dimension = new Dimension()) {
+    result.x = cartesian.x
+    result.y = cartesian.y
+    result.z = cartesian.z
+    result.w = cartesian.w
+    return result
   }
 }

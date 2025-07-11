@@ -10,7 +10,7 @@ import {
   WebMercatorProjection,
   WebMercatorTilingScheme,
 } from "cesium"
-import { enumerable, generate } from "decorators"
+import { enumerable, generate, singleton } from "decorators"
 import { H337 } from "./H337"
 import { Utils } from "utils"
 import type { Earth } from "components/Earth"
@@ -93,6 +93,7 @@ export interface Heatmap {
  * heatmap.render(data)
  * ```
  */
+@singleton()
 export class Heatmap implements Destroyable {
   @generate() isDestroyed!: boolean
   @generate() id!: string

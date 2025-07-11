@@ -49,7 +49,7 @@ export class CameraTool {
   static lockCameraInRectangle(
     @is(Camera) camera: Camera,
     @is(Rectangle) rect: Rectangle,
-    @is(Number) height?: number
+    height?: number
   ) {
     if (!rect) return
     const cPosition = camera.positionCartographic
@@ -115,8 +115,7 @@ export class CameraTool {
    * @param [viewRectangle] 相机区域
    * @returns 范围
    */
-  @validate
-  static viewRectangleToLonLatRange(@is(Rectangle) viewRectangle?: Rectangle) {
+  static viewRectangleToLonLatRange(viewRectangle?: Rectangle) {
     const range: { lon: { min: number; max: number }; lat: { min: number; max: number } } = {
       lon: { min: 0, max: 0 },
       lat: { min: 0, max: 0 },

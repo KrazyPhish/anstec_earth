@@ -102,7 +102,7 @@ export class Figure {
     @is(Geographic) from: T,
     @is(Geographic) to: T,
     @is(Scene) scene: Scene,
-    terrainProvider: TerrainProvider
+    @is(TerrainProvider) terrainProvider: TerrainProvider
   ) {
     let _from: Cartesian3
     let _to: Cartesian3

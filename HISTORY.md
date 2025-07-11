@@ -2,7 +2,14 @@
 
 ### 版本更新历史记录
 
-### Version 2.5.1
+#### Version 2.5.2
+1. 优化对 `?` 型可选参数的验证逻辑
+2. 废弃类 `Utils` 上的静态方法 `ConvertPic2Canvas` 改用 `convertPic2Canvas`
+3. 废弃类 `Utils` 上的静态方法 `ConvertSvg2Canvas` 改用 `convertSvg2Canvas`
+4. 废弃类 `Coordinate` 上的方法 `registerMouseCoordinate`
+5. 废弃类 `Coordinate` 上的方法 `unregisterMouseCoordinate`
+
+#### Version 2.5.1
 1. 修复在React中使用时，单例工具类导致的事件无效化问题
 2. 修复类型声明文件中 `Sensor` 没有默认数据参数的错误
 3. 修复在React中使用时，风场、洋流实例找不到销毁对象的问题

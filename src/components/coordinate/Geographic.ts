@@ -58,7 +58,8 @@ export class Geographic {
    * const carto = geo.toCartographic()
    * ```
    */
-  toCartographic(@is(Cartographic) result?: Cartographic) {
+  @validate
+  toCartographic(@is(Cartographic) result: Cartographic = new Cartographic()) {
     return Cartographic.fromDegrees(this.longitude, this.latitude, this.height, result)
   }
 
@@ -99,14 +100,11 @@ export class Geographic {
    * ```
    */
   @validate
-  clone(@is(Geographic) result?: Geographic) {
-    if (result) {
-      result.latitude = this.latitude
-      result.longitude = this.longitude
-      result.height = this.height
-      return result
-    }
-    return new Geographic(this.longitude, this.latitude, this.height)
+  clone(@is(Geographic) result: Geographic = new Geographic(0, 0)) {
+    result.latitude = this.latitude
+    result.longitude = this.longitude
+    result.height = this.height
+    return result
   }
 
   /**
@@ -169,7 +167,7 @@ export class Geographic {
    * @returns 地理坐标
    */
   @validate
-  static clone(@is(Geographic) geo: Geographic, @is(Geographic) result?: Geographic) {
+  static clone(@is(Geographic) geo: Geographic, @is(Geographic) result: Geographic = new Geographic(0, 0)) {
     return geo.clone(result)
   }
 
@@ -260,16 +258,16 @@ export class Geographic {
    * ```
    */
   @validate
-  static fromCartographic(@is(Cartographic) cartographic: Cartographic, @is(Geographic) result?: Geographic) {
+  static fromCartographic(
+    @is(Cartographic) cartographic: Cartographic,
+    @is(Geographic) result: Geographic = new Geographic(0, 0)
+  ) {
     const lon = Math.toDegrees(cartographic.longitude)
     const lat = Math.toDegrees(cartographic.latitude)
-    if (result) {
-      result.longitude = lon
-      result.latitude = lat
-      result.height = cartographic.height
-      return result
-    }
-    return new Geographic(lon, lat, cartographic.height)
+    result.longitude = lon
+    result.latitude = lat
+    result.height = cartographic.height
+    return result
   }
 
   /**

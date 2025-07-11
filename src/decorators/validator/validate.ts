@@ -70,7 +70,15 @@ export const validate: {
             // ignore default args
             if (index >= args.length) continue
             const check = attr ? args[index][attr] : args[index]
+            if (check === undefined || check === null) {
+              //@ts-ignore
+              if (origin.length - 1 < index) continue
+              const realAttr = attr ? `the '${typeof attr === "string" ? attr : attr.toString()}'` : "it"
+              console.trace("Developer Error.")
+              throw new Error(`Invalid parameter of '${key}' at index ${index}, ${realAttr} is undefined or null.`)
+            }
             if (!rule(check)) {
+              console.trace("Developer Error.")
               throw new Error(failed)
             }
           }

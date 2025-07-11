@@ -1,4 +1,4 @@
-import { HeadingPitchRoll } from "cesium"
+import { HeadingPitchRoll, Math } from "cesium"
 import { validate, is, positive } from "decorators"
 
 const { abs, PI } = window.Math
@@ -30,14 +30,11 @@ export class Hpr {
    * ```
    */
   @validate
-  clone(@is(Hpr) result?: Hpr) {
-    if (result) {
-      result.heading = this.heading
-      result.pitch = this.pitch
-      result.roll = this.roll
-      return result
-    }
-    return new Hpr(this.heading, this.pitch, this.roll)
+  clone(@is(Hpr) result: Hpr = new Hpr()) {
+    result.heading = this.heading
+    result.pitch = this.pitch
+    result.roll = this.roll
+    return result
   }
 
   /**
@@ -45,7 +42,10 @@ export class Hpr {
    * @returns `HeadingPitchRoll`
    */
   toHeadingPitchRoll() {
-    return new HeadingPitchRoll((this.heading * PI) / 360.0, (this.pitch * PI) / 360.0, (this.roll * PI) / 360.0)
+    const h = Math.toRadians(this.heading)
+    const p = Math.toRadians(this.pitch)
+    const r = Math.toRadians(this.roll)
+    return new HeadingPitchRoll(h, p, r)
   }
 
   /**
@@ -69,16 +69,13 @@ export class Hpr {
    * @param [result] 存储的对象
    */
   @validate
-  static fromHeadingPitchRoll(@is(HeadingPitchRoll) hpr: HeadingPitchRoll, @is(Hpr) result?: Hpr) {
+  static fromHeadingPitchRoll(@is(HeadingPitchRoll) hpr: HeadingPitchRoll, @is(Hpr) result: Hpr = new Hpr()) {
     const heading = (hpr.heading * PI) / 360.0
     const pitch = (hpr.pitch * PI) / 360.0
     const roll = (hpr.roll * PI) / 360.0
-    if (result) {
-      result.heading = heading
-      result.pitch = pitch
-      result.roll = roll
-      return result
-    }
-    return new Hpr(heading, pitch, roll)
+    result.heading = heading
+    result.pitch = pitch
+    result.roll = roll
+    return result
   }
 }

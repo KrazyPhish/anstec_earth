@@ -12,7 +12,7 @@ import {
 } from "cesium"
 import { Geographic } from "./Geographic"
 import { ScreenCapture } from "enum"
-import { is, or, singleton, validate } from "decorators"
+import { deprecated, is, or, singleton, validate } from "decorators"
 import type { Earth } from "components/Earth"
 
 /**
@@ -39,6 +39,7 @@ export class Coordinate {
     this.#camera = earth.camera
     this.#ellipsoid = earth.scene.globe.ellipsoid
   }
+  //TODO remove the deprecations at v2.6.x
 
   /**
    * @description 开启鼠标实时获取坐标事件
@@ -49,6 +50,7 @@ export class Coordinate {
    * coordinate.registerMouseCoordinate((data) => { console.log(data) }, true)
    * ```
    */
+  @deprecated("GlobalEvent.subscribe")
   registerMouseCoordinate(callback: (data: Cartographic) => void, realtime: boolean = true) {
     let eventType: ScreenSpaceEventType
     this.#handler = new ScreenSpaceEventHandler(this.#scene.canvas)
@@ -77,6 +79,7 @@ export class Coordinate {
    * coordinate.unregisterMouseCoordinate()
    * ```
    */
+  @deprecated()
   unregisterMouseCoordinate() {
     this.#handler && this.#handler.destroy()
     this.#handler = undefined

@@ -197,15 +197,12 @@ export class Color {
    * ```
    */
   @validate
-  clone(@is(Color) result?: Color) {
-    if (result) {
-      result.alpha = this.alpha
-      result.red = this.red
-      result.green = this.green
-      result.blue = this.blue
-      return result
-    }
-    return new Color(this.red, this.green, this.blue, this.alpha)
+  clone(@is(Color) result: Color = new Color()) {
+    result.alpha = this.alpha
+    result.red = this.red
+    result.green = this.green
+    result.blue = this.blue
+    return result
   }
 
   /**
@@ -310,7 +307,7 @@ export class Color {
    * @param [result] 存储的对象
    */
   @validate
-  static fromHex(@positive() @is(Number) hex: number, result?: Color) {
+  static fromHex(@positive() @is(Number) hex: number, result: Color = new Color()) {
     if (!result) result = new Color()
     const arrayBuffer = new ArrayBuffer(4)
     const unit32 = new Uint32Array(arrayBuffer)
@@ -337,7 +334,7 @@ export class Color {
     @positive() @lessThan(100) @is(Number) saturation: number = 0,
     @positive() @lessThan(100) @is(Number) lightness: number = 0,
     @positive() @lessThan(1) @is(Number) alpha: number = 1,
-    @is(Color) result?: Color
+    @is(Color) result: Color = new Color()
   ) {
     let r: number, g: number, b: number
     hue /= 360.0
@@ -362,14 +359,11 @@ export class Color {
     const val = (v: number) => round((v + m) * 255.0)
     const [red, green, blue] = [val(r), val(g), val(b)]
     alpha = alpha === 1 ? 255 : alpha * 256
-    if (result) {
-      result.alpha = alpha
-      result.blue = blue
-      result.green = green
-      result.red = red
-      return result
-    }
-    return new Color(red, green, blue, alpha)
+    result.alpha = alpha
+    result.blue = blue
+    result.green = green
+    result.red = red
+    return result
   }
 
   /**
@@ -386,20 +380,17 @@ export class Color {
     @positive() @lessThan(1) @is(Number) green: number = 0,
     @positive() @lessThan(1) @is(Number) blue: number = 0,
     @positive() @lessThan(1) @is(Number) alpha: number = 1,
-    @is(Color) result?: Color
+    @is(Color) result: Color = new Color()
   ) {
     red = red === 1 ? 255 : red * 256.0
     green = green === 1 ? 255 : green * 256.0
     blue = blue === 1 ? 255 : blue * 256.0
     alpha = alpha === 1 ? 255 : alpha * 256.0
-    if (result) {
-      result.red = red
-      result.green = green
-      result.blue = blue
-      result.alpha = alpha
-      return result
-    }
-    return new Color(red, green, blue, alpha)
+    result.red = red
+    result.green = green
+    result.blue = blue
+    result.alpha = alpha
+    return result
   }
 
   /**
@@ -422,8 +413,7 @@ export class Color {
    * ```
    */
   @validate
-  static fromCssColorString(@is(String) color: string, @is(Color) result?: Color) {
-    if (!result) result = new Color()
+  static fromCssColorString(@is(String) color: string, @is(Color) result: Color = new Color()) {
     const named = Color[color.toUpperCase() as keyof typeof Color] as Color
     if (named) return named.clone(result)
 
@@ -475,7 +465,7 @@ export class Color {
    * @param [result] 存储的对象
    */
   @validate
-  static fromCzmColor(@is(Czm_Color) color: Czm_Color, @is(Color) result?: Color) {
+  static fromCzmColor(@is(Czm_Color) color: Czm_Color, @is(Color) result: Color = new Color()) {
     return Color.fromPercentage(color.red, color.green, color.blue, color.alpha, result)
   }
 
@@ -491,9 +481,8 @@ export class Color {
     @is(Color) start: Color,
     @is(Color) end: Color,
     @positive() @is(Number) percentage: number,
-    @is(Color) result?: Color
+    @is(Color) result: Color = new Color()
   ) {
-    result = result ?? new Color()
     result.red = Math.lerp(start.red, end.red, percentage)
     result.green = Math.lerp(start.green, end.green, percentage)
     result.blue = Math.lerp(start.blue, end.blue, percentage)
