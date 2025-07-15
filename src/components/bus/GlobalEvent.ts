@@ -121,7 +121,7 @@ export class GlobalEvent implements Destroyable {
    * 3. 传入模块名则仅取消订阅该模块事件
    */
   unsubscribe(callback: GlobalEvent.Callback, event: GlobalEventType, module?: string) {
-    this._bus.on(`${module}_${event}`, callback)
+    this._bus.off(`${module}_${event}`, callback)
   }
 
   /**
