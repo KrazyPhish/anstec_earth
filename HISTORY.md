@@ -2,6 +2,9 @@
 
 ### 版本更新历史记录
 
+#### Version 2.5.3
+1. 修复 `GlobalEvent` 订阅事件取消错误的问题
+
 #### Version 2.5.2
 1. 优化对 `?` 型可选参数的验证逻辑
 2. 废弃类 `Utils` 上的静态方法 `ConvertPic2Canvas` 改用 `convertPic2Canvas`
