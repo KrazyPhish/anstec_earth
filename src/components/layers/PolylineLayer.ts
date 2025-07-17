@@ -125,7 +125,7 @@ export class PolylineLayer<T = unknown> extends Layer<
     }: PolylineLayer.AddParam<T>
   ) {
     if (perLineVertextColors?.length && perLineVertextColors.length !== lines.length) {
-      throw new Error("perLineColors.length must fit the length of lines.")
+      throw new Error("perLineVertextColors.length must fit the length of 'lines'.")
     }
     const geometryInstances: GeometryInstance[] = []
     for (const key in lines) {
@@ -161,7 +161,7 @@ export class PolylineLayer<T = unknown> extends Layer<
       show,
       asynchronous,
       geometryInstances,
-      appearance: perLineVertextColors
+      appearance: (!ground && perLineVertextColors)
         ? new PolylineColorAppearance()
         : new PolylineMaterialAppearance({
             material: new CMaterial({
