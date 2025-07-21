@@ -1571,13 +1571,7 @@ declare module "@anstec/earth" {
     export type Point = Base & {
       color?: Czm_Color
       pixelSize?: number
-      /**
-       * @description 绘制数量，`0`为无限制绘制，手动结束
-       */
       limit?: number
-      /**
-       * @description 是否保留绘制图形
-       */
       keep?: boolean
       onEvery?: (position: Cartesian3, index: number) => void
       onFinish?: (positions: Cartesian3[]) => void
@@ -1596,9 +1590,6 @@ declare module "@anstec/earth" {
      */
     export type Circle = Base & {
       color?: Czm_Color
-      /**
-       * @description 是否保留绘制图形
-       */
       keep?: boolean
       ground?: boolean
       onFinish?: (center: Cartesian3, radius: number) => void
@@ -1616,9 +1607,6 @@ declare module "@anstec/earth" {
      */
     export type Rectangle = Base & {
       color?: Czm_Color
-      /**
-       * @description 是否保留绘制图形
-       */
       keep?: boolean
       ground?: boolean
       onFinish?: (rectangle: Rect) => void
