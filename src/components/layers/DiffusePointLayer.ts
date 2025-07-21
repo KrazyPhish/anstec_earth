@@ -114,17 +114,15 @@ export class DiffusePointLayer<T = unknown> implements Destroyable, DestroyContr
     const stroke = strokeColor.toCssColorString()
     const fill = color.toCssColorString()
     const canvasCoordinate = this.#scene.cartesianToCanvasCoordinates(position)
-    const offset = this.#scene.canvas.getBoundingClientRect()
-    const cx = canvasCoordinate.x + offset.left
-    const cy = canvasCoordinate.y + offset.top
+    const cx = canvasCoordinate.x
+    const cy = canvasCoordinate.y
     pointSVG.innerHTML = `<circle class="${classG}" cx="${cx}" cy="${cy}" r="${pixelSize / 2}" stroke="${stroke}" fill="${fill}" />`
     const callback = () => {
       const ent = this._cache.get(id)
       const _position = ent?.position ?? position
       const canvasCoordinate = this.#scene.cartesianToCanvasCoordinates(_position)
-      const offset = this.#scene.canvas.getBoundingClientRect()
-      const cx = canvasCoordinate.x + offset.left
-      const cy = canvasCoordinate.y + offset.top
+      const cx = canvasCoordinate.x
+      const cy = canvasCoordinate.y
       pointSVG.children[0].setAttribute("cx", cx.toString())
       pointSVG.children[0].setAttribute("cy", cy.toString())
       const cameraOccluder = new EllipsoidalOccluder(Ellipsoid.WGS84, this.#camera.position)
