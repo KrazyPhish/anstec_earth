@@ -5484,7 +5484,7 @@ declare module "@anstec/earth" {
      * const earth = createEarth()
      * const ctxMenu = new ContextMenu(earth)
      * ctxMenu.toggleMenuStatus({
-     *  module: "default",
+     *  module: "__default__",
      *  belong: "terrain-depth",
      *  status: true,
      * })
