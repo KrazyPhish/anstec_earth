@@ -503,7 +503,7 @@ export class Earth implements Destroyable {
    * @example
    * ```
    * const earth = createEarth()
-   * const imageryProvider = useTileImageryProvider({ url: "/api/imagery", maximumLevel: 18 })
+   * const imageryProvider = new UrlTemplateImageryProvider({ url: "/api/imagery", maximumLevel: 18 })
    * earth.addImageryProvider(imageryProvider)
    * ```
    */
