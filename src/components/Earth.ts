@@ -33,7 +33,7 @@ import { Coordinate } from "./coordinate"
 import { GraphicsLayer } from "./layers"
 import { DefaultContextMenuItem as MapMode } from "enum"
 import { ImprovedAnimation, ImprovedScreenSpaceCameraController, ImprovedTimeline } from "improved"
-import { welcome, generate } from "decorators"
+import { welcome, generate, deprecate } from "decorators"
 import type { Destroyable } from "abstract"
 
 export namespace Earth {
@@ -341,13 +341,9 @@ export class Earth implements Destroyable {
    * 2. 该坐标系统由于Echarts限制，仅支持单实例
    * 3. 对应视图需要开启Echarts插件时运行该方法
    * 4. 其他Echarts图形实例也可加载，但不随视图更新位置
-   * @example
-   * ```
-   * const earth = createEarth()
-   * earth.useEcharts()
-   * const overlay = new Overlay({ earth, echartsOption })
-   * ```
+   * @deprecated use `registerEchartsPlugin` from module `@anstec/earth-plugins`
    */
+  @deprecate()
   useEcharts() {
     const self = this
     extendComponentModel({

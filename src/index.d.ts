@@ -568,12 +568,7 @@ declare module "@anstec/earth" {
      * 2. 该坐标系统由于Echarts限制，仅支持单实例
      * 3. 对应视图需要开启Echarts插件时运行该方法
      * 4. 其他Echarts图形实例也可加载，但不随视图更新位置
-     * @example
-     * ```
-     * const earth = createEarth()
-     * earth.useEcharts()
-     * const overlay = new Overlay({ earth, echartsOption })
-     * ```
+     * @deprecated use `registerEchartsPlugin` from module `@anstec/earth-plugins`
      */
     useEcharts(): void
     /**
@@ -5537,12 +5532,7 @@ declare module "@anstec/earth" {
    * @description Echarts插件图层
    * @param earth {@link Earth} 地球实例
    * @param options {@link EChartsOverlay.ConstructorOptions} 参数
-   * @example
-   * ```
-   * const earth = createEarth()
-   * const overlay = EchartsOverlay(earth, { id: "echarts-map" })
-   * overlay.updateOverlay(echartsOption)
-   * ```
+   * @deprecated use `EChartsOverlay` from module `@anstec/earth-plugins`
    */
   export class EChartsOverlay {
     constructor(earth: Earth, options?: EChartsOverlay.ConstructorOptions)

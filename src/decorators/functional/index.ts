@@ -1,6 +1,6 @@
 export * from "./constant"
 export * from "./debounce"
-export * from "./deprecated"
+export * from "./deprecate"
 export * from "./enumerable"
 export * from "./freeze"
 export * from "./generate"

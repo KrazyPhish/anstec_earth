@@ -1,4 +1,4 @@
-import { except, moreThan, is, isPic, lessThan, validate, freeze, deprecated } from "decorators"
+import { except, moreThan, is, isPic, lessThan, validate, freeze, deprecate } from "decorators"
 import { CoorFormat } from "enum"
 
 const separator = "Ω"
@@ -10,7 +10,7 @@ export class Utils {
   /**
    * @deprecated
    */
-  @deprecated("uuid")
+  @deprecate("uuid")
   static RandomUUID(symbol: string = "-") {
     return this.uuid(symbol)
   }
@@ -18,7 +18,7 @@ export class Utils {
   /**
    * @deprecated
    */
-  @deprecated("encode")
+  @deprecate("encode")
   static EncodeId(id: string, module?: string) {
     return this.encode(id, module)
   }
@@ -26,7 +26,7 @@ export class Utils {
   /**
    * @deprecated
    */
-  @deprecated("decode")
+  @deprecate("decode")
   static DecodeId(id: string, module?: string) {
     return this.encode(id, module)
   }
@@ -34,7 +34,7 @@ export class Utils {
   /**
    * @deprecated
    */
-  @deprecated("convertPic2Canvas")
+  @deprecate("convertPic2Canvas")
   static ConvertPic2Canvas(pic: string, width?: number, height?: number) {
     return this.convertPic2Canvas(pic, width, height)
   }
@@ -42,7 +42,7 @@ export class Utils {
   /**
    * @deprecated
    */
-  @deprecated("convertSvg2Canvas")
+  @deprecate("convertSvg2Canvas")
   static ConvertSvg2Canvas(svg: string, width?: number, height?: number) {
     return this.convertPic2Canvas(svg, width, height)
   }

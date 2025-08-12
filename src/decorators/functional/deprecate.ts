@@ -5,9 +5,9 @@ const log = (target: string, version: string, replacement: string) => {
 /**
  * @description 类、方法、属性废弃装饰器
  * @param [replace] 替带方案名
- * @param [version] 预计废弃版本
+ * @param [version] 预计删除版本
  */
-export const deprecated = (
+export const deprecate = (
   replace?: string,
   version?: string
 ): {

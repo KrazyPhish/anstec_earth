@@ -1,4 +1,4 @@
-import { enumerable, generate, singleton } from "decorators"
+import { deprecate, enumerable, generate, singleton } from "decorators"
 import { init, type EChartsOption, type ECharts } from "echarts"
 import { Utils } from "utils"
 import type { Scene, Viewer } from "cesium"
@@ -25,13 +25,9 @@ export interface EChartsOverlay {
  * @description Echarts插件图层
  * @param earth {@link Earth} 地球实例
  * @param param {@link EChartsOverlay.ConstructorOptions} 参数
- * @example
- * ```
- * const earth = createEarth()
- * const overlay = EchartsOverlay(earth, { id: "echarts-map" })
- * overlay.updateOverlay(echartsOption)
- * ```
+ * @deprecated use `EChartsOverlay` from module `@anstec/earth-plugins`
  */
+@deprecate()
 @singleton()
 export class EChartsOverlay implements Destroyable {
   @generate(false) isDestroyed!: boolean
@@ -51,14 +47,12 @@ export class EChartsOverlay implements Destroyable {
 
   #createChartOverlay() {
     this.#scene.canvas.setAttribute("tabIndex", "0")
-    const offset = this.#scene.canvas.getBoundingClientRect()
     const echartDom = document.createElement("div")
     echartDom.style.position = "absolute"
-    echartDom.style.top = `${offset.top}px`
-    echartDom.style.left = `${offset.left}px`
+    echartDom.style.top = "0px"
+    echartDom.style.left = "0px"
     echartDom.style.width = `${this.#scene.canvas.width}px`
     echartDom.style.height = `${this.#scene.canvas.height}px`
-    echartDom.style.pointerEvents = "none"
     echartDom.style.pointerEvents = "none"
     echartDom.setAttribute("id", this._id)
     echartDom.setAttribute("class", "echarts-overlay")
