@@ -2,6 +2,10 @@
 
 ### 版本更新历史记录
 
+#### Version 2.5.5
+1. 废弃类 `EChartsoverlay`
+2. 废弃方法 `Earth.useEcharts`
+
 #### Version 2.5.4
 1. 修复 `PolylineLayer` 新增时参数 `ground` 和 `perLineVertextColors` 冲突出错的问题
 2. 修复 `DiffusePointLayer` 图层定位问题，现所有定位相关的组件图层在地球容器的父组件定位方式为 `relative` 时适用
