@@ -9,7 +9,7 @@ export const enumerable: (value: boolean) => {
   return (...args: Parameters<MethodDecorator> | Parameters<PropertyDecorator>) => {
     const [target, prop, descriptor] = args
     if (descriptor) {
-      descriptor.enumerable = true
+      descriptor.enumerable = value
       descriptor.configurable = false
       return descriptor
     } else {
