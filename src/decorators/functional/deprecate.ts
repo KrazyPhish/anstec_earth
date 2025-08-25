@@ -32,7 +32,15 @@ export const deprecate = (
       //@ts-ignore
       const owner = target.name ?? target.constructor.name
       const key = typeof prop === "string" ? prop : prop.toString()
-      const reader = replace ?? prop
+      const or = typeof prop === "string" ? `_deprecated_${prop}` : Symbol("_deprecated_property")
+      if (!replace) {
+        Object.defineProperty(target, or, {
+          configurable: false,
+          enumerable: false,
+          value: undefined,
+        })
+      }
+      const reader = replace ?? or
       Object.defineProperty(target, prop, {
         configurable: false,
         enumerable: true,
