@@ -27,8 +27,8 @@ export class Utils {
    * @deprecated
    */
   @deprecate("decode")
-  static DecodeId(id: string, module?: string) {
-    return this.encode(id, module)
+  static DecodeId(id: string) {
+    return this.decode(id)
   }
 
   /**

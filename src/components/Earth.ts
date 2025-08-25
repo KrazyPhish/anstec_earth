@@ -341,7 +341,7 @@ export class Earth implements Destroyable {
    * 2. 该坐标系统由于Echarts限制，仅支持单实例
    * 3. 对应视图需要开启Echarts插件时运行该方法
    * 4. 其他Echarts图形实例也可加载，但不随视图更新位置
-   * @deprecated use `registerEchartsPlugin` from module `@anstec/earth-plugins`
+   * @deprecated use `registerEChartsOverlay` from module `@anstec/earth-plugins`
    */
   @deprecate()
   useEcharts() {
