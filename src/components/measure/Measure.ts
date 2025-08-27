@@ -22,7 +22,7 @@ import {
 } from "cesium"
 import { singleton, generate, enumerable } from "decorators"
 import { CameraTool, Utils, State, Figure } from "utils"
-import { ProtoDraw } from "components/draw"
+import { Draw, ProtoDraw } from "components/draw"
 import { DrawType } from "enum"
 import { Geographic } from "components/coordinate"
 import { PolylineLayer, LabelLayer, PolygonLayer } from "components/layers"
@@ -440,7 +440,7 @@ export class Measure implements Destroyable {
    * const result = await measure.calcBearing()
    * ```
    */
-  calcBearing({
+  async calcBearing({
     id = Utils.uuid(),
     split = true,
     width = 2,
@@ -453,7 +453,7 @@ export class Measure implements Destroyable {
     headLabelText = "Reference",
     nodeLabelText,
     module,
-  }: Measure.Bearing) {
+  }: Measure.Bearing = {}): Promise<Draw.PolylineReturn> {
     let start: Cartesian3
     const points: Cartesian3[] = []
     const idCache: Set<string> = new Set()
@@ -510,8 +510,8 @@ export class Measure implements Destroyable {
       }
     }
 
-    return this._drawTool
-      .draw(DrawType.POLYLINE, {
+    try {
+      return await this._drawTool.draw(DrawType.POLYLINE, {
         id,
         module,
         width,
@@ -523,10 +523,10 @@ export class Measure implements Destroyable {
         onEvery,
         onFinish,
       })
-      .catch((error) => {
-        this.remove(id)
-        throw error
-      })
+    } catch (error) {
+      this.remove(id)
+      throw error
+    }
   }
 
   /**
@@ -540,7 +540,7 @@ export class Measure implements Destroyable {
    * const result = await measure.calcCoordinate()
    * ```
    */
-  calcCoordinate({
+  async calcCoordinate({
     id = Utils.uuid(),
     color = Color.YELLOW,
     pointPixelSize = 10,
@@ -550,7 +550,7 @@ export class Measure implements Destroyable {
     labelStyle = LabelStyle.FILL_AND_OUTLINE,
     module,
     labelText,
-  }: Measure.Coordinate) {
+  }: Measure.Coordinate = {}): Promise<Draw.PointReturn[]> {
     const formatText = ({ latitude, longitude, height = 0 }: Geographic) => {
       const _latitude = latitude.toFixed(6)
       const _longitude = longitude.toFixed(6)
@@ -574,8 +574,8 @@ export class Measure implements Destroyable {
       })
     }
 
-    return this._drawTool
-      .draw(DrawType.POINT, {
+    try {
+      return await this._drawTool.draw(DrawType.POINT, {
         id,
         module,
         color,
@@ -584,10 +584,10 @@ export class Measure implements Destroyable {
         keep: true,
         onFinish,
       })
-      .catch((error) => {
-        this.remove(id)
-        throw error
-      })
+    } catch (error) {
+      this.remove(id)
+      throw error
+    }
   }
 
   /**
@@ -601,7 +601,7 @@ export class Measure implements Destroyable {
    * const result = await measure.groundDistance()
    * ```
    */
-  groundDistance({
+  async groundDistance({
     id = Utils.uuid(),
     split = true,
     width = 2,
@@ -614,7 +614,7 @@ export class Measure implements Destroyable {
     headLabelText,
     nodeLabelText,
     module,
-  }: Measure.Distance) {
+  }: Measure.Distance = {}): Promise<Draw.PolylineReturn> {
     let total = 0
     let start: Cartesian3
     const points: Cartesian3[] = []
@@ -683,8 +683,8 @@ export class Measure implements Destroyable {
       this._label.set(id, { text: formatHead(total) })
     }
 
-    return this._drawTool
-      .draw(DrawType.POLYLINE, {
+    try {
+      return await this._drawTool.draw(DrawType.POLYLINE, {
         id,
         module,
         width,
@@ -695,10 +695,10 @@ export class Measure implements Destroyable {
         onEvery,
         onFinish,
       })
-      .catch((error) => {
-        this.remove(id)
-        throw error
-      })
+    } catch (error) {
+      this.remove(id)
+      throw error
+    }
   }
 
   /**
@@ -712,7 +712,7 @@ export class Measure implements Destroyable {
    * const result = await measure.spaceDistance()
    * ```
    */
-  spaceDistance({
+  async spaceDistance({
     id = Utils.uuid(),
     split = true,
     width = 2,
@@ -725,7 +725,7 @@ export class Measure implements Destroyable {
     headLabelText,
     nodeLabelText,
     module,
-  }: Measure.Distance) {
+  }: Measure.Distance = {}): Promise<Draw.PolylineReturn> {
     let total = 0
     let start: Cartesian3
     const points: Cartesian3[] = []
@@ -806,8 +806,8 @@ export class Measure implements Destroyable {
       points.pop()
     }
 
-    return this._drawTool
-      .draw(DrawType.POLYLINE, {
+    try {
+      return await this._drawTool.draw(DrawType.POLYLINE, {
         id,
         module,
         width,
@@ -819,10 +819,10 @@ export class Measure implements Destroyable {
         onEvery,
         onFinish,
       })
-      .catch((error) => {
-        this.remove(id)
-        throw error
-      })
+    } catch (error) {
+      this.remove(id)
+      throw error
+    }
   }
 
   /**
@@ -836,7 +836,7 @@ export class Measure implements Destroyable {
    * const result = await measure.heightDifference()
    * ```
    */
-  heightDifference({
+  async heightDifference({
     id = Utils.uuid(),
     width = 2,
     labelFillColor = Color.RED,
@@ -848,7 +848,7 @@ export class Measure implements Destroyable {
     headLabelText = "Reference",
     nodeLabelText,
     module,
-  }: Measure.HeightDifference) {
+  }: Measure.HeightDifference = {}): Promise<Draw.PolylineReturn> {
     let start: Cartesian3
     const points: Cartesian3[] = []
     const idCache: Set<string> = new Set()
@@ -906,8 +906,8 @@ export class Measure implements Destroyable {
       }
     }
 
-    return this._drawTool
-      .draw(DrawType.POLYLINE, {
+    try {
+      return await this._drawTool.draw(DrawType.POLYLINE, {
         id,
         module,
         width,
@@ -919,10 +919,10 @@ export class Measure implements Destroyable {
         onEvery,
         onFinish,
       })
-      .catch((error) => {
-        this.remove(id)
-        throw error
-      })
+    } catch (error) {
+      this.remove(id)
+      throw error
+    }
   }
 
   /**
@@ -936,14 +936,14 @@ export class Measure implements Destroyable {
    * const result = await measure.spaceArea()
    * ```
    */
-  spaceArea({
+  async spaceArea({
     id = Utils.uuid(),
     color = Color.YELLOW.withAlpha(0.25),
     outlineColor = Color.YELLOW,
     outlineWidth = 1,
     labelText,
     module,
-  }: Measure.Area) {
+  }: Measure.Area = {}): Promise<Draw.PolygonReturn> {
     const points: Cartesian3[] = []
 
     const formatText = (area: number) => {
@@ -998,8 +998,8 @@ export class Measure implements Destroyable {
       })
     }
 
-    return this._drawTool
-      .draw(DrawType.POLYGON, {
+    try {
+      return await this._drawTool.draw(DrawType.POLYGON, {
         id,
         module,
         color,
@@ -1011,10 +1011,10 @@ export class Measure implements Destroyable {
         onEvery,
         onFinish,
       })
-      .catch((error) => {
-        this.remove(id)
-        throw error
-      })
+    } catch (error) {
+      this.remove(id)
+      throw error
+    }
   }
 
   /**
@@ -1036,7 +1036,7 @@ export class Measure implements Destroyable {
     width = 2,
     materialType = "PolylineDash",
     materialUniforms = { color: Color.ORANGE },
-  }: Measure.Section): Promise<Measure.SectionReturn> {
+  }: Measure.Section = {}): Promise<Measure.SectionReturn> {
     const getMaterial = (
       materialType: PolylineLayer.MaterialType,
       materialUniforms?: PolylineLayer.MaterialUniforms
