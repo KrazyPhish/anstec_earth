@@ -14,6 +14,7 @@
     "outDir": "./dist",
     "sourceMap": false,
     "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "noUnusedLocals": true,

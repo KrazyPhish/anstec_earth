@@ -1,19 +1,8 @@
-import {
-  Cartesian3,
-  JulianDate,
-  SampledPositionProperty,
-  VelocityOrientationProperty,
-  type BillboardGraphics,
-  type Entity,
-  type ModelGraphics,
-  type PathGraphics,
-  type TimeIntervalCollection,
-  type Viewer,
-} from "cesium"
+import type { BillboardGraphics, ModelGraphics, PathGraphics, TimeIntervalCollection, Viewer } from "cesium"
 import { is, generate, singleton, validate, enumerable } from "decorators"
 import { Destroyable } from "abstract"
-import { Utils } from "utils"
 import type { Earth } from "components/Earth"
+import { Animation } from "./Animation"
 
 export namespace AnimationManager {
   /**
@@ -67,7 +56,7 @@ export interface AnimationManager {
  */
 @singleton()
 export class AnimationManager implements Destroyable {
-  @enumerable(false) _cache: Map<string, Entity> = new Map()
+  @enumerable(false) _cache: Map<string, Animation> = new Map()
   @enumerable(false) _viewer: Viewer
 
   @generate(false) isDestroyed!: boolean
@@ -78,29 +67,18 @@ export class AnimationManager implements Destroyable {
 
   /**
    * @description 新增动画对象
-   * @param param {@link AnimationManager.AddParam} 参数
+   * @param param {@link Animation} | {@link Animation.ConstructorOptions} 参数
    */
   @validate
-  add(
-    @is(Array, "positions")
-    { id = Utils.uuid(), module, availability, billboard, model, path, positions }: AnimationManager.AddParam
-  ) {
-    const _id = Utils.encode(id, module)
-    const property = new SampledPositionProperty()
-    positions.forEach((position) => {
-      const { longitude, latitude, height, time } = position
-      property.addSample(JulianDate.fromDate(new Date(time)), Cartesian3.fromDegrees(longitude, latitude, height))
-    })
-    const ent = this._viewer.entities.add({
-      id: _id,
-      availability,
-      billboard,
-      model,
-      path,
-      position: property,
-      orientation: new VelocityOrientationProperty(property),
-    })
-    this._cache.set(id, ent)
+  add(@is(Animation) animation: Animation | Animation.ConstructorOptions) {
+    if (animation instanceof Animation) {
+      this._viewer.entities.add(animation.instence)
+      this._cache.set(animation.id, animation)
+    } else {
+      const anim = new Animation(animation)
+      this._viewer.entities.add(anim.instence)
+      this._cache.set(anim.id, anim)
+    }
   }
 
   /**
@@ -116,11 +94,11 @@ export class AnimationManager implements Destroyable {
     if (id) {
       const ent = this._cache.get(id)
       if (ent) {
-        ent.show = true
+        ent.instence.show = true
       }
     } else {
       this._cache.forEach((ent) => {
-        ent.show = true
+        ent.instence.show = true
       })
     }
   }
@@ -138,11 +116,11 @@ export class AnimationManager implements Destroyable {
     if (id) {
       const ent = this._cache.get(id)
       if (ent) {
-        ent.show = false
+        ent.instence.show = false
       }
     } else {
       this._cache.forEach((ent) => {
-        ent.show = false
+        ent.instence.show = false
       })
     }
   }
@@ -161,10 +139,12 @@ export class AnimationManager implements Destroyable {
     if (id) {
       const entity = this._cache.get(id)
       if (entity) {
-        this._viewer.entities.remove(entity)
+        this._viewer.entities.remove(entity.instence)
       }
     } else {
-      this._viewer.entities.removeAll()
+      this._cache.forEach((ent) => {
+        this._viewer.entities.remove(ent.instence)
+      })
     }
   }
 
@@ -174,9 +154,7 @@ export class AnimationManager implements Destroyable {
   destroy() {
     if (this._isDestroyed) return
     this._isDestroyed = true
-    this._cache.forEach((entity) => {
-      this._viewer.entities.remove(entity)
-    })
+    this.remove()
     this._cache.clear()
     this._cache = undefined as any
     this._viewer = undefined as any
