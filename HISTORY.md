@@ -2,6 +2,22 @@
 
 ### 版本更新历史记录
 
+#### Version 2.6.0
+1. 删除类 `EChartsoverlay`
+2. 删除方法 `Earth.useEcharts`
+3. 删除方法 `Coordinate.registerMouseCoordinate`
+4. 删除方法 `Coordinate.unregisterMouseCoordinate`
+5. 删除方法 `Utils.ConvertPic2Canvas`
+6. 删除方法 `Utils.ConvertSvg2Canvas`
+7. 删除方法 `Utils.DecodeId`
+8. 删除方法 `Utils.EncodeId`
+9. 删除方法 `Utils.RandomUUID`
+10. 删除方法 `useEarth`，`useEarthRecycle`，`useNavigation`，`useImageryProvider`
+11. 新增类 `Animation` 用于描述单个动画对象
+12. 重写 `AnimationManager` 以使用 `Animation` 对象并进行管理
+13. 重写方法 `AnimationManger.add`
+14. 修正 `Utils` 中两个图片转换方法返回值标住
+
 #### Version 2.5.5
 1. 废弃类 `EChartsoverlay`
 2. 废弃方法 `Earth.useEcharts`
@@ -17,8 +33,12 @@
 1. 优化对 `?` 型可选参数的验证逻辑
 2. 废弃类 `Utils` 上的静态方法 `ConvertPic2Canvas` 改用 `convertPic2Canvas`
 3. 废弃类 `Utils` 上的静态方法 `ConvertSvg2Canvas` 改用 `convertSvg2Canvas`
-4. 废弃类 `Coordinate` 上的方法 `registerMouseCoordinate`
-5. 废弃类 `Coordinate` 上的方法 `unregisterMouseCoordinate`
+4. 废弃类 `Utils` 上的静态方法 `RandomUUID` 改用 `uuid`
+5. 废弃类 `Utils` 上的静态方法 `EncodeId` 改用 `encode`
+6. 废弃类 `Utils` 上的静态方法 `DecodeId` 改用 `decode`
+7. 废弃类 `Coordinate` 上的方法 `registerMouseCoordinate`
+8. 废弃类 `Coordinate` 上的方法 `unregisterMouseCoordinate`
+9. 优化测量工具的接收参数及错误抛出流程
 
 #### Version 2.5.1
 1. 修复在React中使用时，单例工具类导致的事件无效化问题

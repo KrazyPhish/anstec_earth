@@ -49,9 +49,9 @@ import type {
   TerrainProvider,
   TextureMagnificationFilter,
   TextureMinificationFilter,
-  TimeIntervalCollection,
   UrlTemplateImageryProvider,
   Viewer,
+  Entity,
 } from "cesium"
 import type { EChartsOption } from "echarts"
 
@@ -678,31 +678,72 @@ declare module "@anstec/earth" {
     destroy(): void
   }
 
-  export namespace AnimationManager {
+  export namespace Animation {
     /**
-     * @description 新增动画对象参数
+     * @description 位置采样
+     * @property longitude 经度
+     * @property latitude 纬度
+     * @property [height] 高度
+     * @property time 对应时间
+     */
+    export type PositionSample = {
+      longitude: number
+      latitude: number
+      height?: number
+      time: Date
+    }
+    /**
      * @property [id] ID
      * @property [module] 模块名
-     * @property positions 位置及相应事件信息
-     * @property [availability] {@link TimeIntervalCollection} 时间依赖
-     * @property [billboard] {@link BillboardGraphics} | {@link BillboardGraphics.ConstructorOptions} 广告牌实例 / 构造参数
-     * @property [model] {@link ModelGraphics} | {@link ModelGraphics.ConstructorOptions} 模型实例 / 构造参数
-     * @property [path] {@link PathGraphics} | {@link PathGraphics.ConstructorOptions} 路径实例 / 构造参数
+     * @property positionSamples 位置采样数组
+     * @property [timeZoneSamples] 时间采样范围
+     * @property [billboard] {@link BillboardGraphics} | {@link BillboardGraphics.ConstructorOptions} 广告牌
+     * @property [model] {@link ModelGraphics} | {@link ModelGraphics.ConstructorOptions} 模型
+     * @property [path] {@link PathGraphics} | {@link PathGraphics.ConstructorOptions} 路径
      */
-    export type AddParam = {
+    export type ConstructorOptions = {
       id?: string
       module?: string
-      positions: {
-        longitude: number
-        latitude: number
-        height?: number
-        time: number | string | Date
-      }[]
-      availability?: TimeIntervalCollection
+      positionSamples: PositionSample[]
+      timeZoneSamples?: Date[]
       billboard?: BillboardGraphics | BillboardGraphics.ConstructorOptions
       model?: ModelGraphics | ModelGraphics.ConstructorOptions
       path?: PathGraphics | PathGraphics.ConstructorOptions
     }
+  }
+
+  export class Animation {
+    constructor(options: Animation.ConstructorOptions)
+    readonly isDestroyed: boolean
+    readonly id: string
+    readonly instence: Entity
+    /**
+     * @description 添加位置采样
+     * @param samples 位置采样
+     */
+    addPositionSamples(samples: Animation.PositionSample[]): void
+    /**
+     * @description 添加时间采样
+     * @param samples 时间采样
+     */
+    addTimeZoneSamples(samples: Date[]): void
+    /**
+     * @description 移除时间采样
+     * @param samples 时间采样
+     * @returns
+     */
+    removeTimeZoneSamples(samples: Date[]): void
+    /**
+     * @description 删除时间间隔内的所有位置采样
+     * @param samples 时间采样区间
+     */
+    removePositionSamples(samples: Date[]): void
+    /**
+     * @description 删除对应时间的位置采样
+     * @param sample 对应时间采样
+     * @returns 移除返回 `true`，未找到相应采样返回 `false`
+     */
+    removePositionSample(sample: Date): boolean
   }
 
   /**
@@ -732,9 +773,9 @@ declare module "@anstec/earth" {
     readonly isDestroyed: boolean
     /**
      * @description 新增动画对象
-     * @param param {@link AnimationManager.AddParam} 参数
+     * @param param {@link Animation} | {@link Animation.ConstructorOptions} 动画对象
      */
-    add(param: AnimationManager.AddParam): void
+    add(param: Animation | Animation.ConstructorOptions): void
     /**
      * @description 显示所有动画
      */
@@ -6572,7 +6613,7 @@ declare module "@anstec/earth" {
      * @param [height = 48] 高度
      * @returns Canvas结果
      */
-    const convertSvg2Canvas: (svg: string, width?: number, height?: number) => HTMLCanvasElement
+    const convertSvg2Canvas: (svg: string, width?: number, height?: number) => Promise<HTMLCanvasElement>
     /**
      * @description 将图片格式转换为Canvas
      * @param pic 图片
@@ -6580,7 +6621,7 @@ declare module "@anstec/earth" {
      * @param [height = 48] 高度
      * @returns Canvas结果
      */
-    const convertPic2Canvas: (pic: string, width?: number, height?: number) => HTMLCanvasElement
+    const convertPic2Canvas: (pic: string, width?: number, height?: number) => Promise<HTMLCanvasElement>
     /**
      * @description 将SVG图片格式转换为Canvas
      * @param svg SVG图片
@@ -6589,7 +6630,7 @@ declare module "@anstec/earth" {
      * @returns Canvas结果
      * @deprecated use `Utils.convertSvg2Canvas`, this will be deleted at next minor version
      */
-    const ConvertSvg2Canvas: (svg: string, width?: number, height?: number) => HTMLCanvasElement
+    const ConvertSvg2Canvas: (svg: string, width?: number, height?: number) => Promise<HTMLCanvasElement>
     /**
      * @description 将图片格式转换为Canvas
      * @param pic 图片
@@ -6598,7 +6639,7 @@ declare module "@anstec/earth" {
      * @returns Canvas结果
      * @deprecated use `Utils.convertPic2Canvas`, this will be deleted at next minor version
      */
-    const ConvertPic2Canvas: (pic: string, width?: number, height?: number) => HTMLCanvasElement
+    const ConvertPic2Canvas: (pic: string, width?: number, height?: number) => Promise<HTMLCanvasElement>
     /**
      * @description 防抖
      * @param func 需要防抖的函数
