@@ -1,5 +1,5 @@
 import type { BillboardGraphics, ModelGraphics, PathGraphics, TimeIntervalCollection, Viewer } from "cesium"
-import { is, generate, singleton, validate, enumerable } from "decorators"
+import { generate, singleton, validate, enumerable, or } from "decorators"
 import { Destroyable } from "abstract"
 import type { Earth } from "components/Earth"
 import { Animation } from "./Animation"
@@ -70,7 +70,7 @@ export class AnimationManager implements Destroyable {
    * @param param {@link Animation} | {@link Animation.ConstructorOptions} 参数
    */
   @validate
-  add(@is(Animation) animation: Animation | Animation.ConstructorOptions) {
+  add(@or([Animation, Object]) animation: Animation | Animation.ConstructorOptions) {
     if (animation instanceof Animation) {
       this._viewer.entities.add(animation.instence)
       this._cache.set(animation.id, animation)
