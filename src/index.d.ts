@@ -1388,6 +1388,7 @@ declare module "@anstec/earth" {
      * @property [follow = true] 覆盖物是否跟随锚定位置移动，拖拽禁用时将总是跟随
      * @property [lineStroke = "rgba(43, 44, 47, 0.8)"] 连接线颜色
      * @property position {@link Cartesian3} 位置
+     * @property [distanceDisplayCallback] 距离显隐函数
      */
     export type AddParam<T> = {
       id?: string
@@ -1403,6 +1404,7 @@ declare module "@anstec/earth" {
       closeable?: boolean
       follow?: boolean
       position: Cartesian3
+      distanceDisplayCallback?: (position: Cartesian3, cameraHeight: number) => boolean
     }
     export type SetParam<T> = Partial<Pick<AddParam<T>, "position" | "title" | "content" | "data">>
   }

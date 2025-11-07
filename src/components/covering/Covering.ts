@@ -57,6 +57,7 @@ export namespace Covering {
    * @property [closeable = true] 覆盖物是否可关闭
    * @property [follow = true] 覆盖物是否跟随锚定位置移动，拖拽禁用时将总是跟随
    * @property position {@link Cartesian3} 位置
+   * @property [distanceDisplayCallback] 距离显隐函数
    */
   export type AddParam<T> = {
     id?: string
@@ -72,6 +73,7 @@ export namespace Covering {
     closeable?: boolean
     follow?: boolean
     position: Cartesian3
+    distanceDisplayCallback?: (position: Cartesian3, cameraHeight: number) => boolean
   }
 
   export type SetParam<T> = Partial<Pick<AddParam<T>, "position" | "title" | "content" | "data">>
@@ -138,6 +140,7 @@ export class Covering<T = unknown> implements Destroyable {
     connectionLine,
     offset,
     follow,
+    distanceDisplayCallback,
   }: {
     id: string
     reference: HTMLDivElement
@@ -148,6 +151,7 @@ export class Covering<T = unknown> implements Destroyable {
     connectionLine: Covering.LineOptions
     offset: Cartesian2
     follow: boolean
+    distanceDisplayCallback?: (position: Cartesian3, cameraDistance: number) => boolean
   }) {
     const computeTail = (refTop: number, refLeft: number, coord: Cartesian2) => {
       if (connectionLine.pinned === "TOP_LEFT") {
@@ -268,7 +272,8 @@ export class Covering<T = unknown> implements Destroyable {
         canvasCoordinate.y < 0 ||
         canvasCoordinate.x > this.#scene.canvas.clientWidth ||
         canvasCoordinate.y > this.#scene.canvas.clientHeight ||
-        (this.#scene.mode === SceneMode.SCENE3D && !cameraOccluder.isPointVisible(_position))
+        (this.#scene.mode === SceneMode.SCENE3D && !cameraOccluder.isPointVisible(_position)) ||
+        distanceDisplayCallback?.(_position, this.#camera.positionCartographic.height)
       ) {
         reference.style.display = "none"
         tail.style.opacity = "0"
@@ -328,6 +333,7 @@ export class Covering<T = unknown> implements Destroyable {
       connectionLine,
       position,
       data,
+      distanceDisplayCallback,
     }: Covering.AddParam<T>
   ) {
     let reference: HTMLDivElement
@@ -416,6 +422,7 @@ export class Covering<T = unknown> implements Destroyable {
       connectionLine,
       offset,
       follow,
+      distanceDisplayCallback,
     })
     this.#scene.preRender.addEventListener(callback)
     this._cache.set(id, { title, content, position, reference, tail, data, callback })

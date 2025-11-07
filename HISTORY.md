@@ -16,7 +16,8 @@
 11. 新增类 `Animation` 用于描述单个动画对象
 12. 重写 `AnimationManager` 以使用 `Animation` 对象并进行管理
 13. 重写方法 `AnimationManger.add`
-14. 修正 `Utils` 中两个图片转换方法返回值标住
+14. 修正 `Utils` 中两个图片转换方法返回值标注
+15. `Covering` 类新增参数中新增属性 `distanceDisplayCallback` 控制覆盖物按距离显示和隐藏
 
 #### Version 2.5.5
 1. 废弃类 `EChartsoverlay`
