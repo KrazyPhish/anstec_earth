@@ -6604,7 +6604,7 @@ declare module "@anstec/earth" {
     /**
      * @description 格式化纬度
      * @param latitude 纬度
-     * @param format [format = CoorFormat.DMS] {@link CoorFormat} 格式
+     * @param [format = CoorFormat.DMS] {@link CoorFormat} 格式
      * @return 格式化结果
      */
     const formatGeoLatitude: (latitude: number, format?: CoorFormat) => string
